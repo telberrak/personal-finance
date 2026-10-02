@@ -21,27 +21,45 @@ npm run dev:phone
 
 Open the `Network:` URL it prints (for example `http://192.168.1.20:5173`) on a phone connected to the same Wi-Fi.
 Phones only allow installing a PWA from HTTPS, so the dev server over plain HTTP is for trying the app out.
-To install it on your home screen, deploy `dist/` to any HTTPS static host (Netlify, Vercel, Cloudflare Pages, GitHub Pages).
-Then use _Share → Add to Home Screen_ (iOS) or _Install app_ (Android).
+To install it on your home screen, deploy it (below), open the HTTPS URL on your phone, then use
+_Share → Add to Home Screen_ (iOS) or _Install app_ (Android).
+
+## Deploying
+
+The app is static files, so any HTTPS host works. Config for two is included:
+
+- **Netlify:** import the GitHub repo; `netlify.toml` sets the build, SPA fallback and caching headers.
+- **Vercel:** import the GitHub repo; `vercel.json` does the same.
+
+Every pull request then gets its own preview URL from the host.
 
 ## Scripts
 
-| Script              | What it does                                          |
-| ------------------- | ----------------------------------------------------- |
-| `npm run dev`       | Development server with hot reload                    |
-| `npm run dev:phone` | Same, reachable from other devices on your network    |
-| `npm test`          | Unit tests (Vitest)                                   |
-| `npm run typecheck` | TypeScript check                                      |
-| `npm run build`     | Type-check and build the installable app into `dist/` |
-| `npm run preview`   | Serve the production build locally                    |
+| Script              | What it does                                                     |
+| ------------------- | ---------------------------------------------------------------- |
+| `npm run dev`       | Development server with hot reload                               |
+| `npm run dev:phone` | Same, reachable from other devices on your network               |
+| `npm test`          | Unit and component tests (Vitest, jsdom, fake-indexeddb)         |
+| `npm run test:e2e`  | End-to-end tests at phone size, light and dark (Playwright)      |
+| `npm run lint`      | ESLint, including accessibility rules                            |
+| `npm run format`    | Format with Prettier                                             |
+| `npm run typecheck` | TypeScript check for the app and the Node-side config            |
+| `npm run build`     | Type-check and build the installable app into `dist/`            |
+| `npm run preview`   | Serve the production build locally                               |
+| `npm run check`     | Everything CI runs except e2e: lint, format, types, tests, build |
+| `npm run icons`     | Re-render the PNG app icons from `public/icon*.svg`              |
+
+End-to-end tests use the installed Microsoft Edge locally, so no browser download is needed. CI installs Chromium.
+GitHub Actions (`.github/workflows/ci.yml`) runs the checks and the end-to-end tests on every push and pull request.
 
 ## How it is organised
 
 ```
 src/
   lib/          Pure logic, unit-tested: money (integer pence), dates, recurring schedules, selectors
-  db/           Dexie (IndexedDB) schema, types, live-query hook, demo seed
-  components/   Bottom navigation, icons, list rows, theme hook
+  db/           Dexie (IndexedDB) schema and types, live-query hook, repo.ts (all writes), demo seed
+  components/   Bottom navigation, icons, list rows, theme hook, error boundary
+  components/ui Toast (with Undo), confirm dialog and sheet (native <dialog>), form fields, money input
   pages/        Home, Activity, Bills, Budgets, Add transaction, Settings
   styles/       tokens.css (light/dark design tokens), app.css (mobile-first components)
 ```
@@ -50,6 +68,8 @@ src/
 - **Dates** are local calendar days (`YYYY-MM-DD`), so they never shift with time zones or clock changes.
 - **Bills** are recurring rules (weekly, monthly or yearly). An occurrence counts as paid when a transaction linked to it (`recurringId`) lands within 3 days of the due date.
 - **Safe to spend** = balance − unpaid bills due before the next payday − savings set aside.
+- **Writes** go through `src/db/repo.ts`, which validates input. Screens never call `db.*` to write.
+- **Schema changes** are added as new Dexie versions with an upgrade step; released versions are never edited.
 - **Theme** follows the system by default. Settings can force light or dark, which sets `data-theme` on `<html>`.
 
 ## Roadmap

@@ -38,6 +38,8 @@ Do these before adding features, so every later change is safe to make.
 | 0.10 | Shared UI pieces: `Sheet` (bottom sheet/modal), `Toast` (with Undo), `ConfirmDialog`, `FormField`, `MoneyInput`, `EmptyState` | M    | Every Phase 1 screen needs these                                                          |
 | 0.11 | Write layer: `src/db/repo.ts` with typed functions (`addTransaction`, `updateRecurring`…)                                     | S    | Screens stop calling `db.*` directly, which makes rules, undo and validation easier later |
 
+**Status (2 October 2026):** all built and passing locally. Two steps need your accounts: pushing to GitHub (0.1, which also turns on CI from 0.2), and connecting the repo to Netlify or Vercel (0.6; config files are included).
+
 **Done when:** CI is green, the app is live on an HTTPS URL, and it installs on your phone.
 
 ---
