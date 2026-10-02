@@ -3,10 +3,11 @@ import { useLocation, useNavigate } from 'react-router';
 import { Icon } from '../components/Icon';
 import { Loading } from '../components/Layout';
 import { catVar } from '../components/rows';
-import { db } from '../db/db';
+import { Field, MoneyInput } from '../components/ui/forms';
+import { useToast } from '../components/ui/Toast';
+import { addTransaction, deleteTransaction } from '../db/repo';
 import type { FinanceData } from '../db/types';
 import { today } from '../lib/dates';
-import { newId } from '../lib/id';
 import { parseMoney } from '../lib/money';
 
 type Kind = 'expense' | 'income';
@@ -14,6 +15,7 @@ type Kind = 'expense' | 'income';
 export function AddTransaction({ data }: { data?: FinanceData }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
   const [kind, setKind] = useState<Kind>('expense');
   const [amountText, setAmountText] = useState('');
   const [payee, setPayee] = useState('');
@@ -57,15 +59,23 @@ export function AddTransaction({ data }: { data?: FinanceData }) {
     if (!canSave || amount === null || !selectedCategory || !account) return;
     setSaving(true);
     const now = new Date();
-    await db.transactions.add({
-      id: newId(),
+    const id = await addTransaction({
       accountId: account,
       date,
       time: date === today() ? `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}` : undefined,
       amount: kind === 'expense' ? -amount : amount,
-      payee: payee.trim(),
+      payee,
       categoryId: selectedCategory.id,
-      note: note.trim() || undefined,
+      note,
+    });
+    toast({
+      message: `${kind === 'expense' ? 'Expense' : 'Income'} saved`,
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          await deleteTransaction(id);
+        },
+      },
     });
     close();
   }
@@ -98,56 +108,44 @@ export function AddTransaction({ data }: { data?: FinanceData }) {
         ))}
       </div>
 
-      <label className="amount-input">
-        <span aria-hidden="true">£</span>
-        <span className="visually-hidden">Amount in pounds</span>
-        <input
-          inputMode="decimal"
-          autoComplete="off"
-          placeholder="0.00"
-          value={amountText}
-          onChange={(e) => setAmountText(e.target.value.replace(/[^\d.,]/g, ''))}
-          aria-invalid={amountText !== '' && amount === null}
-          autoFocus
-        />
-      </label>
+      <MoneyInput value={amountText} onChange={setAmountText} autoFocus />
 
       <div className="list">
-        <div className="field">
-          <label htmlFor="payee">{kind === 'expense' ? 'Payee' : 'From'}</label>
-          <input
-            id="payee"
-            list="payees"
-            autoComplete="off"
-            autoCapitalize="words"
-            placeholder="e.g. Tesco"
-            value={payee}
-            onChange={(e) => onPayeeChange(e.target.value)}
-          />
-          <datalist id="payees">
-            {payees.map((p) => (
-              <option key={p} value={p} />
-            ))}
-          </datalist>
-        </div>
-        <div className="field">
-          <label htmlFor="date">Date</label>
-          <input id="date" type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value || today())} />
-        </div>
-        <div className="field">
-          <label htmlFor="account">Account</label>
-          <select id="account" value={account} onChange={(e) => setAccountId(e.target.value)}>
-            {data.accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="note">Note</label>
-          <input id="note" autoComplete="off" placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} />
-        </div>
+        <Field label={kind === 'expense' ? 'Payee' : 'From'}>
+          {(id) => (
+            <input
+              id={id}
+              list="payees"
+              autoComplete="off"
+              autoCapitalize="words"
+              placeholder="e.g. Tesco"
+              value={payee}
+              onChange={(e) => onPayeeChange(e.target.value)}
+            />
+          )}
+        </Field>
+        <datalist id="payees">
+          {payees.map((p) => (
+            <option key={p} value={p} />
+          ))}
+        </datalist>
+        <Field label="Date">
+          {(id) => <input id={id} type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value || today())} />}
+        </Field>
+        <Field label="Account">
+          {(id) => (
+            <select id={id} value={account} onChange={(e) => setAccountId(e.target.value)}>
+              {data.accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+        <Field label="Note">
+          {(id) => <input id={id} autoComplete="off" placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} />}
+        </Field>
       </div>
 
       <div className="section">

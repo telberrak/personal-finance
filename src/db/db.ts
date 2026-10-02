@@ -21,6 +21,9 @@ class FinanceDB extends Dexie {
 
   constructor() {
     super('ledger');
+    // Migration policy: never edit a released version. To change the schema, add
+    // this.version(n + 1).stores({...}).upgrade(tx => ...) below the last one, and add a
+    // migration test in db.test.ts that opens a database written at version n.
     this.version(1).stores({
       accounts: 'id',
       categories: 'id, order',
@@ -51,9 +54,4 @@ export function useFinanceData(): FinanceData | undefined {
     ]);
     return { accounts, categories, transactions, recurring, budgets, settings: settings ?? DEFAULT_SETTINGS };
   });
-}
-
-export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>): Promise<void> {
-  const current = (await db.settings.get('app')) ?? DEFAULT_SETTINGS;
-  await db.settings.put({ ...current, ...patch });
 }
