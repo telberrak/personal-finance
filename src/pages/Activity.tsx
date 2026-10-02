@@ -7,16 +7,17 @@ import { useIsDesktop } from '../components/useMediaQuery';
 import type { FinanceData, Transaction } from '../db/types';
 import { dayHeading, endOfMonth, startOfMonth, today } from '../lib/dates';
 import { formatMoney } from '../lib/money';
-import { groupByDay, inRange } from '../lib/selectors';
+import { groupByDay, inRange, moneyInOut } from '../lib/selectors';
 
-const FILTERS = ['All', 'Spending', 'Income', 'Recurring'] as const;
+const FILTERS = ['All', 'Spending', 'Income', 'Bills', 'Transfers'] as const;
 type Filter = (typeof FILTERS)[number];
 
 const MATCHES: Record<Filter, (t: Transaction) => boolean> = {
   All: () => true,
-  Spending: (t) => t.amount < 0,
-  Income: (t) => t.amount > 0,
-  Recurring: (t) => !!t.recurringId,
+  Spending: (t) => t.amount < 0 && !t.transferId,
+  Income: (t) => t.amount > 0 && !t.transferId,
+  Bills: (t) => !!t.recurringId,
+  Transfers: (t) => !!t.transferId,
 };
 
 export function Activity({ data }: { data?: FinanceData }) {
@@ -25,20 +26,20 @@ export function Activity({ data }: { data?: FinanceData }) {
   const [month, setMonth] = useState(startOfMonth(ref));
   const [filter, setFilter] = useState<Filter>('All');
   const [query, setQuery] = useState('');
+  const [accountFilter, setAccountFilter] = useState('all');
 
   const view = useMemo(() => {
     if (!data) return undefined;
     const from = startOfMonth(month);
     const to = endOfMonth(month);
     const categories = new Map(data.categories.map((c) => [c.id, c]));
-    const inMonth = data.transactions.filter((t) => inRange(t, from, to));
+    const inMonth = data.transactions.filter((t) => inRange(t, from, to) && (accountFilter === 'all' || t.accountId === accountFilter));
     const q = query.trim().toLowerCase();
     const shown = inMonth.filter(
       (t) =>
         MATCHES[filter](t) && (!q || t.payee.toLowerCase().includes(q) || categories.get(t.categoryId)?.name.toLowerCase().includes(q)),
     );
-    const moneyOut = inMonth.reduce((s, t) => (t.amount < 0 ? s - t.amount : s), 0);
-    const moneyIn = inMonth.reduce((s, t) => (t.amount > 0 ? s + t.amount : s), 0);
+    const { moneyIn, moneyOut } = moneyInOut(inMonth, from, to);
     return {
       categories,
       accounts: new Map(data.accounts.map((a) => [a.id, a])),
@@ -48,7 +49,7 @@ export function Activity({ data }: { data?: FinanceData }) {
       shownCount: shown.length,
       groups: groupByDay(shown),
     };
-  }, [data, month, filter, query]);
+  }, [data, month, filter, query, accountFilter]);
 
   if (!view) return <Loading />;
 
@@ -74,6 +75,21 @@ export function Activity({ data }: { data?: FinanceData }) {
         </button>
       ))}
     </div>
+  );
+
+  const openAccounts = data!.accounts.filter((a) => !a.archived);
+  const accountSelect = openAccounts.length > 1 && (
+    <label className="select-pill">
+      <span className="visually-hidden">Account</span>
+      <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
+        <option value="all">All accounts</option>
+        {openAccounts.map((a) => (
+          <option key={a.id} value={a.id}>
+            {a.name}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 
   const empty = view.groups.length === 0 && (
@@ -106,6 +122,7 @@ export function Activity({ data }: { data?: FinanceData }) {
           </div>
           <div className="toolbar">
             {search}
+            {accountSelect}
             {chips}
             <span className="label toolbar-count">
               {view.shownCount} of {view.count} shown
@@ -116,6 +133,7 @@ export function Activity({ data }: { data?: FinanceData }) {
       ) : (
         <>
           {search}
+          {accountSelect}
           {chips}
           <div className="grid-2">
             <div className="card stack" style={{ padding: '12px 14px' }}>
@@ -136,7 +154,12 @@ export function Activity({ data }: { data?: FinanceData }) {
               </div>
               <div className="list">
                 {g.items.map((t) => (
-                  <TransactionRow key={t.id} tx={t} category={view.categories.get(t.categoryId)} />
+                  <TransactionRow
+                    key={t.id}
+                    tx={t}
+                    category={view.categories.get(t.categoryId)}
+                    accountName={view.accounts.get(t.accountId)?.name}
+                  />
                 ))}
               </div>
             </section>

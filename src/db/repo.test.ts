@@ -1,7 +1,27 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetDb } from '../test/utils';
 import { db } from './db';
-import { addTransaction, deleteTransaction, updateSettings, updateTransaction, ValidationError, type NewTransaction } from './repo';
+import {
+  addTransaction,
+  addTransfer,
+  archiveCategory,
+  completeOnboarding,
+  createBackup,
+  deleteTransaction,
+  importTransactions,
+  renamePayee,
+  restoreBackup,
+  saveRecurring,
+  setBudget,
+  undoImport,
+  updateSettings,
+  updateTransaction,
+  updateTransfer,
+  ValidationError,
+  type NewTransaction,
+} from './repo';
+import { seedDemoData } from './seed';
+import { DEFAULT_SETTINGS } from './types';
 
 const base: NewTransaction = { accountId: 'current', date: '2026-10-02', amount: -2340, payee: '  Tesco  ', categoryId: 'groceries' };
 
@@ -51,5 +71,128 @@ describe('settings', () => {
   it('rejects an impossible payday or negative savings', async () => {
     await expect(updateSettings({ payday: 0 })).rejects.toThrow('Payday');
     await expect(updateSettings({ monthlySavings: -1 })).rejects.toThrow('Savings');
+  });
+});
+
+describe('setup', () => {
+  it('starts fresh with one account and the default categories', async () => {
+    await seedDemoData();
+    await completeOnboarding({ accountName: 'Monzo', balance: 123400, payday: 28, monthlySavings: 10000 });
+    expect(await db.transactions.count()).toBe(0);
+    expect(await db.accounts.toArray()).toMatchObject([{ name: 'Monzo', openingBalance: 123400, includeInSafeToSpend: true }]);
+    expect(await db.categories.get('transfer')).toMatchObject({ system: true });
+    expect(await db.settings.get('app')).toMatchObject({ onboarded: true, payday: 28, monthlySavings: 10000 });
+  });
+});
+
+describe('transfers', () => {
+  beforeEach(async () => {
+    await db.accounts.bulkPut([
+      { id: 'a', name: 'Current', type: 'current', openingBalance: 0, includeInSafeToSpend: true },
+      { id: 'b', name: 'Savings', type: 'savings', openingBalance: 0, includeInSafeToSpend: false },
+    ]);
+  });
+
+  it('creates, edits and deletes both halves together', async () => {
+    const id = await addTransfer({ fromAccountId: 'a', toAccountId: 'b', amount: 5000, date: '2026-10-02' });
+    const transferId = (await db.transactions.get(id))!.transferId!;
+    await updateTransfer(transferId, { fromAccountId: 'b', toAccountId: 'a', amount: 7000, date: '2026-10-03' });
+    const pair = await db.transactions.where('transferId').equals(transferId).toArray();
+    expect(pair.map((t) => [t.accountId, t.amount, t.payee]).sort()).toEqual([
+      ['a', 7000, 'Transfer from Savings'],
+      ['b', -7000, 'Transfer to Current'],
+    ]);
+    const undo = await deleteTransaction(pair[0].id);
+    expect(await db.transactions.count()).toBe(0);
+    await undo();
+    expect(await db.transactions.count()).toBe(2);
+  });
+
+  it('rejects a transfer to the same account', async () => {
+    await expect(addTransfer({ fromAccountId: 'a', toAccountId: 'a', amount: 1, date: '2026-10-02' })).rejects.toThrow('two different');
+  });
+});
+
+describe('categories, bills and budgets', () => {
+  it('archiving a category moves its transactions and drops its budget', async () => {
+    await seedDemoData('2026-10-14');
+    const before = await db.transactions.where('categoryId').equals('fun').count();
+    const shopping = await db.transactions.where('categoryId').equals('shopping').count();
+    await archiveCategory('fun', 'shopping');
+    expect(await db.transactions.where('categoryId').equals('fun').count()).toBe(0);
+    expect(await db.transactions.where('categoryId').equals('shopping').count()).toBe(shopping + before);
+    expect(await db.budgets.where('categoryId').equals('fun').count()).toBe(0);
+    expect((await db.categories.get('fun'))?.archived).toBe(true);
+    await expect(archiveCategory('eating', 'salary')).rejects.toThrow('same type');
+  });
+
+  it('remembers the old amount when a bill changes price', async () => {
+    const bill = {
+      name: 'Gym',
+      amount: 2500,
+      frequency: 'monthly' as const,
+      startDate: '2026-01-03',
+      method: 'direct-debit' as const,
+      accountId: 'a',
+      categoryId: 'bills',
+      active: true,
+    };
+    const id = await saveRecurring(bill);
+    await saveRecurring({ ...bill, id, name: 'Gym ' });
+    expect((await db.recurring.get(id))?.previousAmount).toBeUndefined();
+    await saveRecurring({ ...bill, id, amount: 2900 });
+    expect(await db.recurring.get(id)).toMatchObject({ amount: 2900, previousAmount: 2500, priceAlertDismissed: false });
+  });
+
+  it('sets and clears budgets', async () => {
+    await setBudget('groceries', 30000);
+    await setBudget('groceries', 25000);
+    expect(await db.budgets.toArray()).toMatchObject([{ categoryId: 'groceries', monthlyLimit: 25000 }]);
+    await setBudget('groceries', null);
+    expect(await db.budgets.count()).toBe(0);
+  });
+});
+
+describe('imports and payee names', () => {
+  it('imports a batch and undoes it', async () => {
+    const batch = await importTransactions('a', 'october.csv', [
+      { date: '2026-10-01', amount: -320, rawPayee: 'COFFEE 123', payee: 'Coffee', categoryId: 'eating' },
+      { date: '2026-10-02', amount: 100000, rawPayee: 'ACME LTD', payee: 'Acme Ltd', categoryId: 'other-income' },
+    ]);
+    expect(await db.transactions.where('importBatchId').equals(batch.id).count()).toBe(2);
+    expect(await db.categories.get('other-income')).toBeDefined();
+    await undoImport(batch.id);
+    expect(await db.transactions.count()).toBe(0);
+    expect(await db.importBatches.count()).toBe(0);
+  });
+
+  it('renames a payee in past transactions and remembers it', async () => {
+    await addTransaction({ ...base, payee: 'TESCO STORES 3297' });
+    await addTransaction({ ...base, payee: 'Tesco Stores 3297' });
+    expect(await renamePayee('TESCO STORES 3297', 'Tesco')).toBe(2);
+    expect((await db.transactions.toArray()).map((t) => t.payee)).toEqual(['Tesco', 'Tesco']);
+    expect(await db.payeeAliases.toArray()).toMatchObject([{ from: 'tesco stores 3297', to: 'Tesco' }]);
+  });
+});
+
+describe('backup', () => {
+  it('round-trips all data but never exports the PIN', async () => {
+    await seedDemoData('2026-10-14');
+    await db.settings.update('app', { pinHash: 'secret', pinSalt: 'salt', payday: 20 });
+    const backup = await createBackup();
+    expect(JSON.stringify(backup)).not.toContain('secret');
+    const count = await db.transactions.count();
+
+    await resetDb();
+    await db.settings.put({ ...DEFAULT_SETTINGS, pinHash: 'device-pin', pinSalt: 's2' });
+    const { transactions } = await restoreBackup(JSON.stringify(backup));
+    expect(transactions).toBe(count);
+    expect(await db.transactions.count()).toBe(count);
+    expect(await db.settings.get('app')).toMatchObject({ payday: 20, pinHash: 'device-pin', onboarded: true });
+  });
+
+  it('rejects files that are not backups', async () => {
+    await expect(restoreBackup('{"hello":1}')).rejects.toThrow('not a Ledger backup');
+    await expect(restoreBackup('not json')).rejects.toThrow('not a Ledger backup');
   });
 });

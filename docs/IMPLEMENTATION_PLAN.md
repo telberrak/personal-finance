@@ -38,13 +38,15 @@ Do these before adding features, so every later change is safe to make.
 | 0.10 | Shared UI pieces: `Sheet` (bottom sheet/modal), `Toast` (with Undo), `ConfirmDialog`, `FormField`, `MoneyInput`, `EmptyState` | M    | Every Phase 1 screen needs these                                                          |
 | 0.11 | Write layer: `src/db/repo.ts` with typed functions (`addTransaction`, `updateRecurring`…)                                     | S    | Screens stop calling `db.*` directly, which makes rules, undo and validation easier later |
 
-**Status (2 October 2026):** all built and passing locally. Two steps need your accounts: pushing to GitHub (0.1, which also turns on CI from 0.2), and connecting the repo to Netlify or Vercel (0.6; config files are included).
+**Status (2 October 2026):** done. Pushed to GitHub with CI. Connecting Netlify or Vercel (0.6) still needs your account; the config files are included.
 
 **Done when:** CI is green, the app is live on an HTTPS URL, and it installs on your phone.
 
 ---
 
 ## Phase 1 — Complete MVP: manage your own money
+
+**Status (2 October 2026):** built, with one database migration (v1 → v2) that keeps existing data.
 
 Goal: you can stop using the demo data and run your real finances in the app.
 
@@ -101,6 +103,8 @@ Settings     + onboarded: boolean
 
 ## Phase 2 — Getting data in faster
 
+**Status (2 October 2026):** built. Schemas v2 and v3 were combined into a single v2 migration. Parsing runs on the main thread; it is fast enough for typical statements, so the Web Worker is deferred.
+
 Typing every payment by hand is the main reason people give up on finance apps, so this phase matters most for keeping you using it.
 
 ### 2.1 CSV statement import — L
@@ -144,6 +148,8 @@ ImportBatch  new table (id, accountId, fileName, importedAt, rowCount)
 
 ## Phase 3 — Insight
 
+**Status (2 October 2026):** built. Reports is in the desktop sidebar and linked from Home on the phone.
+
 ### 3.1 Reports screen — M/L
 
 - New tab or a section on Home (decide when it's built; the bottom bar holds five items at most).
@@ -174,6 +180,8 @@ ImportBatch  new table (id, accountId, fileName, importedAt, rowCount)
 
 ## Phase 4 — Reliability, privacy, polish
 
+**Status (2 October 2026):** built: backup/restore and CSV export, in-app reminders (overdue bills, low balance, backup), PIN lock (PBKDF2; no encryption at rest), update prompt and persistent storage request. Range queries and list virtualisation are deferred until data volumes need them; real push notifications need Phase 5.
+
 | #   | Task                                                                                                                           | Size | Notes                                                                                                                                                        |
 | --- | ------------------------------------------------------------------------------------------------------------------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 4.1 | Backup and restore: export everything as JSON, import a JSON backup, export transactions as CSV                                | M    | Local-only data can be lost if browser storage is cleared. Remind the user every 30 days and call `navigator.storage.persist()`                              |
@@ -188,6 +196,8 @@ ImportBatch  new table (id, accountId, fileName, importedAt, rowCount)
 ---
 
 ## Phase 5 — Optional: sync and bank connections
+
+**Status:** not started. Needs a backend and accounts; your decision.
 
 These need a backend, accounts and ongoing running costs. Decide whether they're worth it after using Phases 1–4.
 

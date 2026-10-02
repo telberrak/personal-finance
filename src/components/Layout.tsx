@@ -13,6 +13,12 @@ const TABS: { to: string; label: string; icon: IconName }[] = [
 
 const TAB_PATHS = new Set(TABS.map((t) => t.to));
 
+/** Extra sections in the desktop sidebar (on the phone they are linked from Home). */
+const MORE: { to: string; label: string; icon: IconName }[] = [
+  { to: '/reports', label: 'Reports', icon: 'chart' },
+  { to: '/goals', label: 'Goals', icon: 'target' },
+];
+
 function Tab({ to, label, icon }: (typeof TABS)[number]) {
   return (
     <NavLink to={to} end className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
@@ -52,7 +58,7 @@ function Sidebar() {
         Add transaction
       </Link>
       <nav className="side-nav" aria-label="Main">
-        {TABS.map((t) => (
+        {[...TABS, ...MORE].map((t) => (
           <NavLink key={t.to} to={t.to} end className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')}>
             <Icon name={t.icon} size={20} />
             {t.label}
@@ -60,6 +66,10 @@ function Sidebar() {
         ))}
       </nav>
       <div className="sidebar-footer">
+        <NavLink to="/import" className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')}>
+          <Icon name="upload" size={20} />
+          Import
+        </NavLink>
         <NavLink to="/settings" className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')}>
           <Icon name="settings" size={20} />
           Settings

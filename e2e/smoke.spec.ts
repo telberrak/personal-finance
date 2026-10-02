@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /** Each test gets a fresh browser context, so IndexedDB starts empty and demo data is seeded. */
 

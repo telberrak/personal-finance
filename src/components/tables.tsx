@@ -1,6 +1,7 @@
 import type { Account, Category, Transaction } from '../db/types';
 import { dayHeading, type ISODate } from '../lib/dates';
 import { formatMoney } from '../lib/money';
+import { Link } from 'react-router';
 import { catVar } from './rows';
 
 /** Desktop transaction list: one table, a header row per day with that day's total. */
@@ -45,10 +46,12 @@ export function TransactionTable({
                   <td>
                     <div className="row" style={{ gap: 12 }}>
                       <div className="tile tile--sm" style={catVar(category?.color)} aria-hidden="true">
-                        {t.payee.charAt(0).toUpperCase()}
+                        {t.transferId ? '⇄' : t.payee.charAt(0).toUpperCase()}
                       </div>
                       <div className="stack grow" style={{ gap: 0 }}>
-                        <span className="item-title">{t.payee}</span>
+                        <Link to={`/transactions/${t.id}`} className="item-title row-link">
+                          {t.payee}
+                        </Link>
                         {t.note && <span className="small muted">{t.note}</span>}
                       </div>
                       {t.recurringId && (
@@ -66,7 +69,9 @@ export function TransactionTable({
                   </td>
                   <td className="muted">{accounts.get(t.accountId)?.name ?? '—'}</td>
                   <td className="muted num">{t.time ?? '—'}</td>
-                  <td className={'num-col amount' + (t.amount > 0 ? ' amount--in' : '')}>{formatMoney(t.amount, { sign: true })}</td>
+                  <td className={'num-col amount' + (t.amount > 0 && !t.transferId ? ' amount--in' : '')}>
+                    {formatMoney(t.amount, { sign: true })}
+                  </td>
                 </tr>
               );
             })}

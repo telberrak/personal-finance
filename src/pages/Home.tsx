@@ -3,15 +3,19 @@ import { Icon } from '../components/Icon';
 import { Loading } from '../components/Layout';
 import { BillRow, catVar, methodLabel, TransactionRow } from '../components/rows';
 import { useIsDesktop } from '../components/useMediaQuery';
+import { daysSinceBackup } from '../db/repo';
 import type { FinanceData } from '../db/types';
 import { addDays, daysBetween, dueLabel, endOfMonth, formatLong, formatMonth, shiftMonth, startOfMonth, today } from '../lib/dates';
+import { forecastBalance } from '../lib/forecast';
 import { formatMoney, formatPounds } from '../lib/money';
+import { periodFor } from '../lib/periods';
 import {
   billOccurrences,
   budgetProgress,
   dailySpend,
   dayToDaySpend,
   groupByDay,
+  overdueBills,
   safeToSpend,
   spendVersusLastMonth,
 } from '../lib/selectors';
@@ -39,6 +43,12 @@ export function Home({ data }: { data?: FinanceData }) {
     .filter((o) => !o.paid)
     .slice(0, isDesktop ? 5 : 3);
   const categories = new Map(data.categories.map((c) => [c.id, c]));
+  const accounts = new Map(data.accounts.map((a) => [a.id, a.name]));
+  const overdue = overdueBills(data, ref);
+  const forecast = forecastBalance(data, ref, 35);
+  const lowSoon = forecast.lowest.balance < data.settings.lowBalanceThreshold;
+  const backupAge = daysSinceBackup(data.settings);
+  const needsBackup = data.transactions.length >= 20 && (backupAge === undefined || backupAge > 30);
   // Transactions arrive newest date first; groupByDay also orders each day by time.
   const recent = groupByDay(data.transactions.slice(0, 40))
     .flatMap((g) => g.items)
@@ -57,6 +67,46 @@ export function Home({ data }: { data?: FinanceData }) {
           </Link>
         )}
       </header>
+
+      {(overdue.length > 0 || lowSoon || needsBackup) && (
+        <div className="alerts" aria-label="Alerts">
+          {overdue.length > 0 && (
+            <Link to="/bills" className="callout callout--link">
+              <span className="callout-icon">
+                <Icon name="alert" size={20} />
+              </span>
+              <span className="stack grow" style={{ gap: 2 }}>
+                <strong>{overdue.length === 1 ? `${overdue[0].rule.name} looks overdue` : `${overdue.length} bills look overdue`}</strong>
+                <span className="label">No payment recorded yet. Check and mark them as paid.</span>
+              </span>
+            </Link>
+          )}
+          {lowSoon && (
+            <Link to="/reports" className="callout callout--link">
+              <span className="callout-icon">
+                <Icon name="trendUp" size={20} />
+              </span>
+              <span className="stack grow" style={{ gap: 2 }}>
+                <strong>
+                  Your balance may drop to {formatPounds(forecast.lowest.balance)} around {formatLong(forecast.lowest.date)}
+                </strong>
+                <span className="label">Based on upcoming bills and your usual spending.</span>
+              </span>
+            </Link>
+          )}
+          {needsBackup && (
+            <Link to="/settings#backup" className="callout callout--link callout--info">
+              <span className="callout-icon">
+                <Icon name="download" size={20} />
+              </span>
+              <span className="stack grow" style={{ gap: 2 }}>
+                <strong>{backupAge === undefined ? 'Back up your data' : `Last backup was ${backupAge} days ago`}</strong>
+                <span className="label">Your data only lives on this device. Download a backup to keep it safe.</span>
+              </span>
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="home-grid">
         <div className="col">
@@ -145,7 +195,7 @@ export function Home({ data }: { data?: FinanceData }) {
               <div className="list">
                 {data.transactions.length === 0 && <p className="empty">No transactions yet.</p>}
                 {recent.map((t) => (
-                  <TransactionRow key={t.id} tx={t} category={categories.get(t.categoryId)} />
+                  <TransactionRow key={t.id} tx={t} category={categories.get(t.categoryId)} accountName={accounts.get(t.accountId)} />
                 ))}
               </div>
             </section>
@@ -173,15 +223,33 @@ export function Home({ data }: { data?: FinanceData }) {
             </div>
           </section>
 
-          {isDesktop && <BudgetSummary data={data} month={ref} />}
+          {isDesktop && <BudgetSummary data={data} />}
+
+          {!isDesktop && (
+            <nav className="quick-links" aria-label="More">
+              <Link to="/reports" className="quick-link">
+                <Icon name="chart" size={22} />
+                Reports
+              </Link>
+              <Link to="/goals" className="quick-link">
+                <Icon name="target" size={22} />
+                Goals
+              </Link>
+              <Link to="/import" className="quick-link">
+                <Icon name="upload" size={22} />
+                Import
+              </Link>
+            </nav>
+          )}
         </div>
       </div>
     </main>
   );
 }
 
-function BudgetSummary({ data, month }: { data: FinanceData; month: string }) {
-  const rows = budgetProgress(data.budgets, data.categories, data.transactions, month);
+function BudgetSummary({ data }: { data: FinanceData }) {
+  const period = periodFor(today(), data.settings.budgetPeriod, data.settings.payday);
+  const rows = budgetProgress(data.budgets, data.categories, data.transactions, period);
   return (
     <section className="section" aria-label="Budgets">
       <div className="section-head">
@@ -202,7 +270,7 @@ function BudgetSummary({ data, month }: { data: FinanceData; month: string }) {
                   {r.category.name}
                 </span>
                 <span className={'num small ' + (tight ? 'text-warn' : 'muted')}>
-                  {formatMoney(r.spent)} / {formatPounds(r.budget.monthlyLimit)}
+                  {formatMoney(r.spent)} / {formatPounds(r.limit)}
                 </span>
               </div>
               <div

@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { Loading, MonthSwitcher, PageHeader } from '../components/Layout';
+import { Icon } from '../components/Icon';
+import { Loading, PageHeader } from '../components/Layout';
 import { catVar } from '../components/rows';
-import type { FinanceData } from '../db/types';
-import { daysBetween, endOfMonth, startOfMonth, today } from '../lib/dates';
-import { formatMoney, formatPounds } from '../lib/money';
+import { useToast } from '../components/ui/Toast';
+import { setBudget } from '../db/repo';
+import type { Category, FinanceData } from '../db/types';
+import { daysBetween, today } from '../lib/dates';
+import { formatMoney, formatPounds, parseMoney } from '../lib/money';
+import { periodFor, shiftPeriod, type Period } from '../lib/periods';
 import { budgetProgress } from '../lib/selectors';
 
 const RING_R = 52;
@@ -13,98 +17,202 @@ const TIGHT = 0.95;
 
 export function Budgets({ data }: { data?: FinanceData }) {
   const ref = today();
-  const [month, setMonth] = useState(startOfMonth(ref));
+  const [offset, setOffset] = useState(0);
+  const [editing, setEditing] = useState(false);
   if (!data) return <Loading />;
 
-  const rows = budgetProgress(data.budgets, data.categories, data.transactions, month);
-  const limit = rows.reduce((s, r) => s + r.budget.monthlyLimit, 0);
+  const { budgetPeriod, payday, budgetRollover } = data.settings;
+  let period: Period = periodFor(ref, budgetPeriod, payday);
+  for (let i = 0; i < -offset; i++) period = shiftPeriod(period, -1, budgetPeriod, payday);
+  const previous = shiftPeriod(period, -1, budgetPeriod, payday);
+
+  const rows = budgetProgress(data.budgets, data.categories, data.transactions, period, budgetRollover ? previous : undefined);
+  const limit = rows.reduce((s, r) => s + r.limit, 0);
   const spent = rows.reduce((s, r) => s + r.spent, 0);
   const left = limit - spent;
   const ratio = limit ? Math.min(1, spent / limit) : 0;
-  const isCurrent = month === startOfMonth(ref);
-  const daysLeft = isCurrent ? daysBetween(ref, endOfMonth(ref)) + 1 : 0;
+  const isCurrent = offset === 0;
+  const daysLeft = isCurrent ? daysBetween(ref, period.to) + 1 : 0;
+
+  const switcher = (
+    <div className="month-switcher">
+      <button type="button" className="icon-btn icon-btn--ghost" aria-label="Previous period" onClick={() => setOffset(offset - 1)}>
+        <Icon name="back" size={20} />
+      </button>
+      <span className="month-label">{period.label}</span>
+      <button
+        type="button"
+        className="icon-btn icon-btn--ghost"
+        aria-label="Next period"
+        disabled={isCurrent}
+        onClick={() => setOffset(offset + 1)}
+      >
+        <Icon name="forward" size={20} />
+      </button>
+    </div>
+  );
 
   return (
     <main className="screen">
-      <PageHeader title="Budgets" actions={<MonthSwitcher month={month} onChange={setMonth} current={ref} />} />
+      <PageHeader
+        title="Budgets"
+        actions={
+          <>
+            {!editing && switcher}
+            <button type="button" className={'btn' + (editing ? ' btn--solid' : '')} onClick={() => setEditing(!editing)}>
+              {editing ? 'Done' : 'Edit'}
+            </button>
+          </>
+        }
+      />
 
-      <div className="budgets-layout">
-        <section className="card overview" aria-label="Budget overview">
-          <div className="ring">
-            <svg width="120" height="120" viewBox="0 0 120 120" aria-hidden="true">
-              <circle cx="60" cy="60" r={RING_R} fill="none" stroke="var(--track)" strokeWidth="12" />
-              {ratio > 0 && (
-                <circle
-                  cx="60"
-                  cy="60"
-                  r={RING_R}
-                  fill="none"
-                  stroke={spent > limit ? 'var(--warn)' : 'var(--accent)'}
-                  strokeWidth="12"
-                  strokeLinecap="round"
-                  strokeDasharray={`${ratio * RING_C} ${RING_C}`}
-                />
-              )}
-            </svg>
-            <div className="ring-label">
-              <span style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em' }}>
-                {Math.round((limit ? spent / limit : 0) * 100)}%
-              </span>
-              <span className="small muted">used</span>
+      {editing ? (
+        <BudgetEditor data={data} />
+      ) : (
+        <div className="budgets-layout">
+          <section className="card overview" aria-label="Budget overview">
+            <div className="ring">
+              <svg width="120" height="120" viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r={RING_R} fill="none" stroke="var(--track)" strokeWidth="12" />
+                {ratio > 0 && (
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r={RING_R}
+                    fill="none"
+                    stroke={spent > limit ? 'var(--warn)' : 'var(--accent)'}
+                    strokeWidth="12"
+                    strokeLinecap="round"
+                    strokeDasharray={`${ratio * RING_C} ${RING_C}`}
+                  />
+                )}
+              </svg>
+              <div className="ring-label">
+                <span style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em' }}>
+                  {Math.round((limit ? spent / limit : 0) * 100)}%
+                </span>
+                <span className="small muted">used</span>
+              </div>
             </div>
-          </div>
-          <div className="stack">
-            <span className="label">{left >= 0 ? 'Left to spend' : 'Over budget'}</span>
-            <span className={'num ' + (left < 0 ? 'text-warn' : '')} style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.02em' }}>
-              {formatMoney(Math.abs(left))}
-            </span>
-            <span className="label">
-              {formatMoney(spent)} spent of {formatPounds(limit)}
-              {isCurrent && ` · ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left`}
-            </span>
-            {isCurrent && left > 0 && (
-              <span className="pill pill--accent" style={{ alignSelf: 'flex-start', marginTop: 4 }}>
-                About {formatMoney(Math.floor(left / daysLeft))} a day
+            <div className="stack">
+              <span className="label">{left >= 0 ? 'Left to spend' : 'Over budget'}</span>
+              <span className={'num ' + (left < 0 ? 'text-warn' : '')} style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-0.02em' }}>
+                {formatMoney(Math.abs(left))}
               </span>
-            )}
-          </div>
-        </section>
+              <span className="label">
+                {formatMoney(spent)} spent of {formatPounds(limit)}
+                {isCurrent && ` · ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left`}
+              </span>
+              {isCurrent && left > 0 && daysLeft > 0 && (
+                <span className="pill pill--accent" style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+                  About {formatMoney(Math.floor(left / daysLeft))} a day
+                </span>
+              )}
+              {budgetRollover && <span className="small muted">Includes what was left from last period.</span>}
+            </div>
+          </section>
 
-        <section className="budget-grid" aria-label="Categories">
-          {rows.length === 0 && <p className="empty">No budgets set yet.</p>}
-          {rows.map((r) => {
-            const tight = r.ratio >= TIGHT;
-            return (
-              <div key={r.budget.id} className="card stack" style={{ padding: 14, gap: 10, ...catVar(r.category.color) }}>
-                <div className="row">
-                  <div className="tile" style={{ width: 36, height: 36, borderRadius: 10, fontSize: 14 }} aria-hidden="true">
-                    {r.category.name.charAt(0)}
-                  </div>
-                  <div className="grow stack" style={{ gap: 1 }}>
-                    <span className="item-title">{r.category.name}</span>
-                    <span className="small muted num">
-                      {formatMoney(r.spent)} of {formatPounds(r.budget.monthlyLimit)}
+          <section className="budget-grid" aria-label="Categories">
+            {rows.length === 0 && (
+              <div className="card empty">
+                No budgets yet.{' '}
+                <button type="button" className="link-btn" onClick={() => setEditing(true)}>
+                  Set your first budget
+                </button>
+              </div>
+            )}
+            {rows.map((r) => {
+              const tight = r.ratio >= TIGHT;
+              return (
+                <div key={r.budget.id} className="card stack" style={{ padding: 14, gap: 10, ...catVar(r.category.color) }}>
+                  <div className="row">
+                    <div className="tile" style={{ width: 36, height: 36, borderRadius: 10, fontSize: 14 }} aria-hidden="true">
+                      {r.category.name.charAt(0)}
+                    </div>
+                    <div className="grow stack" style={{ gap: 1 }}>
+                      <span className="item-title">{r.category.name}</span>
+                      <span className="small muted num">
+                        {formatMoney(r.spent)} of {formatMoney(r.limit)}
+                        {r.rolledOver !== 0 && ` (${formatMoney(r.rolledOver, { sign: true })} carried)`}
+                      </span>
+                    </div>
+                    <span className={'num nowrap ' + (tight ? 'text-warn' : '')} style={{ fontSize: 14, fontWeight: 600 }}>
+                      {r.remaining >= 0 ? `${formatMoney(r.remaining)} left` : `${formatMoney(-r.remaining)} over`}
                     </span>
                   </div>
-                  <span className={'num ' + (tight ? 'text-warn' : '')} style={{ fontSize: 14, fontWeight: 600 }}>
-                    {r.remaining >= 0 ? `${formatMoney(r.remaining)} left` : `${formatMoney(-r.remaining)} over`}
-                  </span>
+                  <div
+                    className="bar"
+                    role="progressbar"
+                    aria-label={`${r.category.name} budget used`}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(r.ratio * 100)}
+                  >
+                    <span style={{ width: `${Math.min(100, r.ratio * 100)}%`, background: tight ? 'var(--warn)' : undefined }} />
+                  </div>
                 </div>
-                <div
-                  className="bar"
-                  role="progressbar"
-                  aria-label={`${r.category.name} budget used`}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(r.ratio * 100)}
-                >
-                  <span style={{ width: `${Math.min(100, r.ratio * 100)}%`, background: tight ? 'var(--warn)' : undefined }} />
-                </div>
-              </div>
-            );
-          })}
-        </section>
-      </div>
+              );
+            })}
+          </section>
+        </div>
+      )}
     </main>
+  );
+}
+
+function BudgetEditor({ data }: { data: FinanceData }) {
+  const categories = data.categories.filter((c) => c.kind === 'expense' && !c.system && !c.archived);
+  const total = data.budgets.reduce((s, b) => s + b.monthlyLimit, 0);
+  return (
+    <section className="stack" style={{ gap: 12, maxWidth: 640 }}>
+      <p className="label">
+        Set a monthly limit for each category you want to track. Leave it empty for no budget. Total: {formatMoney(total)} a{' '}
+        {data.settings.budgetPeriod === 'payday' ? 'pay period' : 'month'}.
+      </p>
+      <div className="list">
+        {categories.map((c) => (
+          <BudgetInput key={c.id} category={c} limit={data.budgets.find((b) => b.categoryId === c.id)?.monthlyLimit} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BudgetInput({ category, limit }: { category: Category; limit?: number }) {
+  const toast = useToast();
+  const [text, setText] = useState(limit ? (limit / 100).toFixed(0) : '');
+  const id = `budget-${category.id}`;
+
+  async function commit() {
+    const value = text.trim() === '' ? null : parseMoney(text);
+    if (text.trim() !== '' && value === null) {
+      toast({ message: 'Enter the budget as an amount, like 250' });
+      return;
+    }
+    if (value === (limit ?? null)) return;
+    await setBudget(category.id, value);
+    toast({ message: value ? `${category.name}: ${formatMoney(value)} a month` : `${category.name} budget removed` });
+  }
+
+  return (
+    <div className="field">
+      <label htmlFor={id} className="row" style={{ width: 'auto', flex: 1, gap: 10, ...catVar(category.color) }}>
+        <span className="dot" />
+        <span style={{ color: 'var(--text)', fontSize: 15 }}>{category.name}</span>
+      </label>
+      <span className="muted" aria-hidden="true">
+        £
+      </span>
+      <input
+        id={id}
+        inputMode="decimal"
+        placeholder="No budget"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+        style={{ flex: '0 0 120px', textAlign: 'right' }}
+      />
+    </div>
   );
 }

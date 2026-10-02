@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 /** The same app adapts to the screen: bottom tabs on a phone, a sidebar web layout on desktop. */
 

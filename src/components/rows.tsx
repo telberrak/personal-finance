@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { Link } from 'react-router';
 import type { Category, CategoryColor, Recurring, Transaction } from '../db/types';
 import { dayOfMonth, monthAbbr, type ISODate } from '../lib/dates';
 import { formatMoney } from '../lib/money';
@@ -7,12 +8,12 @@ import { Icon } from './Icon';
 /** Inline style that sets the category colour variable used by .tile, .dot, .chip--cat and .bar. */
 export const catVar = (color: CategoryColor | undefined): CSSProperties => ({ '--c': `var(--cat-${color ?? 'fun'})` }) as CSSProperties;
 
-export function TransactionRow({ tx, category }: { tx: Transaction; category?: Category }) {
-  const meta = [category?.name ?? 'Uncategorised', tx.time].filter(Boolean).join(' · ');
+export function TransactionRow({ tx, category, accountName }: { tx: Transaction; category?: Category; accountName?: string }) {
+  const meta = [tx.transferId ? accountName : (category?.name ?? 'Uncategorised'), tx.time].filter(Boolean).join(' · ');
   return (
-    <div className="list-row">
+    <Link to={`/transactions/${tx.id}`} className="list-row list-row--link">
       <div className="tile" style={catVar(category?.color)} aria-hidden="true">
-        {tx.payee.charAt(0).toUpperCase()}
+        {tx.transferId ? '⇄' : tx.payee.charAt(0).toUpperCase()}
       </div>
       <div className="grow stack" style={{ gap: 2 }}>
         <span className="item-title">{tx.payee}</span>
@@ -25,8 +26,8 @@ export function TransactionRow({ tx, category }: { tx: Transaction; category?: C
           )}
         </span>
       </div>
-      <span className={'amount' + (tx.amount > 0 ? ' amount--in' : '')}>{formatMoney(tx.amount, { sign: true })}</span>
-    </div>
+      <span className={'amount' + (tx.amount > 0 && !tx.transferId ? ' amount--in' : '')}>{formatMoney(tx.amount, { sign: true })}</span>
+    </Link>
   );
 }
 
@@ -44,12 +45,15 @@ export function BillRow({
   meta,
   paid,
   trailing,
+  to,
 }: {
   rule: Recurring;
   date: ISODate;
-  meta: string;
+  meta: ReactNode;
   paid?: boolean;
   trailing?: ReactNode;
+  /** Makes the name a link (the row itself may hold buttons). */
+  to?: string;
 }) {
   return (
     <div className="list-row">
@@ -58,7 +62,13 @@ export function BillRow({
         <span className="mon">{monthAbbr(date)}</span>
       </div>
       <div className="grow stack" style={{ gap: 2 }}>
-        <span className="item-title">{rule.name}</span>
+        {to ? (
+          <Link to={to} className="item-title row-link">
+            {rule.name}
+          </Link>
+        ) : (
+          <span className="item-title">{rule.name}</span>
+        )}
         <span className="item-meta">{meta}</span>
       </div>
       {trailing ?? (

@@ -78,16 +78,22 @@ src/
 - **Schema changes** are added as new Dexie versions with an upgrade step; released versions are never edited.
 - **Theme** follows the system by default. Settings can force light or dark, which sets `data-theme` on `<html>`.
 
+## Features
+
+- **Home:** safe to spend until payday, spending this month, upcoming bills, and alerts for overdue bills, a low forecast balance and backups.
+- **Activity:** search, filters (spending, income, bills, transfers) and an account filter. Tap any transaction to edit or delete it, with Undo.
+- **Add:** expenses, income and transfers between your accounts. The category is suggested from rules and your history.
+- **Bills:** direct debits, standing orders and subscriptions. Add, edit, pause or delete them, mark them as paid, see price rises, and get suggestions for regular payments that aren't set up yet.
+- **Budgets:** monthly or payday-to-payday budgets, optional carry-over, and an edit mode for limits.
+- **Reports:** spending by category, six months of income against spending, top payees and a 45-day balance forecast.
+- **Goals:** savings targets with deadlines and the monthly amount needed.
+- **Import:** CSV statements (Monzo, Starling, Barclays, Lloyds/Halifax, Nationwide and NatWest are recognised automatically), with payee clean-up, duplicate detection, bill matching and one-tap undo.
+- **Settings:**
+  - accounts (with an "everyday" flag for safe to spend), categories, rules and payee names;
+  - theme, payday, savings and the low-balance warning;
+  - PIN lock;
+  - backup, restore and CSV export.
+
 ## Roadmap
 
-The full phased plan is in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md). Highlights:
-
-- [ ] Manage accounts, categories, budgets and recurring payments in the UI (seeded only for now)
-- [ ] Edit and delete transactions
-- [ ] CSV statement import with auto-categorisation rules
-- [ ] Match imported payments to bills automatically and detect new subscriptions
-- [ ] Bill reminders (notifications)
-- [ ] Reports: spending by category and over time
-- [ ] Savings goals
-- [ ] Export and backup (JSON/CSV)
-- [ ] Open Banking sync (TrueLayer / GoCardless) — needs a backend
+The full phased plan is in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md). Phases 0 to 4 are built. Phase 5 (multi-device sync, Open Banking, push notifications) needs a backend and is optional.

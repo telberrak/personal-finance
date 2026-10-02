@@ -2,25 +2,43 @@ import Dexie, { type EntityTable } from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   DEFAULT_SETTINGS,
+  TRANSFER_CATEGORY_ID,
   type Account,
   type Budget,
   type Category,
   type FinanceData,
+  type Goal,
+  type ImportBatch,
+  type PayeeAlias,
   type Recurring,
+  type Rule,
   type Settings,
   type Transaction,
 } from './types';
 
-class FinanceDB extends Dexie {
+export const TRANSFER_CATEGORY: Category = {
+  id: TRANSFER_CATEGORY_ID,
+  name: 'Transfers',
+  color: 'fun',
+  kind: 'transfer',
+  order: 1000,
+  system: true,
+};
+
+export class FinanceDB extends Dexie {
   accounts!: EntityTable<Account, 'id'>;
   categories!: EntityTable<Category, 'id'>;
   transactions!: EntityTable<Transaction, 'id'>;
   recurring!: EntityTable<Recurring, 'id'>;
   budgets!: EntityTable<Budget, 'id'>;
   settings!: EntityTable<Settings, 'id'>;
+  rules!: EntityTable<Rule, 'id'>;
+  payeeAliases!: EntityTable<PayeeAlias, 'id'>;
+  importBatches!: EntityTable<ImportBatch, 'id'>;
+  goals!: EntityTable<Goal, 'id'>;
 
-  constructor() {
-    super('ledger');
+  constructor(name = 'ledger') {
+    super(name);
     // Migration policy: never edit a released version. To change the schema, add
     // this.version(n + 1).stores({...}).upgrade(tx => ...) below the last one, and add a
     // migration test in db.test.ts that opens a database written at version n.
@@ -32,6 +50,31 @@ class FinanceDB extends Dexie {
       budgets: 'id, categoryId',
       settings: 'id',
     });
+
+    // v2: accounts/transfers, rules, payee aliases, imports, goals, and new settings.
+    this.version(2)
+      .stores({
+        transactions: 'id, date, accountId, categoryId, recurringId, transferId, importBatchId, fingerprint',
+        rules: 'id, priority',
+        payeeAliases: 'id, &from',
+        importBatches: 'id, importedAt',
+        goals: 'id',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('accounts')
+          .toCollection()
+          .modify((a: Account) => {
+            a.includeInSafeToSpend ??= a.type === 'current' || a.type === 'cash';
+          });
+        await tx.table('categories').put(TRANSFER_CATEGORY);
+        const hadData = (await tx.table('accounts').count()) > 0;
+        const old = await tx.table('settings').get('app');
+        if (old) {
+          // Anyone upgrading has already been using the app, so skip first-run setup.
+          await tx.table('settings').put({ ...DEFAULT_SETTINGS, ...old, onboarded: old.onboarded ?? hadData });
+        }
+      });
   }
 }
 
@@ -44,14 +87,29 @@ export const db = new FinanceDB();
  */
 export function useFinanceData(): FinanceData | undefined {
   return useLiveQuery(async () => {
-    const [accounts, categories, transactions, recurring, budgets, settings] = await Promise.all([
+    const [accounts, categories, transactions, recurring, budgets, rules, aliases, importBatches, goals, settings] = await Promise.all([
       db.accounts.toArray(),
       db.categories.orderBy('order').toArray(),
       db.transactions.orderBy('date').reverse().toArray(),
       db.recurring.toArray(),
       db.budgets.toArray(),
+      db.rules.orderBy('priority').toArray(),
+      db.payeeAliases.toArray(),
+      db.importBatches.orderBy('importedAt').reverse().toArray(),
+      db.goals.toArray(),
       db.settings.get('app'),
     ]);
-    return { accounts, categories, transactions, recurring, budgets, settings: settings ?? DEFAULT_SETTINGS };
+    return {
+      accounts,
+      categories,
+      transactions,
+      recurring,
+      budgets,
+      rules,
+      aliases,
+      importBatches,
+      goals,
+      settings: { ...DEFAULT_SETTINGS, ...settings },
+    };
   });
 }

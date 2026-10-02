@@ -65,11 +65,13 @@ const shortFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'shor
 const monthFmt = new Intl.DateTimeFormat('en-GB', { month: 'long' });
 const monthYearFmt = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' });
 const weekdayFmt = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+const fullFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
 export const formatLong = (s: ISODate) => longFmt.format(fromISO(s)); // Wednesday 14 October
 export const formatShort = (s: ISODate) => shortFmt.format(fromISO(s)); // 14 Oct
 export const formatMonth = (s: ISODate) => monthFmt.format(fromISO(s)); // October
 export const formatMonthYear = (s: ISODate) => monthYearFmt.format(fromISO(s)); // October 2026
+export const formatDate = (s: ISODate) => fullFmt.format(fromISO(s)); // 2 June 2027
 export const monthAbbr = (s: ISODate) => formatShort(s).split(' ')[1];
 
 /** "Today", "Yesterday", or "Monday 12 October" — for grouping transaction lists. */

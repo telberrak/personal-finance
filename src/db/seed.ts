@@ -1,8 +1,18 @@
 import { addDays, daysBetween, shiftMonth, startOfMonth, today, type ISODate } from '../lib/dates';
 import { newId } from '../lib/id';
 import { occurrencesBetween } from '../lib/recurring';
-import { db } from './db';
-import { DEFAULT_SETTINGS, type Account, type Budget, type Category, type Recurring, type Transaction } from './types';
+import { db, TRANSFER_CATEGORY } from './db';
+import {
+  DEFAULT_SETTINGS,
+  OTHER_EXPENSE_ID,
+  OTHER_INCOME_ID,
+  TRANSFER_CATEGORY_ID,
+  type Account,
+  type Budget,
+  type Category,
+  type Recurring,
+  type Transaction,
+} from './types';
 
 /** Small deterministic PRNG so the demo data looks the same on every install. */
 function mulberry32(seed: number) {
@@ -15,7 +25,8 @@ function mulberry32(seed: number) {
   };
 }
 
-const CATEGORIES: Category[] = [
+/** Starting categories for every new install. */
+export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'groceries', name: 'Groceries', color: 'groceries', kind: 'expense', order: 1 },
   { id: 'eating', name: 'Eating out', color: 'eating', kind: 'expense', order: 2 },
   { id: 'transport', name: 'Transport', color: 'transport', kind: 'expense', order: 3 },
@@ -24,6 +35,8 @@ const CATEGORIES: Category[] = [
   { id: 'bills', name: 'Bills', color: 'bills', kind: 'expense', order: 6 },
   { id: 'salary', name: 'Salary', color: 'income', kind: 'income', order: 7 },
   { id: 'refund', name: 'Refunds', color: 'income', kind: 'income', order: 8 },
+  { id: OTHER_EXPENSE_ID, name: 'Other', color: 'fun', kind: 'expense', order: 9 },
+  { id: OTHER_INCOME_ID, name: 'Other income', color: 'income', kind: 'income', order: 10 },
 ];
 
 const BUDGETS: Budget[] = [
@@ -61,17 +74,14 @@ const MERCHANTS: Record<string, [string, number, number, number][]> = {
   ],
 };
 
-/** Fills the database with demo data on first launch only (settings are written on first launch). */
-export async function seedIfEmpty(): Promise<void> {
-  if (await db.settings.get('app')) return;
-  await seedDemoData();
-}
-
+/** Replaces the database contents with realistic demo data relative to `ref`. */
 export async function seedDemoData(ref: ISODate = today()): Promise<void> {
   const rand = mulberry32(42);
-  const account: Account = { id: 'current', name: 'Current account', type: 'current', openingBalance: 185000 };
+  const current: Account = { id: 'current', name: 'Current account', type: 'current', openingBalance: 185000, includeInSafeToSpend: true };
+  const savings: Account = { id: 'savings', name: 'Savings', type: 'savings', openingBalance: 320000, includeInSafeToSpend: false };
   const from = startOfMonth(shiftMonth(ref, -1));
   const yearAgo = shiftMonth(ref, -12);
+  const dayOf = (d: number) => yearAgo.slice(0, 8) + String(d).padStart(2, '0');
 
   const recurring: Recurring[] = [
     { name: 'Rent', amount: 95000, day: 1, method: 'standing-order' as const },
@@ -86,14 +96,15 @@ export async function seedDemoData(ref: ISODate = today()): Promise<void> {
     ...r,
     id: newId(),
     frequency: 'monthly' as const,
-    startDate: yearAgo.slice(0, 8) + String(day).padStart(2, '0'),
-    accountId: account.id,
+    startDate: dayOf(day),
+    accountId: current.id,
     categoryId: 'bills',
     active: true,
   }));
 
   const transactions: Transaction[] = [];
-  const add = (t: Omit<Transaction, 'id' | 'accountId'>) => transactions.push({ ...t, id: newId(), accountId: account.id });
+  const add = (t: Omit<Transaction, 'id' | 'accountId'> & { accountId?: string }) =>
+    transactions.push({ accountId: current.id, ...t, id: newId() });
 
   // Bill payments already taken.
   for (const rule of recurring) {
@@ -102,9 +113,28 @@ export async function seedDemoData(ref: ISODate = today()): Promise<void> {
     }
   }
 
-  // Salary on the 25th of each month in range.
-  for (const date of occurrencesBetween({ startDate: yearAgo.slice(0, 8) + '25', frequency: 'monthly' }, from, ref)) {
+  // Salary on the 25th, and £200 moved to savings the next day.
+  for (const date of occurrencesBetween({ startDate: dayOf(25), frequency: 'monthly' }, from, ref)) {
     add({ date, time: '06:00', amount: 245000, payee: 'Salary', categoryId: 'salary' });
+    const next = addDays(date, 1);
+    if (next <= ref) {
+      const transferId = newId();
+      add({ date: next, time: '09:00', amount: -20000, payee: 'Transfer to Savings', categoryId: TRANSFER_CATEGORY_ID, transferId });
+      add({
+        accountId: savings.id,
+        date: next,
+        time: '09:00',
+        amount: 20000,
+        payee: 'Transfer from Current account',
+        categoryId: TRANSFER_CATEGORY_ID,
+        transferId,
+      });
+    }
+  }
+
+  // A subscription that is not set up as a bill yet, so "Add as bill?" has something to suggest.
+  for (const date of occurrencesBetween({ startDate: dayOf(9), frequency: 'monthly' }, startOfMonth(shiftMonth(ref, -3)), ref)) {
+    if (date < ref) add({ date, time: '04:12', amount: -799, payee: 'Disney Plus', categoryId: 'fun' });
   }
 
   // Everyday spending.
@@ -129,29 +159,19 @@ export async function seedDemoData(ref: ISODate = today()): Promise<void> {
   }
   add({ date: addDays(ref, -2), time: '10:12', amount: 4200, payee: 'ASOS', categoryId: 'refund', note: 'Returned jacket' });
 
-  await db.transaction('rw', [db.accounts, db.categories, db.transactions, db.recurring, db.budgets, db.settings], async () => {
-    await db.accounts.put(account);
-    await db.categories.bulkPut(CATEGORIES);
+  const tables = [db.accounts, db.categories, db.transactions, db.recurring, db.budgets, db.settings, db.goals];
+  await db.transaction('rw', tables, async () => {
+    await Promise.all(tables.filter((t) => t !== db.settings).map((t) => t.clear()));
+    await db.accounts.bulkPut([current, savings]);
+    await db.categories.bulkPut([...DEFAULT_CATEGORIES, TRANSFER_CATEGORY]);
     await db.budgets.bulkPut(BUDGETS);
     await db.recurring.bulkPut(recurring);
     await db.transactions.bulkPut(transactions);
-    if (!(await db.settings.get('app'))) await db.settings.put(DEFAULT_SETTINGS);
+    await db.goals.bulkPut([
+      { id: 'goal-holiday', name: 'Summer holiday', target: 150000, saved: 62000, deadline: shiftMonth(ref, 8), createdAt: Date.now() },
+      { id: 'goal-buffer', name: 'Emergency fund', target: 300000, saved: 258000, createdAt: Date.now() },
+    ]);
+    const existing = await db.settings.get('app');
+    await db.settings.put({ ...DEFAULT_SETTINGS, ...existing, onboarded: true });
   });
-}
-
-/** Removes all money data but keeps settings, the categories and an empty current account, so the app stays usable. */
-export async function eraseAllData(): Promise<void> {
-  await db.transaction('rw', [db.accounts, db.categories, db.transactions, db.recurring, db.budgets], async () => {
-    await Promise.all([db.accounts.clear(), db.transactions.clear(), db.recurring.clear(), db.budgets.clear()]);
-    await db.accounts.put({ id: 'current', name: 'Current account', type: 'current', openingBalance: 0 });
-    await db.categories.bulkPut(CATEGORIES);
-  });
-}
-
-/** Replaces everything with fresh demo data. */
-export async function resetDemoData(): Promise<void> {
-  await eraseAllData();
-  await db.categories.clear();
-  await db.accounts.clear();
-  await seedDemoData();
 }
