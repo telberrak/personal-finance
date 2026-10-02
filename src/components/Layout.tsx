@@ -11,7 +11,11 @@ const TABS: { to: string; label: string; icon: IconName }[] = [
   { to: '/budgets', label: 'Budgets', icon: 'pie' },
 ];
 
-const TAB_PATHS = new Set(TABS.map((t) => t.to));
+/**
+ * Phone screens that bring their own Close or Back button (forms and settings) hide the tab bar.
+ * Every other screen shows it: an installed app on iOS has no browser Back button to leave by.
+ */
+const hidesTabBar = (path: string) => /^\/(add|transactions\/|bills\/|settings)/.test(path);
 
 /** Extra sections in the desktop sidebar (on the phone they are linked from Home). */
 const MORE: { to: string; label: string; icon: IconName }[] = [
@@ -92,7 +96,7 @@ export function AppShell() {
       <div className="shell-main">
         <Outlet />
       </div>
-      {!isDesktop && TAB_PATHS.has(pathname) && <BottomNav />}
+      {!isDesktop && !hidesTabBar(pathname) && <BottomNav />}
     </div>
   );
 }

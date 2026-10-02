@@ -11,6 +11,24 @@ test('phone shows the bottom tab bar and lists', async ({ page }, info) => {
   await expect(page.getByRole('table')).toHaveCount(0);
 });
 
+test('phone keeps a way back from every screen', async ({ page }, info) => {
+  test.skip(!info.project.name.startsWith('phone'), 'phone layout only');
+  for (const path of ['/reports', '/goals', '/import']) {
+    await page.goto(path);
+    await expect(page.locator('nav.nav')).toBeVisible();
+  }
+  for (const path of ['/add', '/settings', '/bills/new']) {
+    await page.goto(path);
+    await expect(page.locator('nav.nav')).toHaveCount(0);
+    await expect(
+      page
+        .getByRole('button', { name: /Close|Back/ })
+        .or(page.getByRole('link', { name: /Back|Close/ }))
+        .first(),
+    ).toBeVisible();
+  }
+});
+
 test('desktop shows a sidebar, tables and a multi-column home', async ({ page }, info) => {
   test.skip(!info.project.name.startsWith('desktop'), 'desktop layout only');
   await page.goto('/');
