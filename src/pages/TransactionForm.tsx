@@ -3,13 +3,16 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 import { Icon } from '../components/Icon';
 import { Loading } from '../components/Layout';
 import { catVar } from '../components/rows';
+import { Sheet } from '../components/ui/Dialog';
 import { Field, MoneyInput } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
 import { addTransaction, addTransfer, deleteTransaction, saveRule, updateTransaction, updateTransfer, ValidationError } from '../db/repo';
 import type { FinanceData, Transaction } from '../db/types';
 import { today } from '../lib/dates';
 import { parseMoney } from '../lib/money';
+import { formatMoney } from '../lib/money';
 import { suggestCategory } from '../lib/rules';
+import { SplitEditor } from './SplitEditor';
 
 type Kind = 'expense' | 'income' | 'transfer';
 const KIND_LABEL: Record<Kind, string> = { expense: 'Expense', income: 'Income', transfer: 'Transfer' };
@@ -65,6 +68,13 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
   const [categoryTouched, setCategoryTouched] = useState(!!existing);
   const [note, setNote] = useState(existing?.note ?? '');
   const [saving, setSaving] = useState(false);
+  const [splitOpen, setSplitOpen] = useState(false);
+  const splitGroup = existing?.splitId
+    ? data.transactions.filter((t) => t.splitId === existing.splitId).sort((a, b) => (a.splitIndex ?? 0) - (b.splitIndex ?? 0))
+    : existing
+      ? [existing]
+      : [];
+  const splitTotal = splitGroup.reduce((s, t) => s + t.amount, 0);
 
   const categories = useMemo(
     () => data.categories.filter((c) => c.kind === kind && !c.system && (!c.archived || c.id === existing?.categoryId)),
@@ -154,166 +164,197 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
   async function remove() {
     if (!existing) return;
     const undo = await deleteTransaction(existing.id);
-    toast({ message: existing.transferId ? 'Transfer deleted' : 'Transaction deleted', action: { label: 'Undo', onClick: undo } });
+    const what = existing.transferId ? 'Transfer' : existing.splitId ? 'Split payment' : 'Transaction';
+    toast({ message: `${what} deleted`, action: { label: 'Undo', onClick: undo } });
     close();
   }
 
-  const kinds: Kind[] = existing ? (existing.transferId ? ['transfer'] : ['expense', 'income']) : ['expense', 'income', 'transfer'];
+  const kinds: Kind[] = existing
+    ? existing.transferId || existing.splitId
+      ? [initialKind]
+      : ['expense', 'income']
+    : ['expense', 'income', 'transfer'];
 
   return (
-    <form className="screen screen--modal" onSubmit={save}>
-      <header className="screen-header">
-        <button type="button" className="icon-btn" aria-label="Close" onClick={close}>
-          <Icon name="close" size={20} strokeWidth={2} />
-        </button>
-        <h1 style={{ fontSize: 17, fontWeight: 600 }}>{existing ? `Edit ${kind}` : `New ${kind}`}</h1>
-        {existing ? (
-          <button type="button" className="icon-btn" aria-label="Delete" onClick={remove}>
-            <Icon name="trash" size={20} />
+    <>
+      <form className="screen screen--modal" onSubmit={save}>
+        <header className="screen-header">
+          <button type="button" className="icon-btn" aria-label="Close" onClick={close}>
+            <Icon name="close" size={20} strokeWidth={2} />
           </button>
-        ) : (
-          <span style={{ width: 44 }} />
-        )}
-      </header>
-
-      {kinds.length > 1 && (
-        <div className="segmented" role="radiogroup" aria-label="Type">
-          {kinds.map((k) => (
-            <button
-              key={k}
-              type="button"
-              role="radio"
-              aria-checked={kind === k}
-              onClick={() => {
-                setKind(k);
-                if (!existing) {
-                  setCategoryId(undefined);
-                  setCategoryTouched(false);
-                }
-              }}
-            >
-              {KIND_LABEL[k]}
+          <h1 style={{ fontSize: 17, fontWeight: 600 }}>{existing ? `Edit ${kind}` : `New ${kind}`}</h1>
+          {existing ? (
+            <button type="button" className="icon-btn" aria-label="Delete" onClick={remove}>
+              <Icon name="trash" size={20} />
             </button>
-          ))}
-        </div>
-      )}
+          ) : (
+            <span style={{ width: 44 }} />
+          )}
+        </header>
 
-      <MoneyInput value={amountText} onChange={setAmountText} autoFocus={!existing} />
-
-      {kind === 'transfer' ? (
-        <div className="list">
-          <Field label="From">
-            {(id) => (
-              <select id={id} value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)}>
-                {openAccounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field label="To">
-            {(id) => (
-              <select id={id} value={toAccountId} onChange={(e) => setToAccountId(e.target.value)}>
-                {openAccounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field label="Date">
-            {(id) => <input id={id} type="date" value={date} onChange={(e) => setDate(e.target.value || today())} />}
-          </Field>
-          <Field label="Note">
-            {(id) => <input id={id} autoComplete="off" placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} />}
-          </Field>
-        </div>
-      ) : (
-        <div className="list">
-          <Field label={kind === 'expense' ? 'Payee' : 'From'}>
-            {(id) => (
-              <input
-                id={id}
-                list="payees"
-                autoComplete="off"
-                autoCapitalize="words"
-                placeholder="e.g. Tesco"
-                value={payee}
-                onChange={(e) => onPayeeChange(e.target.value)}
-              />
-            )}
-          </Field>
-          <datalist id="payees">
-            {payees.map((p) => (
-              <option key={p} value={p} />
-            ))}
-          </datalist>
-          <Field label="Date">
-            {(id) => <input id={id} type="date" value={date} onChange={(e) => setDate(e.target.value || today())} />}
-          </Field>
-          <Field label="Account">
-            {(id) => (
-              <select id={id} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-                {openAccounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-          <Field label="Note">
-            {(id) => <input id={id} autoComplete="off" placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} />}
-          </Field>
-        </div>
-      )}
-
-      {kind === 'transfer' && openAccounts.length < 2 && (
-        <p className="callout small">
-          You need two accounts to move money between them. <Link to="/settings/accounts">Add an account</Link>
-        </p>
-      )}
-
-      {kind !== 'transfer' && (
-        <div className="section">
-          <span className="section-label" id="cat-label">
-            Category
-          </span>
-          <div className="chips" role="radiogroup" aria-labelledby="cat-label">
-            {categories.map((c) => (
+        {kinds.length > 1 && (
+          <div className="segmented" role="radiogroup" aria-label="Type">
+            {kinds.map((k) => (
               <button
-                key={c.id}
+                key={k}
                 type="button"
                 role="radio"
-                aria-checked={selectedCategory?.id === c.id}
-                className="chip chip--cat"
-                style={catVar(c.color)}
+                aria-checked={kind === k}
                 onClick={() => {
-                  setCategoryId(c.id);
-                  setCategoryTouched(true);
+                  setKind(k);
+                  if (!existing) {
+                    setCategoryId(undefined);
+                    setCategoryTouched(false);
+                  }
                 }}
               >
-                <span className="dot" />
-                {c.name}
+                {KIND_LABEL[k]}
               </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {linkedBill && (
-        <p className="label">
-          Payment for the bill <Link to={`/bills/${linkedBill.id}`}>{linkedBill.name}</Link>.
-        </p>
-      )}
-      {existing?.rawPayee && existing.rawPayee !== existing.payee && <p className="small muted">Bank description: {existing.rawPayee}</p>}
+        <MoneyInput value={amountText} onChange={setAmountText} autoFocus={!existing} disabled={!!existing?.splitId} />
+        {existing?.splitId && (
+          <p className="label" style={{ textAlign: 'center', marginTop: -8 }}>
+            Part of a {formatMoney(Math.abs(splitTotal))} payment split into {splitGroup.length} parts
+          </p>
+        )}
 
-      <button type="submit" className="btn btn--primary" disabled={!canSave} style={{ marginTop: 8 }}>
-        {existing ? 'Save changes' : `Save ${kind}`}
-      </button>
-    </form>
+        {kind === 'transfer' ? (
+          <div className="list">
+            <Field label="From">
+              {(id) => (
+                <select id={id} value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)}>
+                  {openAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field label="To">
+              {(id) => (
+                <select id={id} value={toAccountId} onChange={(e) => setToAccountId(e.target.value)}>
+                  {openAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field label="Date">
+              {(id) => <input id={id} type="date" value={date} onChange={(e) => setDate(e.target.value || today())} />}
+            </Field>
+            <Field label="Note">
+              {(id) => <input id={id} autoComplete="off" placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} />}
+            </Field>
+          </div>
+        ) : (
+          <div className="list">
+            <Field label={kind === 'expense' ? 'Payee' : 'From'}>
+              {(id) => (
+                <input
+                  id={id}
+                  list="payees"
+                  autoComplete="off"
+                  autoCapitalize="words"
+                  placeholder="e.g. Tesco"
+                  value={payee}
+                  onChange={(e) => onPayeeChange(e.target.value)}
+                />
+              )}
+            </Field>
+            <datalist id="payees">
+              {payees.map((p) => (
+                <option key={p} value={p} />
+              ))}
+            </datalist>
+            <Field label="Date">
+              {(id) => <input id={id} type="date" value={date} onChange={(e) => setDate(e.target.value || today())} />}
+            </Field>
+            <Field label="Account">
+              {(id) => (
+                <select id={id} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+                  {openAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field label="Note">
+              {(id) => <input id={id} autoComplete="off" placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} />}
+            </Field>
+          </div>
+        )}
+
+        {kind === 'transfer' && openAccounts.length < 2 && (
+          <p className="callout small">
+            You need two accounts to move money between them. <Link to="/settings/accounts">Add an account</Link>
+          </p>
+        )}
+
+        {kind !== 'transfer' && (
+          <div className="section">
+            <span className="section-label" id="cat-label">
+              Category
+            </span>
+            <div className="chips" role="radiogroup" aria-labelledby="cat-label">
+              {categories.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selectedCategory?.id === c.id}
+                  className="chip chip--cat"
+                  style={catVar(c.color)}
+                  onClick={() => {
+                    setCategoryId(c.id);
+                    setCategoryTouched(true);
+                  }}
+                >
+                  <span className="dot" />
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {existing && !existing.transferId && (
+          <button type="button" className="btn" style={{ alignSelf: 'flex-start' }} onClick={() => setSplitOpen(true)}>
+            {existing.splitId ? 'Edit split' : 'Split across categories'}
+          </button>
+        )}
+
+        {linkedBill && (
+          <p className="label">
+            Payment for the bill <Link to={`/bills/${linkedBill.id}`}>{linkedBill.name}</Link>.
+          </p>
+        )}
+        {existing?.rawPayee && existing.rawPayee !== existing.payee && <p className="small muted">Bank description: {existing.rawPayee}</p>}
+
+        <button type="submit" className="btn btn--primary" disabled={!canSave} style={{ marginTop: 8 }}>
+          {existing ? 'Save changes' : `Save ${kind}`}
+        </button>
+      </form>
+      {/* Outside the form: a nested form's submit would also submit this one. */}
+      <Sheet open={splitOpen} onClose={() => setSplitOpen(false)} title={existing?.splitId ? 'Edit split' : 'Split payment'}>
+        {splitOpen && existing && (
+          <SplitEditor
+            data={data}
+            group={splitGroup}
+            onDone={(changed) => {
+              setSplitOpen(false);
+              if (changed) close();
+            }}
+          />
+        )}
+      </Sheet>
+    </>
   );
 }

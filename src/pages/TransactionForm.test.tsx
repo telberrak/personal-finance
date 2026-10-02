@@ -78,4 +78,34 @@ describe('Transaction form', () => {
       ]);
     });
   });
+
+  it('splits a payment across categories from the edit screen', async () => {
+    const user = userEvent.setup();
+    const t = (await db.transactions.filter((x) => x.payee === "Sainsbury's").first())!;
+    const total = -t.amount;
+    window.history.pushState({}, '', `/transactions/${t.id}`);
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: 'Split across categories' }));
+    const sheet = screen.getByRole('dialog', { name: 'Split payment' });
+    const save = within(sheet).getByRole('button', { name: 'Save split' });
+    expect(save).toBeDisabled(); // second part is empty
+
+    await user.selectOptions(within(sheet).getByLabelText('Category for part 2'), 'Shopping');
+    await user.type(within(sheet).getByLabelText('Amount for part 2'), '5');
+    expect(within(sheet).getByRole('status')).toHaveTextContent('too much');
+    await user.click(within(sheet).getByRole('button', { name: 'Balance first part' }));
+    expect(within(sheet).getByRole('status')).toHaveTextContent('All assigned');
+    await user.click(save);
+
+    await waitFor(async () => {
+      const pieces = await db.transactions.filter((x) => x.splitId !== undefined && x.payee === "Sainsbury's").toArray();
+      expect(pieces.map((x) => [x.categoryId, x.amount]).sort()).toEqual(
+        [
+          ['groceries', -(total - 500)],
+          ['shopping', -500],
+        ].sort(),
+      );
+    });
+    expect(await screen.findByText('Split into 2 parts')).toBeInTheDocument();
+  });
 });

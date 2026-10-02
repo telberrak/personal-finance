@@ -21,11 +21,13 @@ export function MoneyInput({
   onChange,
   label = 'Amount in pounds',
   autoFocus,
+  disabled,
 }: {
   value: string;
   onChange: (text: string) => void;
   label?: string;
   autoFocus?: boolean;
+  disabled?: boolean;
 }) {
   const invalid = value !== '' && parseMoney(value) === null;
   return (
@@ -40,6 +42,7 @@ export function MoneyInput({
         onChange={(e) => onChange(e.target.value.replace(/[^\d.,]/g, ''))}
         aria-invalid={invalid}
         autoFocus={autoFocus}
+        disabled={disabled}
       />
     </label>
   );

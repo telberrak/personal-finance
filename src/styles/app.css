@@ -1663,3 +1663,43 @@ dialog::backdrop {
     padding: 0 4px;
   }
 }
+
+/* ---------- Split editor ---------- */
+
+.split-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 44px;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.split-row select,
+.split-row input {
+  height: 44px;
+  min-width: 0;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 16px;
+  color: var(--text);
+}
+
+.split-row input[inputmode='decimal'] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.split-row .split-note {
+  grid-column: 1 / -1;
+  height: 40px;
+  font-size: 14px;
+}
+
+.amount-input input:disabled {
+  color: var(--muted);
+}

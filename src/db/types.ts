@@ -50,6 +50,9 @@ export interface Transaction {
   recurringId?: string;
   /** Both halves of a transfer between accounts share this id. Transfers are not spending or income. */
   transferId?: string;
+  /** The pieces of one payment split across categories share this id; splitIndex orders them. */
+  splitId?: string;
+  splitIndex?: number;
   /** The bank's original description, kept when the payee was cleaned up on import. */
   rawPayee?: string;
   importBatchId?: string;

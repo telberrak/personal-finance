@@ -81,7 +81,7 @@ src/
 ## Features
 
 - **Home:** safe to spend until payday, spending this month, upcoming bills, and alerts for overdue bills, a low forecast balance and backups.
-- **Activity:** search, filters (spending, income, bills, transfers) and an account filter. Tap any transaction to edit or delete it, with Undo.
+- **Activity:** search, filters (spending, income, bills, transfers) and an account filter. Tap any transaction to edit or delete it (with Undo), or split it across several categories.
 - **Add:** expenses, income and transfers between your accounts. The category is suggested from rules and your history.
 - **Bills:** direct debits, standing orders and subscriptions. Add, edit, pause or delete them, mark them as paid, see price rises, and get suggestions for regular payments that aren't set up yet.
 - **Budgets:** monthly or payday-to-payday budgets, optional carry-over, and an edit mode for limits.

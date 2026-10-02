@@ -59,6 +59,11 @@ export function TransactionTable({
                           DD
                         </span>
                       )}
+                      {t.splitId && (
+                        <span className="tag" title="Part of a split payment">
+                          Split
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td>

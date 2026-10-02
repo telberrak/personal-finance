@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { Icon } from '../components/Icon';
 import { Loading, MonthSwitcher, PageHeader } from '../components/Layout';
 import { TransactionRow } from '../components/rows';
@@ -23,7 +24,10 @@ const MATCHES: Record<Filter, (t: Transaction) => boolean> = {
 export function Activity({ data }: { data?: FinanceData }) {
   const ref = today();
   const isDesktop = useIsDesktop();
-  const [month, setMonth] = useState(startOfMonth(ref));
+  // The month lives in the URL (?month=2026-09-01) so going back from an edit returns to it.
+  const [params, setParams] = useSearchParams();
+  const month = params.get('month') ?? startOfMonth(ref);
+  const setMonth = (m: string) => setParams(m === startOfMonth(ref) ? {} : { month: m }, { replace: true });
   const [filter, setFilter] = useState<Filter>('All');
   const [query, setQuery] = useState('');
   const [accountFilter, setAccountFilter] = useState('all');

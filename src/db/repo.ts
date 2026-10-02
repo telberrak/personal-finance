@@ -75,9 +75,6 @@ export async function completeOnboarding(input: {
 }
 
 export async function startWithDemoData(): Promise<void> {
-  await db.transaction('rw', ALL_TABLES(), async () => {
-    await Promise.all(ALL_TABLES().map((t) => t.clear()));
-  });
   await seedDemoData();
 }
 
@@ -126,23 +123,124 @@ export async function addTransaction(input: NewTransaction): Promise<string> {
   return id;
 }
 
+/** Fields every piece of a split shares; editing one piece's copy updates them all. */
+const SHARED_SPLIT_FIELDS = ['payee', 'date', 'time', 'accountId'] as const;
+
 export async function updateTransaction(id: string, patch: Partial<NewTransaction>): Promise<void> {
   await db.transaction('rw', db.transactions, async () => {
     const current = await db.transactions.get(id);
     check(current, 'Transaction not found.');
+    check(
+      !current.splitId || patch.amount === undefined || patch.amount === current.amount,
+      'Change the amounts of a split with Edit split.',
+    );
     const next = { ...current, ...patch, updatedAt: Date.now() };
     if (patch.payee !== undefined) next.payee = patch.payee.trim();
     if (patch.note !== undefined) next.note = patch.note.trim() || undefined;
     validateTransaction(next);
     await db.transactions.put(next);
+    if (current.splitId) {
+      const shared = Object.fromEntries(SHARED_SPLIT_FIELDS.filter((k) => k in patch).map((k) => [k, next[k]]));
+      if (Object.keys(shared).length) {
+        await db.transactions.filter((t) => t.splitId === current.splitId && t.id !== id).modify(shared);
+      }
+    }
   });
 }
 
-/** Deletes a transaction (both halves of a transfer) and returns a function that puts it back. */
+/** The transaction and anything paired with it: both halves of a transfer, or every piece of a split. */
+async function linkedGroup(t: Transaction): Promise<Transaction[]> {
+  if (t.transferId) return db.transactions.where('transferId').equals(t.transferId).toArray();
+  if (t.splitId) {
+    const pieces = await db.transactions.filter((x) => x.splitId === t.splitId).toArray();
+    return pieces.sort((a, b) => (a.splitIndex ?? 0) - (b.splitIndex ?? 0));
+  }
+  return [t];
+}
+
+export interface SplitPart {
+  categoryId: string;
+  /** Positive amount of this piece; the sign follows the original payment. */
+  amount: Pence;
+  note?: string;
+}
+
+/**
+ * Divides a payment across categories (or re-divides an existing split). Each piece is an
+ * ordinary transaction, so budgets and reports need no special handling. Returns an undo function.
+ */
+export async function splitTransaction(id: string, parts: SplitPart[]): Promise<() => Promise<void>> {
+  return db.transaction('rw', db.transactions, db.categories, async () => {
+    const t = await db.transactions.get(id);
+    check(t, 'Transaction not found.');
+    check(!t.transferId, 'Transfers cannot be split.');
+    const group = await linkedGroup(t);
+    const total = group.reduce((s, x) => s + x.amount, 0);
+    const sign = total < 0 ? -1 : 1;
+    check(parts.length >= 2, 'A split needs at least two parts.');
+    check(
+      parts.every((p) => isPence(p.amount) && p.amount > 0),
+      'Every part needs an amount.',
+    );
+    check(parts.reduce((s, p) => s + p.amount, 0) === Math.abs(total), 'The parts must add up to the payment.');
+    const kind = sign < 0 ? 'expense' : 'income';
+    for (const p of parts) {
+      const cat = await db.categories.get(p.categoryId);
+      check(cat && cat.kind === kind, `Pick ${kind === 'expense' ? 'spending' : 'income'} categories.`);
+    }
+
+    const first = group[0];
+    const splitId = first.splitId ?? newId();
+    const pieces: Transaction[] = parts.map((p, i) => ({
+      id: group[i]?.id ?? newId(),
+      accountId: first.accountId,
+      date: first.date,
+      time: first.time,
+      payee: first.payee,
+      rawPayee: first.rawPayee,
+      importBatchId: first.importBatchId,
+      createdAt: first.createdAt,
+      updatedAt: Date.now(),
+      amount: sign * p.amount,
+      categoryId: p.categoryId,
+      note: p.note?.trim() || undefined,
+      splitId,
+      splitIndex: i,
+      // The bank row and bill link stay with the first piece, so imports still spot the duplicate.
+      fingerprint: i === 0 ? first.fingerprint : undefined,
+      recurringId: i === 0 ? first.recurringId : undefined,
+    }));
+    await db.transactions.bulkDelete(group.map((x) => x.id));
+    await db.transactions.bulkPut(pieces);
+    return async () => {
+      await db.transactions.bulkDelete(pieces.map((x) => x.id));
+      await db.transactions.bulkPut(group);
+    };
+  });
+}
+
+/** Turns a split back into one transaction in the first piece's category. Returns an undo function. */
+export async function mergeSplit(id: string): Promise<() => Promise<void>> {
+  return db.transaction('rw', db.transactions, async () => {
+    const t = await db.transactions.get(id);
+    check(t?.splitId, 'This transaction is not split.');
+    const group = await linkedGroup(t);
+    const { splitId: _s, splitIndex: _i, ...first } = group[0];
+    const merged: Transaction = { ...first, amount: group.reduce((s, x) => s + x.amount, 0), updatedAt: Date.now() };
+    await db.transactions.bulkDelete(group.map((x) => x.id));
+    await db.transactions.put(merged);
+    return async () => {
+      await db.transactions.delete(merged.id);
+      await db.transactions.bulkPut(group);
+    };
+  });
+}
+
+/** Deletes a transaction (with its transfer half or split pieces) and returns a function that puts it back. */
 export async function deleteTransaction(id: string): Promise<() => Promise<void>> {
   const existing = await db.transactions.get(id);
   if (!existing) return async () => {};
-  const removed = existing.transferId ? await db.transactions.where('transferId').equals(existing.transferId).toArray() : [existing];
+  const removed = await linkedGroup(existing);
   await db.transactions.bulkDelete(removed.map((t) => t.id));
   return async () => {
     await db.transactions.bulkPut(removed);

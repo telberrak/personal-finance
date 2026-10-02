@@ -24,6 +24,11 @@ export function TransactionRow({ tx, category, accountName }: { tx: Transaction;
               DD
             </span>
           )}
+          {tx.splitId && (
+            <span className="tag" title="Part of a split payment">
+              Split
+            </span>
+          )}
         </span>
       </div>
       <span className={'amount' + (tx.amount > 0 && !tx.transferId ? ' amount--in' : '')}>{formatMoney(tx.amount, { sign: true })}</span>

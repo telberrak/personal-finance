@@ -74,7 +74,7 @@ const MERCHANTS: Record<string, [string, number, number, number][]> = {
   ],
 };
 
-/** Replaces the database contents with realistic demo data relative to `ref`. */
+/** Replaces the database contents with realistic demo data relative to `ref`, in a single transaction. */
 export async function seedDemoData(ref: ISODate = today()): Promise<void> {
   const rand = mulberry32(42);
   const current: Account = { id: 'current', name: 'Current account', type: 'current', openingBalance: 185000, includeInSafeToSpend: true };
@@ -159,7 +159,19 @@ export async function seedDemoData(ref: ISODate = today()): Promise<void> {
   }
   add({ date: addDays(ref, -2), time: '10:12', amount: 4200, payee: 'ASOS', categoryId: 'refund', note: 'Returned jacket' });
 
-  const tables = [db.accounts, db.categories, db.transactions, db.recurring, db.budgets, db.settings, db.goals];
+  // One transaction: if the page closes part-way, the old data stays instead of half a demo.
+  const tables = [
+    db.accounts,
+    db.categories,
+    db.transactions,
+    db.recurring,
+    db.budgets,
+    db.settings,
+    db.goals,
+    db.rules,
+    db.payeeAliases,
+    db.importBatches,
+  ];
   await db.transaction('rw', tables, async () => {
     await Promise.all(tables.filter((t) => t !== db.settings).map((t) => t.clear()));
     await db.accounts.bulkPut([current, savings]);

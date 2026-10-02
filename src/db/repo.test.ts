@@ -9,6 +9,8 @@ import {
   createBackup,
   deleteTransaction,
   importTransactions,
+  mergeSplit,
+  splitTransaction,
   renamePayee,
   restoreBackup,
   saveRecurring,
@@ -194,5 +196,102 @@ describe('backup', () => {
   it('rejects files that are not backups', async () => {
     await expect(restoreBackup('{"hello":1}')).rejects.toThrow('not a Ledger backup');
     await expect(restoreBackup('not json')).rejects.toThrow('not a Ledger backup');
+  });
+});
+
+describe('split transactions', () => {
+  beforeEach(async () => {
+    await seedDemoData('2026-10-14');
+  });
+
+  const shop = () =>
+    addTransaction({ accountId: 'current', date: '2026-10-10', time: '18:20', amount: -6000, payee: 'Tesco', categoryId: 'groceries' });
+
+  it('divides a payment into linked pieces that keep the total', async () => {
+    const id = await shop();
+    const before = await db.transactions.count();
+    const undo = await splitTransaction(id, [
+      { categoryId: 'groceries', amount: 4500 },
+      { categoryId: 'shopping', amount: 1500, note: 'Phone charger' },
+    ]);
+    const pieces = await db.transactions.filter((t) => t.payee === 'Tesco' && t.date === '2026-10-10').sortBy('splitIndex');
+    expect(pieces.map((t) => [t.categoryId, t.amount, t.note])).toEqual([
+      ['groceries', -4500, undefined],
+      ['shopping', -1500, 'Phone charger'],
+    ]);
+    expect(pieces[0].id).toBe(id);
+    expect(new Set(pieces.map((t) => t.splitId)).size).toBe(1);
+    expect(await db.transactions.count()).toBe(before + 1);
+
+    await undo();
+    expect(await db.transactions.count()).toBe(before);
+    expect(await db.transactions.get(id)).toMatchObject({ amount: -6000, categoryId: 'groceries' });
+  });
+
+  it('rejects parts that do not add up or use the wrong kind of category', async () => {
+    const id = await shop();
+    await expect(splitTransaction(id, [{ categoryId: 'groceries', amount: 6000 }])).rejects.toThrow('at least two');
+    await expect(
+      splitTransaction(id, [
+        { categoryId: 'groceries', amount: 4000 },
+        { categoryId: 'shopping', amount: 1000 },
+      ]),
+    ).rejects.toThrow('add up');
+    await expect(
+      splitTransaction(id, [
+        { categoryId: 'groceries', amount: 3000 },
+        { categoryId: 'salary', amount: 3000 },
+      ]),
+    ).rejects.toThrow('spending');
+  });
+
+  it('re-splits, shares payee/date edits, locks piece amounts, merges and deletes as a group', async () => {
+    const id = await shop();
+    await splitTransaction(id, [
+      { categoryId: 'groceries', amount: 4500 },
+      { categoryId: 'shopping', amount: 1500 },
+    ]);
+    await splitTransaction(id, [
+      { categoryId: 'groceries', amount: 3000 },
+      { categoryId: 'shopping', amount: 2000 },
+      { categoryId: 'fun', amount: 1000 },
+    ]);
+    let pieces = await db.transactions.filter((t) => t.payee === 'Tesco').sortBy('splitIndex');
+    expect(pieces.map((t) => t.amount)).toEqual([-3000, -2000, -1000]);
+
+    await updateTransaction(pieces[1].id, { payee: 'Tesco Extra', date: '2026-10-11', categoryId: 'eating' });
+    pieces = await db.transactions.filter((t) => t.splitId === pieces[0].splitId).sortBy('splitIndex');
+    expect(pieces.map((t) => [t.payee, t.date])).toEqual(Array(3).fill(['Tesco Extra', '2026-10-11']));
+    expect(pieces[1].categoryId).toBe('eating');
+    await expect(updateTransaction(pieces[1].id, { amount: -2500 })).rejects.toThrow('Edit split');
+
+    await mergeSplit(pieces[2].id);
+    const merged = await db.transactions.get(id);
+    expect(merged).toMatchObject({ amount: -6000, categoryId: 'groceries' });
+    expect(merged?.splitId).toBeUndefined();
+
+    await splitTransaction(id, [
+      { categoryId: 'groceries', amount: 5000 },
+      { categoryId: 'shopping', amount: 1000 },
+    ]);
+    const before = await db.transactions.count();
+    const undo = await deleteTransaction(id);
+    expect(await db.transactions.count()).toBe(before - 2);
+    await undo();
+    expect(await db.transactions.count()).toBe(before);
+  });
+
+  it('a split imported payment is still recognised as a duplicate', async () => {
+    const batch = await importTransactions('current', 'a.csv', [
+      { date: '2026-10-09', amount: -2000, rawPayee: 'BOOTS 123', payee: 'Boots', categoryId: 'shopping' },
+    ]);
+    const [t] = await db.transactions.where('importBatchId').equals(batch.id).toArray();
+    await splitTransaction(t.id, [
+      { categoryId: 'shopping', amount: 1200 },
+      { categoryId: 'groceries', amount: 800 },
+    ]);
+    const { markDuplicates } = await import('../lib/importer');
+    const rows = markDuplicates([{ date: '2026-10-09', amount: -2000, rawPayee: 'BOOTS 123' }], await db.transactions.toArray(), 'current');
+    expect(rows[0].duplicate).toBe(true);
   });
 });
