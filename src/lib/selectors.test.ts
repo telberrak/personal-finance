@@ -3,10 +3,26 @@ import { DEFAULT_SETTINGS, type FinanceData, type Recurring, type Transaction } 
 import { billOccurrences, budgetProgress, dayToDaySpend, safeToSpend, totalBalance } from './selectors';
 
 const rule = (over: Partial<Recurring>): Recurring => ({
-  id: 'r1', name: 'Council Tax', amount: 14800, frequency: 'monthly', startDate: '2026-01-15',
-  method: 'direct-debit', accountId: 'a', categoryId: 'bills', active: true, ...over,
+  id: 'r1',
+  name: 'Council Tax',
+  amount: 14800,
+  frequency: 'monthly',
+  startDate: '2026-01-15',
+  method: 'direct-debit',
+  accountId: 'a',
+  categoryId: 'bills',
+  active: true,
+  ...over,
 });
-const tx = (over: Partial<Transaction>): Transaction => ({ id: Math.random().toString(), accountId: 'a', date: '2026-10-01', amount: -100, payee: 'X', categoryId: 'groceries', ...over });
+const tx = (over: Partial<Transaction>): Transaction => ({
+  id: Math.random().toString(),
+  accountId: 'a',
+  date: '2026-10-01',
+  amount: -100,
+  payee: 'X',
+  categoryId: 'groceries',
+  ...over,
+});
 
 describe('billOccurrences', () => {
   it('marks a bill paid when a linked payment lands within 3 days', () => {
@@ -28,7 +44,11 @@ describe('safeToSpend', () => {
       accounts: [{ id: 'a', name: 'Current', type: 'current', openingBalance: 148740 }],
       categories: [],
       transactions: [],
-      recurring: [rule({}), rule({ id: 'r2', name: 'Rent', amount: 95000, startDate: '2026-01-01' }), rule({ id: 'r3', name: 'After payday', amount: 999, startDate: '2026-01-27' })],
+      recurring: [
+        rule({}),
+        rule({ id: 'r2', name: 'Rent', amount: 95000, startDate: '2026-01-01' }),
+        rule({ id: 'r3', name: 'After payday', amount: 999, startDate: '2026-01-27' }),
+      ],
       budgets: [],
       settings: { ...DEFAULT_SETTINGS, payday: 25, monthlySavings: 20000 },
     };
@@ -49,11 +69,18 @@ describe('spending', () => {
 
   it('excludes bill payments and income from day-to-day spend', () => {
     expect(dayToDaySpend(txs, '2026-10-01', '2026-10-31')).toBe(2340);
-    expect(totalBalance({ accounts: [{ id: 'a', name: '', type: 'current', openingBalance: 0 }], transactions: txs })).toBe(-2340 - 1199 + 4200 - 500);
+    expect(totalBalance({ accounts: [{ id: 'a', name: '', type: 'current', openingBalance: 0 }], transactions: txs })).toBe(
+      -2340 - 1199 + 4200 - 500,
+    );
   });
 
   it('tracks budget use per month', () => {
-    const [g] = budgetProgress([{ id: 'b', categoryId: 'groceries', monthlyLimit: 30000 }], [{ id: 'groceries', name: 'Groceries', color: 'groceries', kind: 'expense', order: 1 }], txs, '2026-10-05');
+    const [g] = budgetProgress(
+      [{ id: 'b', categoryId: 'groceries', monthlyLimit: 30000 }],
+      [{ id: 'groceries', name: 'Groceries', color: 'groceries', kind: 'expense', order: 1 }],
+      txs,
+      '2026-10-05',
+    );
     expect(g.spent).toBe(2340);
     expect(g.remaining).toBe(27660);
   });

@@ -16,7 +16,13 @@ describe('dates', () => {
 describe('occurrencesBetween', () => {
   it('keeps a monthly anchor of the 31st, clamping short months', () => {
     const s = { startDate: '2026-01-31', frequency: 'monthly' as const };
-    expect(occurrencesBetween(s, '2026-01-01', '2026-05-31')).toEqual(['2026-01-31', '2026-02-28', '2026-03-31', '2026-04-30', '2026-05-31']);
+    expect(occurrencesBetween(s, '2026-01-01', '2026-05-31')).toEqual([
+      '2026-01-31',
+      '2026-02-28',
+      '2026-03-31',
+      '2026-04-30',
+      '2026-05-31',
+    ]);
   });
 
   it('starts no earlier than the start date and finds far-future dates', () => {
@@ -26,8 +32,14 @@ describe('occurrencesBetween', () => {
   });
 
   it('supports weekly and yearly', () => {
-    expect(occurrencesBetween({ startDate: '2026-10-01', frequency: 'weekly' }, '2026-10-05', '2026-10-20')).toEqual(['2026-10-08', '2026-10-15']);
-    expect(occurrencesBetween({ startDate: '2024-02-29', frequency: 'yearly' }, '2025-01-01', '2026-12-31')).toEqual(['2025-02-28', '2026-02-28']);
+    expect(occurrencesBetween({ startDate: '2026-10-01', frequency: 'weekly' }, '2026-10-05', '2026-10-20')).toEqual([
+      '2026-10-08',
+      '2026-10-15',
+    ]);
+    expect(occurrencesBetween({ startDate: '2024-02-29', frequency: 'yearly' }, '2025-01-01', '2026-12-31')).toEqual([
+      '2025-02-28',
+      '2026-02-28',
+    ]);
   });
 
   it('finds the next occurrence', () => {

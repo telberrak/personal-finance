@@ -41,7 +41,13 @@ export function Settings({ data }: { data?: FinanceData }) {
         </h2>
         <div className="segmented" role="radiogroup" aria-labelledby="theme-label">
           {THEMES.map((t) => (
-            <button key={t.id} type="button" role="radio" aria-checked={settings.theme === t.id} onClick={() => updateSettings({ theme: t.id })}>
+            <button
+              key={t.id}
+              type="button"
+              role="radio"
+              aria-checked={settings.theme === t.id}
+              onClick={() => updateSettings({ theme: t.id })}
+            >
               {t.label}
             </button>
           ))}
@@ -88,7 +94,11 @@ export function Settings({ data }: { data?: FinanceData }) {
           <button type="button" className="btn" onClick={() => confirm('Replace all data with fresh demo data?') && resetDemoData()}>
             Reset demo data
           </button>
-          <button type="button" className="btn btn--danger" onClick={() => confirm('Erase all transactions, bills and budgets? This cannot be undone.') && eraseAllData()}>
+          <button
+            type="button"
+            className="btn btn--danger"
+            onClick={() => confirm('Erase all transactions, bills and budgets? This cannot be undone.') && eraseAllData()}
+          >
             Erase all data
           </button>
         </div>

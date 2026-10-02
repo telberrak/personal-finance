@@ -36,11 +36,29 @@ const BUDGETS: Budget[] = [
 
 /** [payee, min £, max £, chance per day] */
 const MERCHANTS: Record<string, [string, number, number, number][]> = {
-  groceries: [['Tesco Express', 4, 28, 0.35], ["Sainsbury's", 25, 70, 0.12], ['Lidl', 15, 45, 0.08]],
-  eating: [['Pret A Manger', 4, 9, 0.25], ['Greggs', 2, 6, 0.12], ['Wagamama', 18, 38, 0.04]],
-  transport: [['TfL Travel', 2.8, 8.5, 0.45], ['Trainline', 12, 45, 0.03]],
-  shopping: [['Amazon', 8, 45, 0.08], ['Boots', 5, 22, 0.06], ['ASOS', 20, 60, 0.03]],
-  fun: [['Vue Cinema', 9, 22, 0.05], ['Steam', 6, 30, 0.03]],
+  groceries: [
+    ['Tesco Express', 4, 28, 0.35],
+    ["Sainsbury's", 25, 70, 0.12],
+    ['Lidl', 15, 45, 0.08],
+  ],
+  eating: [
+    ['Pret A Manger', 4, 9, 0.25],
+    ['Greggs', 2, 6, 0.12],
+    ['Wagamama', 18, 38, 0.04],
+  ],
+  transport: [
+    ['TfL Travel', 2.8, 8.5, 0.45],
+    ['Trainline', 12, 45, 0.03],
+  ],
+  shopping: [
+    ['Amazon', 8, 45, 0.08],
+    ['Boots', 5, 22, 0.06],
+    ['ASOS', 20, 60, 0.03],
+  ],
+  fun: [
+    ['Vue Cinema', 9, 22, 0.05],
+    ['Steam', 6, 30, 0.03],
+  ],
 };
 
 /** Fills the database with demo data on first launch only (settings are written on first launch). */
@@ -99,7 +117,13 @@ export async function seedDemoData(ref: ISODate = today()): Promise<void> {
         const pounds = min + rand() * (max - min);
         const hour = 7 + Math.floor(rand() * 14);
         const minute = Math.floor(rand() * 60);
-        add({ date, time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`, amount: -Math.round(pounds * 100), payee, categoryId });
+        add({
+          date,
+          time: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+          amount: -Math.round(pounds * 100),
+          payee,
+          categoryId,
+        });
       }
     }
   }

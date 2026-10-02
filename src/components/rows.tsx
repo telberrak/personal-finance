@@ -18,7 +18,11 @@ export function TransactionRow({ tx, category }: { tx: Transaction; category?: C
         <span className="item-title">{tx.payee}</span>
         <span className="item-meta">
           {meta}
-          {tx.recurringId && <span className="tag" title="Recurring payment">DD</span>}
+          {tx.recurringId && (
+            <span className="tag" title="Recurring payment">
+              DD
+            </span>
+          )}
         </span>
       </div>
       <span className={'amount' + (tx.amount > 0 ? ' amount--in' : '')}>{formatMoney(tx.amount, { sign: true })}</span>
@@ -34,7 +38,19 @@ const METHOD_LABEL: Record<Recurring['method'], string> = {
 
 export const methodLabel = (m: Recurring['method']) => METHOD_LABEL[m];
 
-export function BillRow({ rule, date, meta, paid, trailing }: { rule: Recurring; date: ISODate; meta: string; paid?: boolean; trailing?: ReactNode }) {
+export function BillRow({
+  rule,
+  date,
+  meta,
+  paid,
+  trailing,
+}: {
+  rule: Recurring;
+  date: ISODate;
+  meta: string;
+  paid?: boolean;
+  trailing?: ReactNode;
+}) {
   return (
     <div className="list-row">
       <div className={'tile tile--date' + (paid ? ' tile--muted' : '')} style={catVar('bills')} aria-hidden="true">

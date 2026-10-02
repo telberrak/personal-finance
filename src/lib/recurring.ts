@@ -29,7 +29,7 @@ export function occurrencesBetween(schedule: Schedule, from: ISODate, to: ISODat
   let monthsAhead = (fromDate.getFullYear() - start.getFullYear()) * 12 + (fromDate.getMonth() - start.getMonth()) - step;
   monthsAhead = Math.max(0, Math.floor(monthsAhead / step) * step);
 
-  for (;; monthsAhead += step) {
+  for (; ; monthsAhead += step) {
     const d = clampedDate(start.getFullYear(), start.getMonth() + monthsAhead, anchorDay);
     if (d > to) break;
     if (d >= from) out.push(d);

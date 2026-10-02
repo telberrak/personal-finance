@@ -1,6 +1,15 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { DEFAULT_SETTINGS, type Account, type Budget, type Category, type FinanceData, type Recurring, type Settings, type Transaction } from './types';
+import {
+  DEFAULT_SETTINGS,
+  type Account,
+  type Budget,
+  type Category,
+  type FinanceData,
+  type Recurring,
+  type Settings,
+  type Transaction,
+} from './types';
 
 class FinanceDB extends Dexie {
   accounts!: EntityTable<Account, 'id'>;

@@ -95,7 +95,12 @@ export function Bills({ data }: { data?: FinanceData }) {
             <div className="list">
               {due.length === 0 && <p className="empty">All paid for {formatMonth(ref)}.</p>}
               {due.map((o) => (
-                <BillRow key={o.rule.id + o.date} rule={o.rule} date={o.date} meta={`${methodLabel(o.rule.method)} · ${dueLabel(o.date, ref)}`} />
+                <BillRow
+                  key={o.rule.id + o.date}
+                  rule={o.rule}
+                  date={o.date}
+                  meta={`${methodLabel(o.rule.method)} · ${dueLabel(o.date, ref)}`}
+                />
               ))}
             </div>
           </section>

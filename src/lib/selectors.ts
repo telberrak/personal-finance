@@ -69,7 +69,15 @@ export function safeToSpend(data: FinanceData, ref: ISODate): SafeToSpend {
   const savings = data.settings.monthlySavings;
   const safe = balance - billsBeforePayday - savings;
   const daysToPayday = daysBetween(ref, payday);
-  return { balance, billsBeforePayday, savings, safe, payday, daysToPayday, perDay: Math.max(0, Math.floor(safe / Math.max(1, daysToPayday))) };
+  return {
+    balance,
+    billsBeforePayday,
+    savings,
+    safe,
+    payday,
+    daysToPayday,
+    perDay: Math.max(0, Math.floor(safe / Math.max(1, daysToPayday))),
+  };
 }
 
 /** Day-to-day spending per day of `month`, up to and including `ref` when the month is current. */
@@ -111,7 +119,9 @@ export function budgetProgress(budgets: Budget[], categories: Category[], transa
       (sum, t) => (t.categoryId === budget.categoryId && t.amount < 0 && inRange(t, from, to) ? sum - t.amount : sum),
       0,
     );
-    return [{ budget, category, spent, remaining: budget.monthlyLimit - spent, ratio: budget.monthlyLimit ? spent / budget.monthlyLimit : 0 }];
+    return [
+      { budget, category, spent, remaining: budget.monthlyLimit - spent, ratio: budget.monthlyLimit ? spent / budget.monthlyLimit : 0 },
+    ];
   });
   return rows.sort((a, b) => a.category.order - b.category.order);
 }
@@ -119,7 +129,9 @@ export function budgetProgress(budgets: Budget[], categories: Category[], transa
 /** Transactions grouped by date, newest first, with each day's net total. */
 export function groupByDay(transactions: Transaction[]): { date: ISODate; total: Pence; items: Transaction[] }[] {
   const groups = new Map<ISODate, Transaction[]>();
-  const sorted = [...transactions].sort((a, b) => (a.date === b.date ? (b.time ?? '').localeCompare(a.time ?? '') : a.date < b.date ? 1 : -1));
+  const sorted = [...transactions].sort((a, b) =>
+    a.date === b.date ? (b.time ?? '').localeCompare(a.time ?? '') : a.date < b.date ? 1 : -1,
+  );
   for (const t of sorted) {
     const list = groups.get(t.date) ?? [];
     list.push(t);

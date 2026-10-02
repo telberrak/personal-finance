@@ -32,11 +32,23 @@ export function Budgets({ data }: { data?: FinanceData }) {
       </header>
 
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <button type="button" className="icon-btn icon-btn--ghost" aria-label="Previous month" onClick={() => setMonth(shiftMonth(month, -1))}>
+        <button
+          type="button"
+          className="icon-btn icon-btn--ghost"
+          aria-label="Previous month"
+          onClick={() => setMonth(shiftMonth(month, -1))}
+        >
           <Icon name="back" size={20} />
         </button>
         <span style={{ fontWeight: 600 }}>{formatMonthYear(month)}</span>
-        <button type="button" className="icon-btn icon-btn--ghost" aria-label="Next month" disabled={isCurrent} style={{ opacity: isCurrent ? 0.3 : 1 }} onClick={() => setMonth(shiftMonth(month, 1))}>
+        <button
+          type="button"
+          className="icon-btn icon-btn--ghost"
+          aria-label="Next month"
+          disabled={isCurrent}
+          style={{ opacity: isCurrent ? 0.3 : 1 }}
+          onClick={() => setMonth(shiftMonth(month, 1))}
+        >
           <Icon name="forward" size={20} />
         </button>
       </div>
@@ -59,7 +71,9 @@ export function Budgets({ data }: { data?: FinanceData }) {
             )}
           </svg>
           <div className="ring-label">
-            <span style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em' }}>{Math.round((limit ? spent / limit : 0) * 100)}%</span>
+            <span style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em' }}>
+              {Math.round((limit ? spent / limit : 0) * 100)}%
+            </span>
             <span className="small muted">used</span>
           </div>
         </div>

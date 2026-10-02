@@ -22,18 +22,18 @@ npm run dev:phone
 Open the `Network:` URL it prints (for example `http://192.168.1.20:5173`) on a phone connected to the same Wi-Fi.
 Phones only allow installing a PWA from HTTPS, so the dev server over plain HTTP is for trying the app out.
 To install it on your home screen, deploy `dist/` to any HTTPS static host (Netlify, Vercel, Cloudflare Pages, GitHub Pages).
-Then use *Share → Add to Home Screen* (iOS) or *Install app* (Android).
+Then use _Share → Add to Home Screen_ (iOS) or _Install app_ (Android).
 
 ## Scripts
 
-| Script | What it does |
-| --- | --- |
-| `npm run dev` | Development server with hot reload |
-| `npm run dev:phone` | Same, reachable from other devices on your network |
-| `npm test` | Unit tests (Vitest) |
-| `npm run typecheck` | TypeScript check |
-| `npm run build` | Type-check and build the installable app into `dist/` |
-| `npm run preview` | Serve the production build locally |
+| Script              | What it does                                          |
+| ------------------- | ----------------------------------------------------- |
+| `npm run dev`       | Development server with hot reload                    |
+| `npm run dev:phone` | Same, reachable from other devices on your network    |
+| `npm test`          | Unit tests (Vitest)                                   |
+| `npm run typecheck` | TypeScript check                                      |
+| `npm run build`     | Type-check and build the installable app into `dist/` |
+| `npm run preview`   | Serve the production build locally                    |
 
 ## How it is organised
 

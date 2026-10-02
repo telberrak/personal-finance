@@ -115,7 +115,15 @@ export function AddTransaction({ data }: { data?: FinanceData }) {
       <div className="list">
         <div className="field">
           <label htmlFor="payee">{kind === 'expense' ? 'Payee' : 'From'}</label>
-          <input id="payee" list="payees" autoComplete="off" autoCapitalize="words" placeholder="e.g. Tesco" value={payee} onChange={(e) => onPayeeChange(e.target.value)} />
+          <input
+            id="payee"
+            list="payees"
+            autoComplete="off"
+            autoCapitalize="words"
+            placeholder="e.g. Tesco"
+            value={payee}
+            onChange={(e) => onPayeeChange(e.target.value)}
+          />
           <datalist id="payees">
             {payees.map((p) => (
               <option key={p} value={p} />
