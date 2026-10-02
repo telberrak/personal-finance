@@ -1017,7 +1017,7 @@ dialog::backdrop {
 @media (min-width: 1024px) {
   :root {
     --sidebar-w: 248px;
-    --page-w: 1200px;
+    --page-w: 1480px;
   }
 
   .shell {
@@ -1101,10 +1101,12 @@ dialog::backdrop {
     margin-top: auto;
   }
 
+  /* Content starts right next to the sidebar; on very wide screens the extra space goes to the right. */
   .screen {
     width: 100%;
     max-width: var(--page-w);
-    padding: 36px 48px 64px;
+    margin: 0;
+    padding: 32px 40px 64px;
     gap: 24px;
   }
 
