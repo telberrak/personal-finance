@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Icon } from '../components/Icon';
-import { Loading } from '../components/Layout';
+import { Loading, MonthSwitcher, PageHeader } from '../components/Layout';
 import { TransactionRow } from '../components/rows';
+import { TransactionTable } from '../components/tables';
+import { useIsDesktop } from '../components/useMediaQuery';
 import type { FinanceData, Transaction } from '../db/types';
-import { dayHeading, endOfMonth, formatMonthYear, shiftMonth, startOfMonth, today } from '../lib/dates';
+import { dayHeading, endOfMonth, startOfMonth, today } from '../lib/dates';
 import { formatMoney } from '../lib/money';
 import { groupByDay, inRange } from '../lib/selectors';
 
@@ -19,6 +21,7 @@ const MATCHES: Record<Filter, (t: Transaction) => boolean> = {
 
 export function Activity({ data }: { data?: FinanceData }) {
   const ref = today();
+  const isDesktop = useIsDesktop();
   const [month, setMonth] = useState(startOfMonth(ref));
   const [filter, setFilter] = useState<Filter>('All');
   const [query, setQuery] = useState('');
@@ -34,91 +37,112 @@ export function Activity({ data }: { data?: FinanceData }) {
       (t) =>
         MATCHES[filter](t) && (!q || t.payee.toLowerCase().includes(q) || categories.get(t.categoryId)?.name.toLowerCase().includes(q)),
     );
+    const moneyOut = inMonth.reduce((s, t) => (t.amount < 0 ? s - t.amount : s), 0);
+    const moneyIn = inMonth.reduce((s, t) => (t.amount > 0 ? s + t.amount : s), 0);
     return {
       categories,
-      moneyOut: inMonth.reduce((s, t) => (t.amount < 0 ? s - t.amount : s), 0),
-      moneyIn: inMonth.reduce((s, t) => (t.amount > 0 ? s + t.amount : s), 0),
+      accounts: new Map(data.accounts.map((a) => [a.id, a])),
+      moneyOut,
+      moneyIn,
+      count: inMonth.length,
+      shownCount: shown.length,
       groups: groupByDay(shown),
     };
   }, [data, month, filter, query]);
 
   if (!view) return <Loading />;
-  const isCurrentMonth = month === startOfMonth(ref);
+
+  const search = (
+    <label className="search">
+      <Icon name="search" size={18} />
+      <span className="visually-hidden">Search transactions</span>
+      <input
+        type="search"
+        placeholder="Search payees or categories"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        enterKeyHint="search"
+      />
+    </label>
+  );
+
+  const chips = (
+    <div className="chips" role="group" aria-label="Filter">
+      {FILTERS.map((f) => (
+        <button key={f} type="button" className="chip" aria-pressed={filter === f} onClick={() => setFilter(f)}>
+          {f}
+        </button>
+      ))}
+    </div>
+  );
+
+  const empty = view.groups.length === 0 && (
+    <p className="empty">{filter === 'All' && !query.trim() ? 'No transactions this month yet.' : 'No transactions match.'}</p>
+  );
 
   return (
     <main className="screen">
-      <header className="screen-header">
-        <h1 className="screen-title">Activity</h1>
-        <div className="row" style={{ gap: 0 }}>
-          <button
-            type="button"
-            className="icon-btn icon-btn--ghost"
-            aria-label="Previous month"
-            onClick={() => setMonth(shiftMonth(month, -1))}
-          >
-            <Icon name="back" size={20} />
-          </button>
-          <span style={{ fontSize: 14, fontWeight: 500, minWidth: 108, textAlign: 'center' }}>{formatMonthYear(month)}</span>
-          <button
-            type="button"
-            className="icon-btn icon-btn--ghost"
-            aria-label="Next month"
-            disabled={isCurrentMonth}
-            style={{ opacity: isCurrentMonth ? 0.3 : 1 }}
-            onClick={() => setMonth(shiftMonth(month, 1))}
-          >
-            <Icon name="forward" size={20} />
-          </button>
-        </div>
-      </header>
+      <PageHeader title="Activity" actions={<MonthSwitcher month={month} onChange={setMonth} current={ref} />} />
 
-      <label className="search">
-        <Icon name="search" size={18} />
-        <span className="visually-hidden">Search transactions</span>
-        <input
-          type="search"
-          placeholder="Search payees or categories"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          enterKeyHint="search"
-        />
-      </label>
-
-      <div className="chips" role="group" aria-label="Filter">
-        {FILTERS.map((f) => (
-          <button key={f} type="button" className="chip" aria-pressed={filter === f} onClick={() => setFilter(f)}>
-            {f}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid-2">
-        <div className="card stack" style={{ padding: '12px 14px' }}>
-          <span className="small muted">Money out</span>
-          <span className="value-md num">{formatMoney(view.moneyOut)}</span>
-        </div>
-        <div className="card stack" style={{ padding: '12px 14px' }}>
-          <span className="small muted">Money in</span>
-          <span className="value-md num text-pos">{formatMoney(view.moneyIn, { sign: true })}</span>
-        </div>
-      </div>
-
-      {view.groups.length === 0 && (
-        <p className="empty">{filter === 'All' && !query.trim() ? 'No transactions this month yet.' : 'No transactions match.'}</p>
+      {isDesktop ? (
+        <>
+          <div className="stat-grid">
+            <div className="card stack">
+              <span className="label">Money out</span>
+              <span className="value-md num">{formatMoney(view.moneyOut)}</span>
+            </div>
+            <div className="card stack">
+              <span className="label">Money in</span>
+              <span className="value-md num text-pos">{formatMoney(view.moneyIn, { sign: true })}</span>
+            </div>
+            <div className="card stack">
+              <span className="label">Net</span>
+              <span className="value-md num">{formatMoney(view.moneyIn - view.moneyOut, { sign: true })}</span>
+            </div>
+            <div className="card stack">
+              <span className="label">Transactions</span>
+              <span className="value-md num">{view.count}</span>
+            </div>
+          </div>
+          <div className="toolbar">
+            {search}
+            {chips}
+            <span className="label toolbar-count">
+              {view.shownCount} of {view.count} shown
+            </span>
+          </div>
+          {empty || <TransactionTable groups={view.groups} categories={view.categories} accounts={view.accounts} refDate={ref} />}
+        </>
+      ) : (
+        <>
+          {search}
+          {chips}
+          <div className="grid-2">
+            <div className="card stack" style={{ padding: '12px 14px' }}>
+              <span className="small muted">Money out</span>
+              <span className="value-md num">{formatMoney(view.moneyOut)}</span>
+            </div>
+            <div className="card stack" style={{ padding: '12px 14px' }}>
+              <span className="small muted">Money in</span>
+              <span className="value-md num text-pos">{formatMoney(view.moneyIn, { sign: true })}</span>
+            </div>
+          </div>
+          {empty}
+          {view.groups.map((g) => (
+            <section key={g.date} className="section">
+              <div className="section-head section-label">
+                <span>{dayHeading(g.date, ref)}</span>
+                <span className="num">{formatMoney(g.total, { sign: true })}</span>
+              </div>
+              <div className="list">
+                {g.items.map((t) => (
+                  <TransactionRow key={t.id} tx={t} category={view.categories.get(t.categoryId)} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </>
       )}
-      {view.groups.map((g) => (
-        <section key={g.date} className="section">
-          <div className="section-head section-label">
-            <span>{dayHeading(g.date, ref)}</span>
-            <span className="num">{formatMoney(g.total, { sign: true })}</span>
-          </div>
-          <div className="list">
-            {g.items.map((t) => (
-              <TransactionRow key={t.id} tx={t} category={view.categories.get(t.categoryId)} />
-            ))}
-          </div>
-        </section>
-      ))}
     </main>
   );
 }

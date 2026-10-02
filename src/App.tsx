@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
-import { TabLayout } from './components/Layout';
+import { AppShell } from './components/Layout';
 import { ConfirmProvider } from './components/ui/Dialog';
 import { ToastProvider } from './components/ui/Toast';
 import { useTheme } from './components/useTheme';
@@ -20,14 +20,14 @@ export function App() {
       <ConfirmProvider>
         <BrowserRouter>
           <Routes>
-            <Route element={<TabLayout />}>
+            <Route element={<AppShell />}>
               <Route index element={<Home data={data} />} />
               <Route path="activity" element={<Activity data={data} />} />
               <Route path="bills" element={<Bills data={data} />} />
               <Route path="budgets" element={<Budgets data={data} />} />
+              <Route path="add" element={<AddTransaction data={data} />} />
+              <Route path="settings" element={<Settings data={data} />} />
             </Route>
-            <Route path="add" element={<AddTransaction data={data} />} />
-            <Route path="settings" element={<Settings data={data} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

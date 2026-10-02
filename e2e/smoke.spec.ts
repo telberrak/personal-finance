@@ -35,7 +35,8 @@ test('adding an expense shows it in Activity and can be undone', async ({ page }
 
   await expect(page.getByText('Expense saved')).toBeVisible();
   await expect(page).toHaveURL(/\/activity$/);
-  const row = page.locator('.list-row', { hasText: 'Corner Café' });
+  // A list row on the phone, a table row on desktop.
+  const row = page.locator('.list-row, tbody tr', { hasText: 'Corner Café' });
   await expect(row).toContainText('−£7.25');
   await expect(row).toContainText('Eating out');
 
@@ -47,7 +48,7 @@ test('adding an expense shows it in Activity and can be undone', async ({ page }
 test('theme follows the system and can be overridden in Settings', async ({ page }, info) => {
   await page.goto('/settings');
   const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  const systemIsDark = info.project.name === 'phone-dark';
+  const systemIsDark = info.project.name.endsWith('-dark');
   expect(await bg()).toBe(systemIsDark ? 'rgb(13, 15, 18)' : 'rgb(244, 245, 242)');
 
   await page.getByRole('radio', { name: systemIsDark ? 'Light' : 'Dark' }).click();

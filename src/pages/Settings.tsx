@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon';
-import { Loading } from '../components/Layout';
+import { Loading, PageHeader } from '../components/Layout';
 import { useConfirm } from '../components/ui/Dialog';
 import { Field } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
+import { useIsDesktop } from '../components/useMediaQuery';
 import { eraseAllData, resetDemoData, updateSettings } from '../db/repo';
 import type { FinanceData, ThemePreference } from '../db/types';
 import { formatMoney, parseMoney } from '../lib/money';
@@ -19,6 +20,7 @@ export function Settings({ data }: { data?: FinanceData }) {
   const [savingsText, setSavingsText] = useState<string>();
   const confirm = useConfirm();
   const toast = useToast();
+  const isDesktop = useIsDesktop();
   if (!data) return <Loading />;
   const { settings } = data;
 
@@ -56,13 +58,17 @@ export function Settings({ data }: { data?: FinanceData }) {
 
   return (
     <main className="screen screen--modal">
-      <header className="screen-header">
-        <Link to="/" className="icon-btn" aria-label="Back">
-          <Icon name="back" size={20} strokeWidth={2} />
-        </Link>
-        <h1 style={{ fontSize: 17, fontWeight: 600 }}>Settings</h1>
-        <span style={{ width: 44 }} />
-      </header>
+      {isDesktop ? (
+        <PageHeader title="Settings" />
+      ) : (
+        <header className="screen-header">
+          <Link to="/" className="icon-btn" aria-label="Back">
+            <Icon name="back" size={20} strokeWidth={2} />
+          </Link>
+          <h1 style={{ fontSize: 17, fontWeight: 600 }}>Settings</h1>
+          <span style={{ width: 44 }} />
+        </header>
+      )}
 
       <section className="section">
         <h2 className="section-label" id="theme-label">

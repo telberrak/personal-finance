@@ -4,6 +4,11 @@ A personal finance app for everyday money: daily spending, direct debits and bil
 It is a mobile-first progressive web app (PWA). It runs in any browser and can be installed on a phone's home screen.
 All data stays on the device, in IndexedDB.
 
+It has two layouts from one codebase, chosen by window width:
+
+- **Phone and tablet (under 1024 px):** bottom tab bar, single column, lists.
+- **Desktop (1024 px and wider):** a web page with a sidebar, multi-column dashboard, and tables for transactions and bills.
+
 ## Getting started
 
 ```bash
@@ -35,21 +40,22 @@ Every pull request then gets its own preview URL from the host.
 
 ## Scripts
 
-| Script              | What it does                                                     |
-| ------------------- | ---------------------------------------------------------------- |
-| `npm run dev`       | Development server with hot reload                               |
-| `npm run dev:phone` | Same, reachable from other devices on your network               |
-| `npm test`          | Unit and component tests (Vitest, jsdom, fake-indexeddb)         |
-| `npm run test:e2e`  | End-to-end tests at phone size, light and dark (Playwright)      |
-| `npm run lint`      | ESLint, including accessibility rules                            |
-| `npm run format`    | Format with Prettier                                             |
-| `npm run typecheck` | TypeScript check for the app and the Node-side config            |
-| `npm run build`     | Type-check and build the installable app into `dist/`            |
-| `npm run preview`   | Serve the production build locally                               |
-| `npm run check`     | Everything CI runs except e2e: lint, format, types, tests, build |
-| `npm run icons`     | Re-render the PNG app icons from `public/icon*.svg`              |
+| Script              | What it does                                                                 |
+| ------------------- | ---------------------------------------------------------------------------- |
+| `npm run dev`       | Development server with hot reload                                           |
+| `npm run dev:phone` | Same, reachable from other devices on your network                           |
+| `npm test`          | Unit and component tests (Vitest, jsdom, fake-indexeddb)                     |
+| `npm run test:e2e`  | End-to-end tests at phone size, light and dark (Playwright)                  |
+| `npm run lint`      | ESLint, including accessibility rules                                        |
+| `npm run format`    | Format with Prettier                                                         |
+| `npm run typecheck` | TypeScript check for the app and the Node-side config                        |
+| `npm run build`     | Type-check and build the installable app into `dist/`                        |
+| `npm run serve`     | Build and serve the production app on port 4173, reachable from your network |
+| `npm run preview`   | Serve the production build locally                                           |
+| `npm run check`     | Everything CI runs except e2e: lint, format, types, tests, build             |
+| `npm run icons`     | Re-render the PNG app icons from `public/icon*.svg`                          |
 
-End-to-end tests use the installed Microsoft Edge locally, so no browser download is needed. CI installs Chromium.
+End-to-end tests run at phone (390×844) and desktop (1440×900) sizes in light and dark, on port 4174. They use the installed Microsoft Edge locally, so no browser download is needed. CI installs Chromium.
 GitHub Actions (`.github/workflows/ci.yml`) runs the checks and the end-to-end tests on every push and pull request.
 
 ## How it is organised
