@@ -123,11 +123,19 @@ function ValueForm({ account, onDone }: { account: Account; onDone: () => void }
     e.preventDefault();
     const pence = parseMoney(value);
     if (pence === null) return toast({ message: t('networth.valueHint') });
-    const valuations = [...(account.valuations ?? []).filter((v) => v.date !== date), { date, value: pence }].sort((a, b) =>
+    const stored = account.native ? account.native.valuations : account.valuations;
+    const valuations = [...(stored ?? []).filter((v) => v.date !== date), { date, value: pence }].sort((a, b) =>
       a.date < b.date ? -1 : 1,
     );
     try {
-      await saveAccount({ ...account, valuations });
+      // Saved in the account's own currency.
+      await saveAccount({
+        ...account,
+        openingBalance: account.native?.openingBalance ?? account.openingBalance,
+        credit: account.native ? account.native.credit : account.credit,
+        monthlyPayment: account.native ? account.native.monthlyPayment : account.monthlyPayment,
+        valuations,
+      });
       toast({ message: t('networth.valueSaved') });
       onDone();
     } catch (err) {

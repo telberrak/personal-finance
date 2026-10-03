@@ -102,7 +102,9 @@
     "dueDay": "Payment due day",
     "minPayment": "Minimum payment",
     "monthlyPayment": "Monthly payment",
-    "notSet": "Not set"
+    "notSet": "Not set",
+    "currency": "Currency",
+    "homeCurrency": "{{currency}} (home currency)"
   },
   "categories": {
     "transfer": "Transfers",
@@ -651,7 +653,12 @@
     "banks": "Bank connections",
     "banksDetail": "Bring transactions in automatically",
     "household": "Household",
-    "householdDetail": "Share accounts with a partner"
+    "householdDetail": "Share accounts with a partner",
+    "digits": "Digits",
+    "digitsLatin": "Latin (0123)",
+    "digitsArabic": "Arabic-Indic (٠١٢٣)",
+    "weekStart": "Week starts on",
+    "weekStartAuto": "As usual for the language"
   },
   "colors": {
     "groceries": "Blue",
@@ -764,7 +771,11 @@
       "transfer": "Save transfer"
     },
     "splitTitle": "Split payment",
-    "splitInfo": "Part of a {{amount}} payment split into {{count}} parts"
+    "splitInfo": "Part of a {{amount}} payment split into {{count}} parts",
+    "amountReceived": "Amount received ({{currency}})",
+    "paidIn": "Paid in",
+    "paidInHome": "The account’s currency",
+    "foreignAmount": "Amount in {{currency}}"
   },
   "split": {
     "done_one": "Split into {{count}} part",
@@ -932,8 +943,8 @@
     },
     "lowBalance": {
       "title": "Your balance may run low",
-      "body_one": "Forecast to drop to {{amount}} in {{days}} day.",
-      "body_other": "Forecast to drop to {{amount}} in {{days}} days."
+      "body_one": "Forecast to drop to {{amount}} in {{count}} day.",
+      "body_other": "Forecast to drop to {{amount}} in {{count}} days."
     },
     "unusual": {
       "title": "Unusual payment to {{name}}",
@@ -1276,5 +1287,17 @@
     "join": "Join household",
     "joinNeedsSync": "To join, first turn on sync (it only takes an email address).",
     "joined": "You joined {{name}}"
+  },
+  "fx": {
+    "title": "Exchange rates",
+    "rateLabel": "1 {{currency}} in {{home}}",
+    "missing": "Not set",
+    "rateHint": "Enter a rate, for example 0.86.",
+    "manualOn": "{{currency}}: your rate, {{date}}.",
+    "ecbOn": "{{currency}}: European Central Bank, {{date}}.",
+    "note": "Accounts in other currencies are converted at these rates for totals, budgets and reports. Type a rate to override it.",
+    "update": "Update rates",
+    "updated": "Rates updated",
+    "unavailable": "Rates are not available right now. Type them in instead."
   }
 }

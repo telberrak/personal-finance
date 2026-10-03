@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import ar from '../locales/ar.json';
 import en from '../locales/en.json';
+import fr from '../locales/fr.json';
 import { configureFormatting } from '../lib/format';
 import { formatMoney, formatPercent, formatWhole, moneyParts, parseMoney } from '../lib/money';
 import { formatLong } from '../lib/dates';
@@ -127,5 +129,42 @@ describe('languages', () => {
   it('uses plural forms', () => {
     expect(t('home.daysToPayday', { count: 1 })).toBe('1 day to payday');
     expect(t('home.daysToPayday', { count: 22 })).toBe('22 days to payday');
+  });
+});
+
+describe('French and Arabic', () => {
+  const english = flatten(en as Tree);
+  const bases = new Set([...english.keys()].filter((k) => PLURAL.test(k)).map((k) => k.replace(PLURAL, '')));
+  const placeholders = (s: string) => new Set([...s.matchAll(/\{\{\s*(\w+)\s*\}\}/g)].map((m) => m[1]));
+
+  it.each([
+    ['fr', fr, ['one', 'other']],
+    ['ar', ar, ['zero', 'one', 'two', 'few', 'many', 'other']],
+  ] as const)('%s has every string, every plural form, and no unknown placeholders', (_lang, file, forms) => {
+    const tr = flatten(file as Tree);
+    for (const [k, v] of english) {
+      if (PLURAL.test(k)) continue;
+      expect(tr.has(k), k).toBe(true);
+      for (const p of placeholders(tr.get(k)!)) expect(placeholders(v).has(p), `${k}: {{${p}}}`).toBe(true);
+    }
+    for (const b of bases) {
+      const allowed = new Set([...placeholders(english.get(`${b}_other`)!), 'count']);
+      for (const f of forms) {
+        expect(tr.has(`${b}_${f}`), `${b}_${f}`).toBe(true);
+        for (const p of placeholders(tr.get(`${b}_${f}`)!)) expect(allowed.has(p), `${b}_${f}: {{${p}}}`).toBe(true);
+      }
+    }
+  });
+
+  it('picks Arabic plural forms and formats in French', () => {
+    applyLocale('ar', 'MAD');
+    expect(t('home.daysToPayday', { count: 2 })).toBe('يومان حتى الراتب');
+    expect(t('home.daysToPayday', { count: 5 })).toBe('5 أيام حتى الراتب');
+    expect(t('home.daysToPayday', { count: 11 })).toBe('11 يومًا حتى الراتب');
+    expect(document.documentElement.dir).toBe('rtl');
+    applyLocale('fr', 'EUR');
+    expect(t('settings.title')).toBe('Réglages');
+    expect(formatMoney(123450)).toMatch(/^1\s234,50\s€$/);
+    applyLocale('en', 'GBP');
   });
 });

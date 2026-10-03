@@ -35,13 +35,16 @@ export function configureFormatting(next: Partial<FormatConfig>): void {
   dateCache.clear();
 }
 
-const FSI = '\u2068';
+// Left-to-right isolates: an amount reads "−£6.97" the same way inside Arabic text.
+const LRI = '\u2066';
 const PDI = '\u2069';
+/** Direction marks Intl adds to Arabic-locale numbers; the isolate does their job. */
+const BIDI_MARKS = /[\u200E\u200F\u061C]/g;
 
 /** Wraps text in Unicode isolates when the interface is right-to-left. */
-export const isolate = (s: string): string => (config.isolate ? FSI + s + PDI : s);
-export const isolateStart = (s: string): string => (config.isolate ? FSI + s : s);
-export const isolateEnd = (s: string): string => (config.isolate ? s + PDI : s);
+export const isolate = (s: string): string => (config.isolate ? LRI + s.replace(BIDI_MARKS, '') + PDI : s);
+export const isolateStart = (s: string): string => (config.isolate ? LRI + s.replace(BIDI_MARKS, '') : s);
+export const isolateEnd = (s: string): string => (config.isolate ? s.replace(BIDI_MARKS, '') + PDI : s);
 
 export const formatConfig = (): Readonly<FormatConfig> => config;
 
@@ -74,5 +77,24 @@ export function regionName(code: string): string {
     return new Intl.DisplayNames([config.locale], { type: 'region' }).of(code) ?? code;
   } catch {
     return code;
+  }
+}
+
+/** A weekday's name in the display language: 1 Monday … 7 Sunday (ISO). */
+export function weekdayName(isoDay: number): string {
+  // 1 January 2024 was a Monday.
+  return dateFormat({ weekday: 'long' }).format(new Date(2024, 0, isoDay));
+}
+
+/** The first day of the week for the display locale (1 Monday … 7 Sunday), where the browser knows it. */
+export function localeWeekStart(): number {
+  try {
+    const locale = new Intl.Locale(config.locale) as Intl.Locale & {
+      getWeekInfo?: () => { firstDay: number };
+      weekInfo?: { firstDay: number };
+    };
+    return locale.getWeekInfo?.().firstDay ?? locale.weekInfo?.firstDay ?? 1;
+  } catch {
+    return 1;
   }
 }

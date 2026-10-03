@@ -18,14 +18,16 @@ const toText = (pence: number) => (pence / 100).toFixed(2);
 /** Sheet content for dividing one payment across categories. `group` is the payment's current pieces. */
 export function SplitEditor({ data, group, onDone }: { data: FinanceData; group: Transaction[]; onDone: (changed: boolean) => void }) {
   const toast = useToast();
-  const total = Math.abs(group.reduce((s, t) => s + t.amount, 0));
+  // In the account's own currency (the stored amounts).
+  const own = (t: Transaction) => t.native?.amount ?? t.amount;
+  const total = Math.abs(group.reduce((s, t) => s + own(t), 0));
   const kind = group[0].amount < 0 ? 'expense' : 'income';
   const categories = data.categories.filter((c) => c.kind === kind && !c.system && !c.archived);
   const isSplit = !!group[0].splitId;
 
   const [rows, setRows] = useState<Row[]>(() =>
     isSplit
-      ? group.map((t, i) => ({ key: i, categoryId: t.categoryId, text: toText(Math.abs(t.amount)), note: t.note ?? '' }))
+      ? group.map((t, i) => ({ key: i, categoryId: t.categoryId, text: toText(Math.abs(own(t))), note: t.note ?? '' }))
       : [
           { key: 0, categoryId: group[0].categoryId, text: toText(total), note: group[0].note ?? '' },
           { key: 1, categoryId: categories.find((c) => c.id !== group[0].categoryId)?.id ?? group[0].categoryId, text: '', note: '' },

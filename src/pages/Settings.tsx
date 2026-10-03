@@ -21,6 +21,7 @@ import {
   ValidationError,
 } from '../db/repo';
 import { db } from '../db/db';
+import { ExchangeRates } from '../components/ExchangeRates';
 import { disableNativeBiometric, enableNativeBiometric, isNative, nativeBiometricAvailable } from '../native/native';
 import {
   addPasskey,
@@ -39,6 +40,7 @@ import {
 import type { FinanceData, Settings as AppSettings, ThemePreference } from '../db/types';
 import { formatDate, toISO, today } from '../lib/dates';
 import { currencyName, formatMoney, parseMoney } from '../lib/money';
+import { weekdayName } from '../lib/format';
 import { isValidPin, pinSupported } from '../lib/pin';
 import { CURRENCIES, LANGUAGES, t } from '../i18n';
 
@@ -207,6 +209,36 @@ export function Settings({ data }: { data?: FinanceData }) {
               </select>
             )}
           </Field>
+          {settings.language === 'ar' && (
+            <Field label={t('settings.digits')}>
+              {(id) => (
+                <select
+                  id={id}
+                  value={settings.digits ?? 'latn'}
+                  onChange={(e) => updateSettings({ digits: e.target.value as 'latn' | 'arab' })}
+                >
+                  <option value="latn">{t('settings.digitsLatin')}</option>
+                  <option value="arab">{t('settings.digitsArabic')}</option>
+                </select>
+              )}
+            </Field>
+          )}
+          <Field label={t('settings.weekStart')}>
+            {(id) => (
+              <select
+                id={id}
+                value={settings.weekStart ?? 0}
+                onChange={(e) => updateSettings({ weekStart: Number(e.target.value) || undefined })}
+              >
+                <option value={0}>{t('settings.weekStartAuto')}</option>
+                {[1, 6, 7].map((d) => (
+                  <option key={d} value={d}>
+                    {weekdayName(d)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
           <Field label={t('settings.currency')}>
             {(id) => (
               <select id={id} value={settings.currency} onChange={(e) => updateSettings({ currency: e.target.value })}>
@@ -223,6 +255,8 @@ export function Settings({ data }: { data?: FinanceData }) {
           {t('settings.currencyNote')}
         </p>
       </Section>
+
+      <ExchangeRates data={data} />
 
       <Section title={t('settings.payCycle')}>
         <div className="list">

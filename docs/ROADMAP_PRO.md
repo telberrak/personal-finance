@@ -188,6 +188,8 @@ See [SERVER.md](SERVER.md).
 
 ## P12 — French and Arabic release, multi-currency — L
 
+**Status (3 October 2026): done in code.** Complete `fr` and `ar` files (machine-drafted by the developer; a professional review by native speakers, with a financial glossary, is still needed before marketing in those languages), RTL pass with e2e checks in both languages, locale options, multi-currency with ECB rates, French CSV presets. Moroccan and Gulf bank exports have no standard format; they import through column mapping.
+
 - Professional translation of `fr` and `ar` (financial terms reviewed by native speakers), plus a glossary.
 - **RTL quality pass:**
   - every screen at phone and desktop size;

@@ -2,6 +2,7 @@ import type { ISODate } from '../lib/dates';
 import type { Pence } from '../lib/money';
 import type { Frequency } from '../lib/recurring';
 import type { SavedSearch } from '../lib/search';
+import type { FxRates, Native } from '../lib/fx';
 
 export type AccountType = 'current' | 'savings' | 'cash' | 'credit' | 'loan' | 'mortgage' | 'investment' | 'pension' | 'property';
 
@@ -43,6 +44,10 @@ export interface Account {
   spaceId?: string;
   /** Sync user id of whoever shared it; only they can stop sharing it. */
   ownerId?: string;
+  /** ISO currency of the account when not the home currency (P12). */
+  currency?: string;
+  /** View only (never stored): original values when converted to the home currency. */
+  native?: Native;
 }
 
 /** Keys into the category palette in tokens.css (--cat-<color>). */
@@ -100,6 +105,10 @@ export interface Transaction {
   warrantyUntil?: ISODate;
   /** Household the transaction is shared with (set from its account). */
   spaceId?: string;
+  /** Paid in another currency (travel): the amount in that currency; `amount` is what was charged. */
+  foreign?: { amount: Pence; currency: string };
+  /** View only (never stored): the amount in the account's own currency, when converted. */
+  native?: Native;
   createdAt?: number;
   updatedAt?: number;
 }
@@ -207,6 +216,12 @@ export interface Settings {
   savedSearches?: SavedSearch[];
   /** Country whose tax year and headings the tax helper uses (ISO code). Default GB. */
   taxCountry?: string;
+  /** Arabic: Latin (0-9, the default) or Arabic-Indic digits. */
+  digits?: 'latn' | 'arab';
+  /** First day of the week in calendars: 1 Monday … 7 Sunday; undefined follows the language. */
+  weekStart?: number;
+  /** Exchange rates to the home currency, by currency code (P12). */
+  fxRates?: FxRates;
   /** Lock again after this many minutes in the background. */
   lockAfterMinutes: number;
   /** Payees whose "add as bill?" suggestion was dismissed (payee keys). */

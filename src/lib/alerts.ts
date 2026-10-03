@@ -207,7 +207,7 @@ export function computeAlerts(data: FinanceData, now: Date): Alert[] {
         type: 'lowBalance',
         at: nowMs,
         title: t('alerts.lowBalance.title'),
-        body: t('alerts.lowBalance.body', { amount: formatMoney(lowest.balance), days: daysBetween(today, lowest.date) }),
+        body: t('alerts.lowBalance.body', { amount: formatMoney(lowest.balance), count: daysBetween(today, lowest.date) }),
         link: '/reports',
       });
     }

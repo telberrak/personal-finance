@@ -11,6 +11,7 @@ import { startSync } from './sync/engine';
 import { cleanOrphanAttachments } from './db/repo';
 import { useNotifier } from './notify/notifier';
 import { useBankAutoSync } from './banks/banks';
+import { useDailyRates } from './components/ExchangeRates';
 import { Notifications } from './pages/Notifications';
 import { applyLocale } from './i18n';
 import type { FinanceData } from './db/types';
@@ -56,11 +57,12 @@ export function App() {
 function Unlocked() {
   const data = useFinanceData();
   // Language, text direction and number/date formats must be in place before anything renders.
-  if (data) applyLocale(data.settings.language, data.settings.currency, data.settings.hideAmounts);
+  if (data) applyLocale(data.settings.language, data.settings.currency, data.settings.hideAmounts, data.settings.digits);
   useTheme(data?.settings.theme);
   useAutoLock(data?.settings.lockAfterMinutes);
   useNotifier(data);
   useBankAutoSync(data);
+  useDailyRates(data);
   // Sync runs while unlocked (it needs to read and write the data).
   useEffect(() => startSync(), []);
   // Receipts of transactions deleted in an earlier session (after the chance to undo).

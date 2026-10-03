@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { t } from '../i18n';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { inHomeCurrency } from '../lib/fx';
 import { encryptionMiddleware } from './encryption';
 import { outboxMiddleware } from './outbox';
 import {
@@ -164,7 +165,7 @@ export function useFinanceData(): FinanceData | undefined {
       db.ious.toArray(),
       db.settings.get('app'),
     ]);
-    return {
+    return inHomeCurrency({
       // Everyday accounts first, so they are the default wherever an account is picked.
       accounts: accounts.sort(
         (a, b) => ACCOUNT_TYPE_ORDER.indexOf(a.type) - ACCOUNT_TYPE_ORDER.indexOf(b.type) || a.name.localeCompare(b.name),
@@ -181,6 +182,6 @@ export function useFinanceData(): FinanceData | undefined {
       people: people.sort((a, b) => a.name.localeCompare(b.name)),
       ious: ious.sort((a, b) => (a.date < b.date ? 1 : -1)),
       settings: { ...DEFAULT_SETTINGS, ...settings },
-    };
+    });
   });
 }

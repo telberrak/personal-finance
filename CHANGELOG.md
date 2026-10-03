@@ -2,6 +2,13 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.13.0 — P12: French, Arabic and multi-currency
+
+- French and Arabic translations of every screen (first drafts for native-speaker review), with all Arabic plural forms; right-to-left layout; Latin or Arabic-Indic digits; first day of the week per language or chosen.
+- Multi-currency: a currency per account, converted to your home currency for totals, budgets, reports and net worth; exchange rates from the European Central Bank (daily, via the sync server) or typed in; transfers between currencies; purchases paid in another currency.
+- CSV import presets for BoursoBank, BNP Paribas, Société Générale, Crédit Agricole, Crédit Mutuel/CIC, La Banque Postale and Revolut; French column names recognised.
+- Fixes: amounts keep their order inside Arabic text (left-to-right isolates); the low-balance alert showed its key instead of text.
+
 ## 0.12.0 — P11: shared finances
 
 - Households: share chosen accounts (with their transactions and bills) with a partner through a one-use invite link; everything else stays private. End-to-end encrypted with a household key that travels only in the link's #fragment.

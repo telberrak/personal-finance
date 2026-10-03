@@ -119,3 +119,25 @@ describe('payees', () => {
     expect(applyAlias('TESCO STORES', [{ id: '1', from: payeeKey('Tesco Stores'), to: 'Tesco' }])).toBe('Tesco');
   });
 });
+
+describe('French bank exports', () => {
+  it('reads a Crédit Agricole statement: semicolons, comma decimals, separate debit and credit', () => {
+    const csv = [
+      'Date;Libellé;Débit euros;Crédit euros',
+      '02/10/2026;CARTE X1234 CARREFOUR;45,20;',
+      '01/10/2026;VIR SALAIRE;;2 150,00',
+    ].join('\n');
+    const rows = parseCsv(csv);
+    expect(detectPreset(rows[0])?.name).toBe('Crédit Agricole');
+    const parsed = mapRows(rows, guessMapping(rows));
+    expect(parsed.map((r) => [r.date, r.amount])).toEqual([
+      ['2026-10-02', -4520],
+      ['2026-10-01', 215000],
+    ]);
+  });
+
+  it('guesses columns from French names', () => {
+    const rows = parseCsv(['Date;Intitulé;Montant', '03/10/2026;Boulangerie;-3,80'].join('\n'));
+    expect(mapRows(rows, guessMapping(rows))[0]).toMatchObject({ date: '2026-10-03', amount: -380, rawPayee: 'Boulangerie' });
+  });
+});

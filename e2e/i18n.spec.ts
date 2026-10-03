@@ -116,3 +116,39 @@ test('language and currency settings change how amounts look', async ({ page }) 
   await expect(page.getByLabel('Safe to spend')).toContainText('€');
   await expect(page.getByLabel('Safe to spend')).not.toContainText('£');
 });
+
+// Real languages: every screen, no raw keys, no untranslated English in Arabic, no sideways scroll.
+const BRANDS = /^(Ledger|PIN|PDF|CSV|Face ID|Monzo\.me|PayPal\.me|Revolut|Gift Aid|BNC|HTTPS|localhost|APR|ECB)$/;
+for (const lang of ['fr', 'ar'] as const) {
+  test(`every screen works in ${lang === 'fr' ? 'French' : 'Arabic'}`, async ({ page }, info) => {
+    test.skip(info.project.name.endsWith('-dark'), 'one theme is enough');
+    test.setTimeout(90_000);
+    for (const path of SCREENS) {
+      await page.goto(`${path}?locale=${lang}`);
+      await page.locator('main').first().waitFor();
+      await expect(page.locator('html')).toHaveAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+      const problems = await page.evaluate(
+        ({ dataSelector, arabic, brands }) => {
+          const out: string[] = [];
+          const brandRe = new RegExp(brands);
+          const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+          for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+            const el = n.parentElement;
+            if (!el || el.closest('[hidden], script, style') || !el.checkVisibility?.()) continue;
+            const text = (n.textContent ?? '').trim();
+            if (/^[a-z]+(\.[A-Za-z0-9_-]+)+$/.test(text)) out.push(`raw key: ${text}`);
+            if (arabic && !el.closest(dataSelector) && /[A-Za-z]{3}/.test(text) && !/[؀-ۿ]/.test(text)) {
+              const words = text.split(/[\s,·:()]+/).filter((w) => /[A-Za-z]{3}/.test(w));
+              if (!words.every((w) => brandRe.test(w))) out.push(`English: ${text}`);
+            }
+          }
+          return out;
+        },
+        { dataSelector: DATA, arabic: lang === 'ar', brands: BRANDS.source },
+      );
+      expect(problems, path).toEqual([]);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(overflow, `${path} scrolls sideways in ${lang}`).toBeLessThanOrEqual(0);
+    }
+  });
+}

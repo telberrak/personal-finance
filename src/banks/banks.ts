@@ -167,7 +167,8 @@ export function useBankAutoSync(data: FinanceData | undefined) {
 /** Bank balance minus Ledger's balance for the account, when the bank reported one. */
 export function balanceDifference(data: FinanceData, accountId: string, bankBalance: number | null | undefined): number | null {
   const account = data.accounts.find((a) => a.id === accountId);
-  if (!account || bankBalance === null || bankBalance === undefined) return null;
+  // Foreign-currency accounts are converted for totals, so they are not compared here.
+  if (!account || account.native || bankBalance === null || bankBalance === undefined) return null;
   return bankBalance - accountBalance(account, data.transactions);
 }
 

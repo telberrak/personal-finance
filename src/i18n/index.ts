@@ -1,5 +1,7 @@
 import i18next from 'i18next';
+import ar from '../locales/ar.json';
 import en from '../locales/en.json';
+import fr from '../locales/fr.json';
 import { configureFormatting } from '../lib/format';
 import { pseudoLocalise } from './pseudo';
 
@@ -15,12 +17,14 @@ export interface Language {
 }
 
 /**
- * Languages the app can show. French ('fr', formatLocale 'fr-FR') and Arabic ('ar', dir 'rtl',
- * formatLocale 'ar-u-nu-latn' or 'ar' for Arabic-Indic digits) are added here with their
- * translation files in P12.
+ * Languages the app can show. French and Arabic are first translations, to be reviewed by
+ * native speakers (see docs/TRANSLATING.md). Arabic shows Latin digits by default; Settings can
+ * switch to Arabic-Indic digits.
  */
 export const LANGUAGES: Language[] = [
   { code: 'en', name: 'English', dir: 'ltr', formatLocale: 'en-GB' },
+  { code: 'fr', name: 'Français', dir: 'ltr', formatLocale: 'fr-FR' },
+  { code: 'ar', name: 'العربية', dir: 'rtl', formatLocale: 'ar-u-nu-latn' },
   // Pseudo-locales for testing: accented and ~40% longer text exposes hard-coded strings and clipping;
   // the RTL one checks right-to-left layout before real Arabic translations exist.
   { code: 'en-XA', name: 'Ƥśéûðö (test)', dir: 'ltr', formatLocale: 'en-GB', pseudo: true },
@@ -37,6 +41,8 @@ void i18next.init({
   initAsync: false,
   resources: {
     en: { translation: en },
+    fr: { translation: fr },
+    ar: { translation: ar },
     'en-XA': { translation: pseudoResources },
     'ar-XB': { translation: pseudoResources },
   },
@@ -62,11 +68,17 @@ function sessionOverride(): string | undefined {
 
 let arabicFontLoaded = false;
 
+/** The locale used for numbers and dates, with the digits chosen in Settings (Arabic). */
+export function formatLocaleOf(lang: Language, digits?: 'latn' | 'arab'): string {
+  if (lang.code !== 'ar' || !digits) return lang.formatLocale;
+  return digits === 'arab' ? 'ar' : 'ar-u-nu-latn';
+}
+
 /** Applies language, text direction and number/date formatting. Safe to call on every render. */
-export function applyLocale(languageCode: string, currency: string, hideAmounts = false): Language {
+export function applyLocale(languageCode: string, currency: string, hideAmounts = false, digits?: 'latn' | 'arab'): Language {
   const lang = languageOf(sessionOverride() ?? languageCode);
   if (i18next.language !== lang.code) void i18next.changeLanguage(lang.code);
-  configureFormatting({ locale: lang.formatLocale, currency, isolate: lang.dir === 'rtl', hideAmounts });
+  configureFormatting({ locale: formatLocaleOf(lang, digits), currency, isolate: lang.dir === 'rtl', hideAmounts });
   const html = document.documentElement;
   if (html.lang !== lang.code) html.lang = lang.code;
   if (html.dir !== lang.dir) html.dir = lang.dir;

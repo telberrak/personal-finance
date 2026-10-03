@@ -23,7 +23,8 @@ import { equalShare } from '../lib/friends';
 import { takeSharedFiles, type PreparedFile } from '../lib/files';
 import type { FinanceData, Transaction } from '../db/types';
 import { today } from '../lib/dates';
-import { parseMoney } from '../lib/money';
+import { currencyName, parseMoney } from '../lib/money';
+import { CURRENCIES } from '../i18n';
 import { allTags } from '../lib/search';
 import { taxSystem } from '../lib/tax';
 import { formatMoney } from '../lib/money';
@@ -75,12 +76,20 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
 
   const openAccounts = data.accounts.filter((a) => !a.archived || a.id === existing?.accountId);
   const [kind, setKind] = useState<Kind>(initialKind);
-  const [amountText, setAmountText] = useState(existing ? (Math.abs(existing.amount) / 100).toFixed(2) : '');
+  // Foreign-currency accounts are edited in their own currency.
+  const [amountText, setAmountText] = useState(existing ? (Math.abs(existing.native?.amount ?? existing.amount) / 100).toFixed(2) : '');
   const [payee, setPayee] = useState(existing && !existing.transferId ? existing.payee : '');
   const [date, setDate] = useState(existing?.date ?? today());
   const [accountId, setAccountId] = useState(existing?.accountId ?? params.get('account') ?? openAccounts[0]?.id);
   const [fromAccountId, setFromAccountId] = useState(pair.find((x) => x.amount < 0)?.accountId ?? openAccounts[0]?.id);
   const [toAccountId, setToAccountId] = useState(pair.find((x) => x.amount > 0)?.accountId ?? openAccounts[1]?.id);
+  const received = pair.find((x) => x.amount > 0);
+  const [toAmountText, setToAmountText] = useState(received ? ((received.native?.amount ?? received.amount) / 100).toFixed(2) : '');
+  const currencyOf = (accountId?: string) => data.accounts.find((a) => a.id === accountId)?.currency ?? data.settings.currency;
+  const crossCurrency = kind === 'transfer' && currencyOf(fromAccountId) !== currencyOf(toAccountId);
+  // Paid abroad (expenses): the amount in the other currency; the main amount is what was charged.
+  const [foreignCurrency, setForeignCurrency] = useState(existing?.foreign?.currency ?? '');
+  const [foreignText, setForeignText] = useState(existing?.foreign ? (existing.foreign.amount / 100).toFixed(2) : '');
   const [categoryId, setCategoryId] = useState<string | undefined>(existing?.categoryId);
   const [categoryTouched, setCategoryTouched] = useState(!!existing);
   const [note, setNote] = useState(existing?.note ?? '');
@@ -143,7 +152,8 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
     setSaving(true);
     try {
       if (kind === 'transfer') {
-        const input = { fromAccountId: fromAccountId!, toAccountId: toAccountId!, amount, date, note };
+        const toAmount = crossCurrency ? (parseMoney(toAmountText) ?? undefined) : undefined;
+        const input = { fromAccountId: fromAccountId!, toAccountId: toAccountId!, amount, toAmount, date, note };
         if (existing?.transferId) await updateTransfer(existing.transferId, input);
         else await addTransfer(input);
         toast({ message: existing ? t('txForm.transferUpdated') : t('txForm.transferSaved') });
@@ -160,6 +170,10 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
         tags: tagsText.split(','),
         tax: tax || undefined,
         returnBy: kind === 'expense' ? returnBy || undefined : undefined,
+        foreign:
+          kind === 'expense' && foreignCurrency && parseMoney(foreignText)
+            ? { currency: foreignCurrency, amount: parseMoney(foreignText)! }
+            : undefined,
         warrantyUntil: kind === 'expense' ? warrantyUntil || undefined : undefined,
       };
       if (existing) {
@@ -292,6 +306,11 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
                   </select>
                 )}
               </Field>
+              {crossCurrency && (
+                <Field label={t('txForm.amountReceived', { currency: currencyOf(toAccountId) })}>
+                  {(id) => <input id={id} inputMode="decimal" value={toAmountText} onChange={(e) => setToAmountText(e.target.value)} />}
+                </Field>
+              )}
               <Field label={t('fields.date')}>
                 {(id) => <input id={id} type="date" value={date} onChange={(e) => setDate(e.target.value || today())} />}
               </Field>
@@ -445,6 +464,23 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
 
           {kind === 'expense' && (
             <div className="list">
+              <Field label={t('txForm.paidIn')}>
+                {(id) => (
+                  <select id={id} value={foreignCurrency} onChange={(e) => setForeignCurrency(e.target.value)}>
+                    <option value="">{t('txForm.paidInHome')}</option>
+                    {CURRENCIES.filter((c) => c !== currencyOf(accountId)).map((c) => (
+                      <option key={c} value={c}>
+                        {currencyName(c)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+              {foreignCurrency && (
+                <Field label={t('txForm.foreignAmount', { currency: foreignCurrency })}>
+                  {(id) => <input id={id} inputMode="decimal" value={foreignText} onChange={(e) => setForeignText(e.target.value)} />}
+                </Field>
+              )}
               <Field label={t('fields.returnBy')}>
                 {(id) => <input id={id} type="date" value={returnBy} min={date} onChange={(e) => setReturnBy(e.target.value)} />}
               </Field>

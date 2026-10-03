@@ -7,16 +7,26 @@ const MASK = '•••';
 
 /** The currency symbol around a mask, in the locale's order: "£•••", "••• €". */
 function masked(): string {
-  return numberFormat({ style: 'currency', currency: formatConfig().currency, maximumFractionDigits: 0, minimumFractionDigits: 0 })
+  return numberFormat({
+    style: 'currency',
+    currency: formatConfig().currency,
+    currencyDisplay: 'narrowSymbol',
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  })
     .formatToParts(0)
     .map((p) => (p.type === 'integer' ? MASK : p.value))
     .join('');
 }
 
 /** £1,234.50, −£23.40, or +£42.00 when `sign` is set and the amount is positive. Uses the display locale and currency. */
-export function formatMoney(pence: Pence, opts: { sign?: boolean } = {}): string {
+export function formatMoney(pence: Pence, opts: { sign?: boolean; currency?: string } = {}): string {
   if (formatConfig().hideAmounts) return isolate(masked());
-  const body = numberFormat({ style: 'currency', currency: formatConfig().currency }).format(Math.abs(pence) / 100);
+  const body = numberFormat({
+    style: 'currency',
+    currency: opts.currency ?? formatConfig().currency,
+    currencyDisplay: opts.currency ? 'symbol' : 'narrowSymbol',
+  }).format(Math.abs(pence) / 100);
   if (pence < 0) return isolate('−' + body);
   if (opts.sign && pence > 0) return isolate('+' + body);
   return isolate(body);
@@ -26,9 +36,13 @@ export function formatMoney(pence: Pence, opts: { sign?: boolean } = {}): string
 export function formatWhole(pence: Pence): string {
   if (formatConfig().hideAmounts) return isolate(masked());
   return isolate(
-    numberFormat({ style: 'currency', currency: formatConfig().currency, maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(
-      Math.round(pence / 100),
-    ),
+    numberFormat({
+      style: 'currency',
+      currency: formatConfig().currency,
+      currencyDisplay: 'narrowSymbol',
+      maximumFractionDigits: 0,
+      minimumFractionDigits: 0,
+    }).format(Math.round(pence / 100)),
   );
 }
 
@@ -79,7 +93,9 @@ export const MONEY_INPUT_CHARS = /[^\d\u0660-\u0669\u06F0-\u06F9.,\u066B\u066C\s
  */
 export function moneyParts(pence: Pence): { main: string; fraction: string } {
   if (formatConfig().hideAmounts) return { main: isolate(masked()), fraction: '' };
-  const parts = numberFormat({ style: 'currency', currency: formatConfig().currency }).formatToParts(Math.abs(pence) / 100);
+  const parts = numberFormat({ style: 'currency', currency: formatConfig().currency, currencyDisplay: 'narrowSymbol' }).formatToParts(
+    Math.abs(pence) / 100,
+  );
   const at = parts.findIndex((p) => p.type === 'decimal');
   const join = (ps: Intl.NumberFormatPart[]) => ps.map((p) => p.value).join('');
   const sign = pence < 0 ? '−' : '';
@@ -91,7 +107,7 @@ export function moneyParts(pence: Pence): { main: string; fraction: string } {
 
 /** The display currency's symbol: £, €, MAD… */
 export function currencySymbol(): string {
-  const parts = numberFormat({ style: 'currency', currency: formatConfig().currency }).formatToParts(0);
+  const parts = numberFormat({ style: 'currency', currency: formatConfig().currency, currencyDisplay: 'narrowSymbol' }).formatToParts(0);
   return parts.find((p) => p.type === 'currency')?.value ?? formatConfig().currency;
 }
 

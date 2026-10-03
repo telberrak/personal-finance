@@ -7,8 +7,10 @@ import { Field } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
 import { saveAccount, setAccountArchived, ValidationError } from '../db/repo';
 import { LIABILITY_TYPES, type Account, type AccountType, type FinanceData } from '../db/types';
-import { formatMoney, parseMoney } from '../lib/money';
-import { accountBalance, totalBalance } from '../lib/selectors';
+import { currencyName, formatMoney, parseMoney } from '../lib/money';
+import { nativeBalance } from '../lib/fx';
+import { CURRENCIES } from '../i18n';
+import { totalBalance } from '../lib/selectors';
 import { t } from '../i18n';
 
 const TYPES: AccountType[] = ['current', 'savings', 'cash', 'credit', 'loan', 'mortgage', 'investment', 'pension', 'property'];
@@ -46,7 +48,7 @@ export function Accounts({ data }: { data?: FinanceData }) {
 
       <div className="list">
         {open.map((a) => (
-          <AccountRow key={a.id} account={a} balance={accountBalance(a, data.transactions)} onEdit={() => setEditing(a)} />
+          <AccountRow key={a.id} account={a} balance={nativeBalance(a, data.transactions)} onEdit={() => setEditing(a)} />
         ))}
       </div>
       <p className="small muted">
@@ -59,7 +61,7 @@ export function Accounts({ data }: { data?: FinanceData }) {
           <h2 className="section-label">{t('accounts.archived')}</h2>
           <div className="list">
             {archived.map((a) => (
-              <AccountRow key={a.id} account={a} balance={accountBalance(a, data.transactions)} onEdit={() => setEditing(a)} />
+              <AccountRow key={a.id} account={a} balance={nativeBalance(a, data.transactions)} onEdit={() => setEditing(a)} />
             ))}
           </div>
         </section>
@@ -70,6 +72,7 @@ export function Accounts({ data }: { data?: FinanceData }) {
           <AccountEditor
             key={editing === 'new' ? 'new' : editing.id}
             account={editing === 'new' ? undefined : editing}
+            homeCurrency={data.settings.currency}
             onDone={() => setEditing(undefined)}
           />
         )}
@@ -91,24 +94,27 @@ function AccountRow({ account, balance, onEdit }: { account: Account; balance: n
           {account.includeInSafeToSpend && <span className="tag">{t('accounts.everyday')}</span>}
         </span>
       </div>
-      <span className={'amount' + (balance < 0 ? ' text-warn' : '')}>{formatMoney(balance)}</span>
+      <span className={'amount' + (balance < 0 ? ' text-warn' : '')}>{formatMoney(balance, { currency: account.native?.currency })}</span>
     </button>
   );
 }
 
-function AccountEditor({ account, onDone }: { account?: Account; onDone: () => void }) {
+function AccountEditor({ account, onDone, homeCurrency }: { account?: Account; onDone: () => void; homeCurrency: string }) {
   const toast = useToast();
   const [name, setName] = useState(account?.name ?? '');
   const [type, setType] = useState<AccountType>(account?.type ?? 'current');
-  const [openingText, setOpeningText] = useState(account ? (account.openingBalance / 100).toFixed(2) : '0.00');
+  const native = account?.native;
+  const [openingText, setOpeningText] = useState(account ? ((native?.openingBalance ?? account.openingBalance) / 100).toFixed(2) : '0.00');
+  const [currency, setCurrency] = useState(account?.currency ?? '');
   const [everyday, setEveryday] = useState(account?.includeInSafeToSpend ?? true);
   const pounds = (p?: number) => (p === undefined ? '' : (p / 100).toFixed(2));
   const [aprText, setAprText] = useState(account?.apr?.toString() ?? '');
-  const [limitText, setLimitText] = useState(pounds(account?.credit?.limit));
-  const [dueDay, setDueDay] = useState(account?.credit?.dueDay ?? 0);
-  const [statementDay, setStatementDay] = useState(account?.credit?.statementDay ?? 0);
-  const [minText, setMinText] = useState(pounds(account?.credit?.minPayment));
-  const [paymentText, setPaymentText] = useState(pounds(account?.monthlyPayment));
+  const credit = native ? native.credit : account?.credit;
+  const [limitText, setLimitText] = useState(pounds(credit?.limit));
+  const [dueDay, setDueDay] = useState(credit?.dueDay ?? 0);
+  const [statementDay, setStatementDay] = useState(credit?.statementDay ?? 0);
+  const [minText, setMinText] = useState(pounds(credit?.minPayment));
+  const [paymentText, setPaymentText] = useState(pounds(native ? native.monthlyPayment : account?.monthlyPayment));
   const liability = LIABILITY_TYPES.includes(type);
 
   async function submit(e: FormEvent) {
@@ -126,7 +132,8 @@ function AccountEditor({ account, onDone }: { account?: Account; onDone: () => v
         openingBalance: opening,
         includeInSafeToSpend: everyday,
         archived: account?.archived,
-        valuations: account?.valuations,
+        valuations: native ? native.valuations : account?.valuations,
+        currency: currency || undefined,
         apr: liability ? apr : undefined,
         credit:
           type === 'credit'
@@ -172,6 +179,18 @@ function AccountEditor({ account, onDone }: { account?: Account; onDone: () => v
               {TYPES.map((v) => (
                 <option key={v} value={v}>
                   {typeLabel(v)}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+        <Field label={t('accounts.currency')}>
+          {(id) => (
+            <select id={id} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+              <option value="">{t('accounts.homeCurrency', { currency: currencyName(homeCurrency) })}</option>
+              {CURRENCIES.filter((c) => c !== homeCurrency).map((c) => (
+                <option key={c} value={c}>
+                  {currencyName(c)}
                 </option>
               ))}
             </select>

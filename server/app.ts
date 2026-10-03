@@ -22,6 +22,7 @@ import type { Mailer } from './mailer.ts';
 import { bankRoutes, type BankProvider } from './banks.ts';
 import { pushRoutes, type PushSender } from './push.ts';
 import { spaceRoutes } from './spaces.ts';
+import { rateRoutes } from './rates.ts';
 import { RateLimiter } from './rate-limit.ts';
 
 export interface Config {
@@ -58,12 +59,15 @@ export function createApp({
   config,
   push,
   banks,
+  fetchRates,
 }: {
   sql: Sql;
   mailer: Mailer;
   config: Config;
   push?: PushSender;
   banks?: BankProvider;
+  /** For tests: how exchange rates are fetched. */
+  fetchRates?: typeof fetch;
 }) {
   const app = new Hono<Env>().basePath('/api');
   const limiter = new RateLimiter();
@@ -116,6 +120,8 @@ export function createApp({
     }),
   );
   app.use(bodyLimit({ maxSize: 8 * 1024 * 1024, onError: (c) => c.json({ error: 'Too much data in one request.' }, 413) }));
+
+  rateRoutes(app as unknown as Hono, fetchRates);
 
   app.get('/health', async (c) => {
     await sql.query('SELECT 1');

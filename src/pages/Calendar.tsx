@@ -4,14 +4,14 @@ import { Loading, MonthSwitcher, PageHeader } from '../components/Layout';
 import type { FinanceData } from '../db/types';
 import { t } from '../i18n';
 import { calendarMonth, type CalendarDay } from '../lib/calendar';
-import { dateFormat } from '../lib/format';
+import { dateFormat, localeWeekStart } from '../lib/format';
 import { formatDay, formatLong, shiftMonth, startOfMonth, today } from '../lib/dates';
 import { formatMoney, formatWhole } from '../lib/money';
 
-/** Weekday names in the display language, starting on Monday. */
-function weekdays(): string[] {
+/** Weekday names in the display language, starting on `first` (1 Monday … 7 Sunday). */
+function weekdays(first: number): string[] {
   const f = dateFormat({ weekday: 'short' });
-  return Array.from({ length: 7 }, (_, i) => f.format(new Date(2024, 0, 1 + i))); // 1 Jan 2024 was a Monday
+  return Array.from({ length: 7 }, (_, i) => f.format(new Date(2024, 0, ((first - 1 + i) % 7) + 1))); // 1 Jan 2024 was a Monday
 }
 
 export function Calendar({ data }: { data?: FinanceData }) {
@@ -19,11 +19,13 @@ export function Calendar({ data }: { data?: FinanceData }) {
   const ref = today();
   const month = params.get('month') ?? startOfMonth(ref);
   const [selected, setSelected] = useState<string>(ref);
-  const weeks = useMemo(() => (data ? calendarMonth(data, month, ref) : []), [data, month, ref]);
+  const first = data?.settings.weekStart ?? localeWeekStart();
+  // calendarMonth counts days like Date#getDay: 0 is Sunday.
+  const weeks = useMemo(() => (data ? calendarMonth(data, month, ref, first % 7) : []), [data, month, ref, first]);
   if (!data) return <Loading />;
   const days = weeks.flat();
   const day = days.find((d) => d.date === selected) ?? days.find((d) => d.inMonth)!;
-  const names = weekdays();
+  const names = weekdays(first);
 
   return (
     <main className="screen">

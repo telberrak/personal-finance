@@ -1,6 +1,8 @@
 # Languages and translation
 
-Ledger ships in English. The code is ready for other languages, French and Arabic (right to left) first: adding one means adding a translation file, not changing screens.
+Ledger ships in English, French and Arabic (right to left). Adding a language means adding a translation file, not changing screens.
+
+**Status of the translations:** `fr.json` and `ar.json` are complete first drafts. Before promoting the app in those languages, have native speakers review them, especially financial terms (see the glossary below) and the Arabic plural forms.
 
 ## How it works
 
@@ -25,6 +27,23 @@ Ledger ships in English. The code is ready for other languages, French and Arabi
    - Arabic: `{ code: 'ar', name: 'العربية', dir: 'rtl', formatLocale: 'ar-u-nu-latn' }` (Latin digits), or `'ar'` for Arabic-Indic digits.
 4. Run `npm test`. The key test fails if a key used in the code is missing from `en.json` or a plural set is incomplete.
 5. Run the e2e suite and look at screens in the new language at phone and desktop sizes.
+
+## Glossary (keep consistent)
+
+| English                             | French                                    | Arabic                           |
+| ----------------------------------- | ----------------------------------------- | -------------------------------- |
+| Safe to spend                       | Disponible                                | المتاح للإنفاق                   |
+| Bill (direct debit, standing order) | Facture (prélèvement, virement permanent) | فاتورة (خصم مباشر، أمر دفع دائم) |
+| Budget                              | Budget                                    | الميزانية                        |
+| Payday                              | Jour de paie                              | يوم الراتب                       |
+| Transfer                            | Virement                                  | تحويل                            |
+| Net worth                           | Patrimoine net                            | صافي الثروة                      |
+| Recovery key                        | Clé de récupération                       | مفتاح الاسترداد                  |
+| Household                           | Foyer                                     | الأسرة                           |
+
+## Checks
+
+`src/i18n/i18n.test.ts` fails when a French or Arabic string is missing, an Arabic plural form is missing, or a translation uses a `{{placeholder}}` the English does not. `e2e/i18n.spec.ts` opens every screen in French and Arabic (`?locale=fr`, `?locale=ar`) and fails on raw keys, untranslated English in Arabic, or sideways scrolling.
 
 ## Writing new screens
 

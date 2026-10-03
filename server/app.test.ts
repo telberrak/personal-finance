@@ -324,3 +324,14 @@ describe('households', () => {
     expect(await sql.query('SELECT 1 FROM space_records')).toHaveLength(0);
   });
 });
+
+it('serves ECB exchange rates, cached', async () => {
+  let calls = 0;
+  const xml = `<Cube><Cube time='2026-10-02'><Cube currency='USD' rate='1.0800'/><Cube currency='GBP' rate='0.8600'/></Cube></Cube>`;
+  const fetchRates = (async () => (calls++, new Response(xml))) as unknown as typeof fetch;
+  app = createApp({ sql, mailer, fetchRates, config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] } });
+  const body: { date: string; rates: Record<string, number> } = await (await call('GET', '/rates')).json();
+  expect(body).toEqual({ date: '2026-10-02', rates: { USD: 1.08, GBP: 0.86 } });
+  await call('GET', '/rates');
+  expect(calls).toBe(1);
+});

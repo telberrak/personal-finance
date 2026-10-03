@@ -36,7 +36,20 @@ export function TransactionRow({ tx, category, accountName }: { tx: Transaction;
           ))}
         </span>
       </div>
-      <span className={'amount' + (tx.amount > 0 && !tx.transferId ? ' amount--in' : '')}>{formatMoney(tx.amount, { sign: true })}</span>
+      <span className="stack" style={{ gap: 0, alignItems: 'flex-end' }}>
+        <span className={'amount' + (tx.amount > 0 && !tx.transferId ? ' amount--in' : '')}>
+          {tx.native
+            ? formatMoney(tx.native.amount!, { sign: true, currency: tx.native.currency })
+            : formatMoney(tx.amount, { sign: true })}
+        </span>
+        {(tx.native || tx.foreign) && (
+          <span className="small muted num">
+            {tx.native
+              ? formatMoney(tx.amount, { sign: true })
+              : formatMoney(-tx.foreign!.amount, { sign: true, currency: tx.foreign!.currency })}
+          </span>
+        )}
+      </span>
     </Link>
   );
 }

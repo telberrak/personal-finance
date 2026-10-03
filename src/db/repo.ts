@@ -139,7 +139,7 @@ async function spaceOf(accountId: string): Promise<string | undefined> {
   return (await db.accounts.get(accountId))?.spaceId;
 }
 
-export async function addTransaction(input: NewTransaction): Promise<string> {
+export async function addTransaction({ native: _view, ...input }: NewTransaction): Promise<string> {
   const spaceId = await spaceOf(input.accountId);
   const t = {
     spaceId,
@@ -158,7 +158,7 @@ export async function addTransaction(input: NewTransaction): Promise<string> {
 /** Fields every piece of a split shares; editing one piece's copy updates them all. */
 const SHARED_SPLIT_FIELDS = ['payee', 'date', 'time', 'accountId'] as const;
 
-export async function updateTransaction(id: string, patch: Partial<NewTransaction>): Promise<void> {
+export async function updateTransaction(id: string, { native: _view, ...patch }: Partial<NewTransaction>): Promise<void> {
   await db.transaction('rw', db.transactions, async () => {
     const current = await db.transactions.get(id);
     check(current, 'errors.transactionNotFound');
@@ -173,7 +173,7 @@ export async function updateTransaction(id: string, patch: Partial<NewTransactio
     if (current.splitId) {
       const shared = Object.fromEntries(SHARED_SPLIT_FIELDS.filter((k) => k in patch).map((k) => [k, next[k]]));
       if (Object.keys(shared).length) {
-        await db.transactions.filter((t) => t.splitId === current.splitId && t.id !== id).modify(shared);
+        await db.transactions.filter((t) => t.splitId === current.splitId && t.id !== id).modify(shared as Partial<Transaction>);
       }
     }
   });
@@ -443,6 +443,8 @@ export interface TransferInput {
   fromAccountId: string;
   toAccountId: string;
   amount: Pence;
+  /** Amount received, when the two accounts hold different currencies. */
+  toAmount?: Pence;
   date: ISODate;
   note?: string;
 }
@@ -468,7 +470,7 @@ async function transferPair(input: TransferInput, transferId: string, ids?: [str
       id: ids?.[1] ?? newId(),
       accountId: to.id,
       spaceId: to.spaceId,
-      amount: input.amount,
+      amount: input.toAmount ?? input.amount,
       payee: t('transactions.transferFrom', { name: from.name }),
     },
   ];
@@ -495,7 +497,7 @@ export async function updateTransfer(transferId: string, input: TransferInput): 
 
 export type AccountInput = Omit<Account, 'id'> & { id?: string };
 
-export async function saveAccount(input: AccountInput): Promise<string> {
+export async function saveAccount({ native: _view, ...input }: AccountInput): Promise<string> {
   check(input.name.trim(), 'errors.accountNameRequired');
   check(isPence(input.openingBalance), 'errors.openingNotAmount');
   const id = input.id ?? newId();

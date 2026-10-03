@@ -37,7 +37,7 @@ const col = (header: string[], ...names: string[]) => {
   return undefined;
 };
 
-/** Common UK bank exports. Detected by their header row; anything else uses guessMapping. */
+/** Common UK and French bank exports. Detected by their header row; anything else uses guessMapping. */
 export const PRESETS: BankPreset[] = [
   {
     id: 'monzo',
@@ -87,6 +87,71 @@ export const PRESETS: BankPreset[] = [
     signature: ['date', 'type', 'description', 'value', 'balance'],
     build: (h) => ({ date: col(h, 'date'), description: col(h, 'description'), amount: col(h, 'value'), dateFormat: 'dmy' }),
   },
+  // France (semicolon-separated, comma decimals, day/month/year: handled by the CSV reader and parseAmount).
+  {
+    id: 'boursobank',
+    name: 'BoursoBank',
+    signature: ['dateop', 'label', 'amount'],
+    build: (h) => ({ date: col(h, 'dateop'), description: col(h, 'label'), amount: col(h, 'amount'), dateFormat: 'ymd' }),
+  },
+  {
+    id: 'bnp',
+    name: 'BNP Paribas',
+    signature: ['date opération', 'libellé opération', 'montant opération'],
+    build: (h) => ({
+      date: col(h, 'date opération'),
+      description: col(h, 'libellé opération'),
+      amount: col(h, 'montant opération'),
+      dateFormat: 'dmy',
+    }),
+  },
+  {
+    id: 'societe-generale',
+    name: 'Société Générale',
+    signature: ["date de l'opération", 'libellé', "montant de l'opération"],
+    build: (h) => ({
+      date: col(h, "date de l'opération"),
+      description: col(h, 'libellé'),
+      amount: col(h, "montant de l'opération"),
+      dateFormat: 'dmy',
+    }),
+  },
+  {
+    id: 'credit-agricole',
+    name: 'Crédit Agricole',
+    signature: ['date', 'libellé', 'débit euros', 'crédit euros'],
+    build: (h) => ({
+      date: col(h, 'date'),
+      description: col(h, 'libellé'),
+      moneyOut: col(h, 'débit euros'),
+      moneyIn: col(h, 'crédit euros'),
+      dateFormat: 'dmy',
+    }),
+  },
+  {
+    id: 'credit-mutuel',
+    name: 'Crédit Mutuel / CIC',
+    signature: ['date', 'date de valeur', 'débit', 'crédit', 'libellé'],
+    build: (h) => ({
+      date: col(h, 'date'),
+      description: col(h, 'libellé'),
+      moneyOut: col(h, 'débit'),
+      moneyIn: col(h, 'crédit'),
+      dateFormat: 'dmy',
+    }),
+  },
+  {
+    id: 'banque-postale',
+    name: 'La Banque Postale',
+    signature: ['date', 'libellé', 'montant(euros)'],
+    build: (h) => ({ date: col(h, 'date'), description: col(h, 'libellé'), amount: col(h, 'montant(euros)'), dateFormat: 'dmy' }),
+  },
+  {
+    id: 'revolut',
+    name: 'Revolut',
+    signature: ['type', 'product', 'started date', 'description', 'amount'],
+    build: (h) => ({ date: col(h, 'started date'), description: col(h, 'description'), amount: col(h, 'amount'), dateFormat: 'ymd' }),
+  },
 ];
 
 export function detectPreset(header: string[]): BankPreset | undefined {
@@ -111,14 +176,15 @@ export function guessMapping(rows: string[][]): ColumnMapping {
     const i = first.findIndex((h) => re.test(h));
     return i >= 0 ? i : undefined;
   };
-  const moneyOut = find(/paid out|debit|money out|withdraw/i);
-  const moneyIn = find(/paid in|credit|money in|deposit/i);
-  const amount = find(/^(amount|value)|amount/i);
+  // English and French column names; Arabic-language exports usually use one of these too.
+  const moneyOut = find(/paid out|debit|débit|money out|withdraw|sortie/i);
+  const moneyIn = find(/paid in|credit|crédit|money in|deposit|entrée/i);
+  const amount = find(/^(amount|value|montant)|amount|montant/i);
   const date = find(/date/i) ?? 0;
   const mapping: ColumnMapping = {
     hasHeader: true,
     date,
-    description: find(/desc|payee|name|memo|counter ?party|narrative|details|merchant|reference/i) ?? 1,
+    description: find(/desc|payee|name|memo|counter ?party|narrative|details|merchant|reference|libell|intitul/i) ?? 1,
     dateFormat: guessDateFormat(rows.slice(1).map((r) => r[date] ?? '')),
     invertAmount: false,
   };
