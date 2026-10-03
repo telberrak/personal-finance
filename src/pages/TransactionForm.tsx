@@ -6,7 +6,18 @@ import { catVar } from '../components/rows';
 import { Sheet } from '../components/ui/Dialog';
 import { Field, MoneyInput } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
-import { addTransaction, addTransfer, deleteTransaction, saveRule, updateTransaction, updateTransfer, ValidationError } from '../db/repo';
+import {
+  addAttachment,
+  addTransaction,
+  addTransfer,
+  deleteTransaction,
+  saveRule,
+  updateTransaction,
+  updateTransfer,
+  ValidationError,
+} from '../db/repo';
+import { Receipts } from '../components/Receipts';
+import type { PreparedFile } from '../lib/files';
 import type { FinanceData, Transaction } from '../db/types';
 import { today } from '../lib/dates';
 import { parseMoney } from '../lib/money';
@@ -72,6 +83,9 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
   const [note, setNote] = useState(existing?.note ?? '');
   const [tagsText, setTagsText] = useState(existing?.tags?.join(', ') ?? '');
   const [tax, setTax] = useState(existing?.tax ?? '');
+  const [returnBy, setReturnBy] = useState(existing?.returnBy ?? '');
+  const [warrantyUntil, setWarrantyUntil] = useState(existing?.warrantyUntil ?? '');
+  const [pending, setPending] = useState<PreparedFile[]>([]);
   const transactions = data?.transactions;
   const knownTags = useMemo(() => allTags(transactions ?? []), [transactions]);
   const [saving, setSaving] = useState(false);
@@ -135,6 +149,8 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
         note,
         tags: tagsText.split(','),
         tax: tax || undefined,
+        returnBy: kind === 'expense' ? returnBy || undefined : undefined,
+        warrantyUntil: kind === 'expense' ? warrantyUntil || undefined : undefined,
       };
       if (existing) {
         await updateTransaction(existing.id, fields);
@@ -153,6 +169,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
         });
       } else {
         const id = await addTransaction({ ...fields, time: date === today() ? nowTime() : undefined });
+        for (const file of pending) await addAttachment({ ...file, transactionId: id });
         toast({
           message: t(`txForm.saved.${kind}`),
           action: {
@@ -379,6 +396,31 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {kind !== 'transfer' && (
+            <Receipts
+              transactionId={existing?.id}
+              pending={pending}
+              setPending={setPending}
+              onRead={(guess) => {
+                if (guess.amount !== undefined) setAmountText((guess.amount / 100).toFixed(2));
+                if (guess.date) setDate(guess.date);
+                if (guess.merchant && !payee.trim()) onPayeeChange(guess.merchant);
+                toast({ message: t('receipts.filled') });
+              }}
+            />
+          )}
+
+          {kind === 'expense' && (
+            <div className="list">
+              <Field label={t('fields.returnBy')}>
+                {(id) => <input id={id} type="date" value={returnBy} min={date} onChange={(e) => setReturnBy(e.target.value)} />}
+              </Field>
+              <Field label={t('fields.warrantyUntil')}>
+                {(id) => <input id={id} type="date" value={warrantyUntil} min={date} onChange={(e) => setWarrantyUntil(e.target.value)} />}
+              </Field>
             </div>
           )}
 

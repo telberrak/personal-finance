@@ -7,7 +7,8 @@
  */
 export const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
-  "script-src 'self'",
+  // WebAssembly (on-device receipt reading) needs 'wasm-unsafe-eval'; it does not allow JavaScript eval.
+  "script-src 'self' 'wasm-unsafe-eval'",
   "style-src 'self'",
   "style-src-attr 'unsafe-inline'",
   "img-src 'self' data: blob:",

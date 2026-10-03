@@ -165,6 +165,8 @@ See [SERVER.md](SERVER.md).
 
 ## P9 — Receipts and attachments — M
 
+**Status (3 October 2026): done.** Attachments (encrypted, synced), on-device OCR with no cloud service, return-by and warranty reminders. A cloud OCR option was not added: on-device reading covers printed receipts, and avoids sending images anywhere.
+
 - Attach photos or PDFs to a transaction, stored encrypted (synced after P3).
 - Warranty and return-by reminders on purchases.
 - Optional OCR of amount, date and merchant: on-device (Tesseract.js) first, a cloud service only with consent.

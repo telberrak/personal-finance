@@ -12,6 +12,7 @@ import {
   type Category,
   type FinanceData,
   type Goal,
+  type Attachment,
   type BankConnection,
   type ImportBatch,
   type KeyEntry,
@@ -51,6 +52,7 @@ export class FinanceDB extends Dexie {
   syncState!: EntityTable<SyncState, 'id'>;
   notices!: EntityTable<Notice, 'id'>;
   bankConnections!: EntityTable<BankConnection, 'id'>;
+  attachments!: EntityTable<Attachment, 'id'>;
 
   constructor(name = 'ledger') {
     super(name);
@@ -108,6 +110,8 @@ export class FinanceDB extends Dexie {
     this.version(5).stores({ notices: 'id' });
     // v6: Open Banking connections (synced).
     this.version(6).stores({ bankConnections: 'id' });
+    // v7: receipts and documents attached to transactions (P9).
+    this.version(7).stores({ attachments: 'id, transactionId' });
 
     this.use(encryptionMiddleware);
     this.use(outboxMiddleware);

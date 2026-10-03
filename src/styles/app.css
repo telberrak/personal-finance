@@ -1958,3 +1958,43 @@ dialog::backdrop {
     border: 1px solid #ccc;
   }
 }
+
+/* Receipts and documents on a transaction. */
+.receipts {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.receipt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.receipt-thumb {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+}
+.receipt-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.receipt-doc {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.receipt-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -23,12 +23,23 @@ export const ALERT_TYPES = [
   'unusual',
   'trialEnding',
   'renewal',
+  'returnBy',
+  'warranty',
   'bankConsent',
 ] as const;
 export type AlertType = (typeof ALERT_TYPES)[number];
 
 /** Types that can be scheduled ahead and pushed while the app is closed. */
-export const SCHEDULED_TYPES = new Set<AlertType>(['billDue', 'payday', 'cardDue', 'trialEnding', 'renewal', 'bankConsent']);
+export const SCHEDULED_TYPES = new Set<AlertType>([
+  'billDue',
+  'payday',
+  'cardDue',
+  'trialEnding',
+  'renewal',
+  'returnBy',
+  'warranty',
+  'bankConsent',
+]);
 
 export interface Alert {
   /** Stable: the same event always has the same id, so it is shown and notified once. */
@@ -198,6 +209,30 @@ export function computeAlerts(data: FinanceData, now: Date): Alert[] {
         title: t('alerts.lowBalance.title'),
         body: t('alerts.lowBalance.body', { amount: formatMoney(lowest.balance), days: daysBetween(today, lowest.date) }),
         link: '/reports',
+      });
+    }
+  }
+
+  // Purchases: two days before the return window closes, a month before the warranty ends.
+  for (const tx of data.transactions) {
+    if (tx.returnBy && tx.returnBy >= today && daysBetween(today, tx.returnBy) <= 8 + 2) {
+      out.push({
+        id: `returnBy:${tx.id}:${tx.returnBy}`,
+        type: 'returnBy',
+        at: at(addDays(tx.returnBy, -2), '09:00'),
+        title: t('alerts.returnBy.title', { name: tx.payee }),
+        body: t('alerts.returnBy.body', { amount: formatMoney(-tx.amount) }),
+        link: `/transactions/${tx.id}`,
+      });
+    }
+    if (tx.warrantyUntil && tx.warrantyUntil >= today && daysBetween(today, tx.warrantyUntil) <= 8 + 30) {
+      out.push({
+        id: `warranty:${tx.id}:${tx.warrantyUntil}`,
+        type: 'warranty',
+        at: at(addDays(tx.warrantyUntil, -30), '09:00'),
+        title: t('alerts.warranty.title', { name: tx.payee }),
+        body: t('alerts.warranty.body'),
+        link: `/transactions/${tx.id}`,
       });
     }
   }

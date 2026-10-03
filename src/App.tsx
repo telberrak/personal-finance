@@ -8,6 +8,7 @@ import { useTheme } from './components/useTheme';
 import { useFinanceData } from './db/db';
 import { useSecurityMode } from './db/security';
 import { startSync } from './sync/engine';
+import { cleanOrphanAttachments } from './db/repo';
 import { useNotifier } from './notify/notifier';
 import { useBankAutoSync } from './banks/banks';
 import { Notifications } from './pages/Notifications';
@@ -59,6 +60,8 @@ function Unlocked() {
   useBankAutoSync(data);
   // Sync runs while unlocked (it needs to read and write the data).
   useEffect(() => startSync(), []);
+  // Receipts of transactions deleted in an earlier session (after the chance to undo).
+  useEffect(() => void cleanOrphanAttachments().catch(() => undefined), []);
 
   let content;
   if (!data) content = <Loading />;

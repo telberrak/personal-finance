@@ -53,7 +53,9 @@
     "splitAmountLocked": "Change the amounts of a split with Edit split.",
     "splitPartAmount": "Every part needs an amount.",
     "trialDate": "Enter the date the free trial ends.",
-    "tagRequired": "Enter a tag."
+    "tagRequired": "Enter a tag.",
+    "attachmentType": "Attach a photo (JPEG, PNG, WebP) or a PDF.",
+    "attachmentSize": "That file is too large. Attach files of up to 2 MB."
   },
   "transactions": {
     "transferTo": "Transfer to {{name}}",
@@ -457,7 +459,9 @@
     "tags": "Tags",
     "tagsPlaceholder": "Holiday 2027, Work expense",
     "tax": "Tax",
-    "taxNone": "Not for tax"
+    "taxNone": "Not for tax",
+    "returnBy": "Return by",
+    "warrantyUntil": "Warranty until"
   },
   "goals": {
     "title": "Goals",
@@ -940,11 +944,21 @@
       "lowBalance": "Balance warning",
       "unusual": "Unusual payment",
       "body": "Open Ledger to see the details.",
-      "cardDue": "A card payment is due soon"
+      "cardDue": "A card payment is due soon",
+      "returnBy": "A return window closes soon",
+      "warranty": "A warranty ends next month"
     },
     "cardDue": {
       "title": "{{name}} payment due in 3 days",
       "body": "Pay {{amount}} in full to avoid interest."
+    },
+    "returnBy": {
+      "title": "Last days to return {{name}}",
+      "body": "The return window for this {{amount}} purchase closes in 2 days."
+    },
+    "warranty": {
+      "title": "{{name}} warranty ends in a month",
+      "body": "Check it still works, and claim before the warranty ends."
     }
   },
   "notifications": {
@@ -968,7 +982,9 @@
       "trialEnding": "Free trial ending",
       "renewal": "Yearly payment renewing",
       "bankConsent": "Bank connection expiring",
-      "cardDue": "Credit card payment due"
+      "cardDue": "Credit card payment due",
+      "returnBy": "Return window closing",
+      "warranty": "Warranty ending"
     },
     "quietFrom": "Quiet from",
     "quietTo": "Quiet until",
@@ -1168,5 +1184,19 @@
       "donations": "Donations (dons)",
       "childcare": "Childcare costs (frais de garde)"
     }
+  },
+  "receipts": {
+    "title": "Receipts and documents",
+    "add": "Add photo or PDF",
+    "addFailed": "Could not add that file.",
+    "open": "Open {{name}}",
+    "remove": "Remove {{name}}",
+    "pdf": "PDF",
+    "read": "Read receipt",
+    "reading": "Reading… {{percent}}%",
+    "readFailed": "Could not read the receipt.",
+    "nothingFound": "No amount or date found on that receipt.",
+    "filled": "Filled in from the receipt. Check the details.",
+    "note": "Photos are compressed and stored encrypted on your device. Reading a receipt happens on your device too."
   }
 }

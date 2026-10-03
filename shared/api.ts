@@ -9,8 +9,10 @@ export const API_VERSION = 1;
 export const LIMITS = {
   changesPerPush: 500,
   changesPerPull: 500,
-  /** Characters of one encrypted record (base64). */
-  blobChars: 256 * 1024,
+  /** Characters of one encrypted record (base64). Attachments are the largest records. */
+  blobChars: 4 * 1024 * 1024,
+  /** Characters of all records in one push, kept under the server's request limit. */
+  pushChars: 6 * 1024 * 1024,
   /** Characters of the encrypted vault envelope. */
   envelopeChars: 4096,
   deviceNameChars: 80,

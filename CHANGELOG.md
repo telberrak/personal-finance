@@ -2,6 +2,13 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.10.0 — P9: receipts and attachments
+
+- Attach photos and PDFs to transactions; photos are resized and compressed on the device, stored encrypted and synced end-to-end encrypted.
+- Read a receipt on the device (Tesseract, served by the app itself): fills in the amount, date and shop.
+- Return-by and warranty dates on purchases, with reminders.
+- Security: the CSP now allows `'wasm-unsafe-eval'` (WebAssembly only, not JavaScript eval).
+
 ## 0.9.0 — P8: cash-flow calendar and deeper reports
 
 - Calendar: a month grid with bills, paydays and each day's balance (forecast ahead, up to three months), with day details.

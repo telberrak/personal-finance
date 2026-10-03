@@ -23,6 +23,7 @@ import {
   type Rule,
   type Settings,
   type Transaction,
+  type Attachment,
 } from './types';
 
 export class ValidationError extends Error {
@@ -42,6 +43,7 @@ const ALL_TABLES = () => [
   db.importBatches,
   db.goals,
   db.bankConnections,
+  db.attachments,
 ];
 
 /** Throws a ValidationError with the translated message for `key` (under errors.* in the locale files). */
@@ -100,6 +102,7 @@ export async function eraseAllData(): Promise<void> {
       db.importBatches.clear(),
       db.goals.clear(),
       db.bankConnections.clear(),
+      db.attachments.clear(),
     ]);
     await db.accounts.put({ id: newId(), name: t('accounts.defaultName'), type: 'current', openingBalance: 0, includeInSafeToSpend: true });
     if ((await db.categories.count()) === 0) await db.categories.bulkPut([...defaultCategories(), transferCategory()]);
@@ -126,6 +129,7 @@ function validateTransaction(t: NewTransaction): void {
   check(t.payee.trim(), 'errors.payeeRequired');
   check(t.accountId, 'errors.accountRequired');
   check(t.categoryId, 'errors.categoryRequired');
+  for (const d of [t.returnBy, t.warrantyUntil]) check(!d || ISO_DATE.test(d), 'errors.invalidDateValue', { date: d });
 }
 
 export async function addTransaction(input: NewTransaction): Promise<string> {
@@ -162,6 +166,37 @@ export async function updateTransaction(id: string, patch: Partial<NewTransactio
         await db.transactions.filter((t) => t.splitId === current.splitId && t.id !== id).modify(shared);
       }
     }
+  });
+}
+
+// ---------------------------------------------------------------- attachments
+
+export const ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+/** Per file, after compression: keeps sync and backups reasonable. */
+export const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
+
+export async function addAttachment(input: Omit<Attachment, 'id' | 'createdAt'>): Promise<string> {
+  check(ATTACHMENT_TYPES.includes(input.type), 'errors.attachmentType');
+  check(input.size <= MAX_ATTACHMENT_BYTES, 'errors.attachmentSize');
+  const id = newId();
+  await db.attachments.add({ ...input, name: input.name.slice(0, 120), id, createdAt: Date.now() });
+  return id;
+}
+
+export async function deleteAttachment(id: string): Promise<void> {
+  await db.attachments.delete(id);
+}
+
+/**
+ * Removes attachments whose transaction no longer exists. Run at start-up rather than on delete,
+ * so undoing a deletion keeps its receipts.
+ */
+export async function cleanOrphanAttachments(): Promise<number> {
+  return db.transaction('rw', db.attachments, db.transactions, async () => {
+    const ids = new Set((await db.transactions.toCollection().primaryKeys()) as string[]);
+    const orphans = (await db.attachments.toArray()).filter((a) => !ids.has(a.transactionId)).map((a) => a.id);
+    await db.attachments.bulkDelete(orphans);
+    return orphans.length;
   });
 }
 
@@ -655,26 +690,52 @@ export interface Backup {
 }
 
 export async function createBackup(): Promise<Backup> {
-  const [accounts, categories, transactions, recurring, budgets, rules, payeeAliases, importBatches, goals, bankConnections, settings] =
-    await Promise.all([
-      db.accounts.toArray(),
-      db.categories.toArray(),
-      db.transactions.toArray(),
-      db.recurring.toArray(),
-      db.budgets.toArray(),
-      db.rules.toArray(),
-      db.payeeAliases.toArray(),
-      db.importBatches.toArray(),
-      db.goals.toArray(),
-      db.bankConnections.toArray(),
-      // Lock settings belong to this device; the keyring is never exported.
-      db.settings.toArray().then((all) => all.map(({ pinHash: _h, pinSalt: _s, lockAfterMinutes: _l, ...rest }) => rest)),
-    ]);
+  const [
+    accounts,
+    categories,
+    transactions,
+    recurring,
+    budgets,
+    rules,
+    payeeAliases,
+    importBatches,
+    goals,
+    bankConnections,
+    attachments,
+    settings,
+  ] = await Promise.all([
+    db.accounts.toArray(),
+    db.categories.toArray(),
+    db.transactions.toArray(),
+    db.recurring.toArray(),
+    db.budgets.toArray(),
+    db.rules.toArray(),
+    db.payeeAliases.toArray(),
+    db.importBatches.toArray(),
+    db.goals.toArray(),
+    db.bankConnections.toArray(),
+    db.attachments.toArray(),
+    // Lock settings belong to this device; the keyring is never exported.
+    db.settings.toArray().then((all) => all.map(({ pinHash: _h, pinSalt: _s, lockAfterMinutes: _l, ...rest }) => rest)),
+  ]);
   return {
     format: BACKUP_FORMAT,
     version: 2,
     exportedAt: new Date().toISOString(),
-    data: { accounts, categories, transactions, recurring, budgets, rules, payeeAliases, importBatches, goals, bankConnections, settings },
+    data: {
+      accounts,
+      categories,
+      transactions,
+      recurring,
+      budgets,
+      rules,
+      payeeAliases,
+      importBatches,
+      goals,
+      bankConnections,
+      attachments,
+      settings,
+    },
   };
 }
 
@@ -709,6 +770,7 @@ export async function restoreBackup(json: string): Promise<{ transactions: numbe
     await db.importBatches.bulkPut(arr('importBatches'));
     await db.goals.bulkPut(arr('goals'));
     await db.bankConnections.bulkPut(arr('bankConnections'));
+    await db.attachments.bulkPut(arr('attachments'));
     const restored = (arr('settings') as Partial<Settings>[])[0] ?? {};
     await db.settings.put({
       ...DEFAULT_SETTINGS,

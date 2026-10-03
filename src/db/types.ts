@@ -91,6 +91,9 @@ export interface Transaction {
   tags?: string[];
   /** Tax heading id (see lib/tax), for the tax helper. */
   tax?: string;
+  /** Purchases: last day to return it, and when the warranty ends (reminders before both). */
+  returnBy?: ISODate;
+  warrantyUntil?: ISODate;
   createdAt?: number;
   updatedAt?: number;
 }
@@ -310,4 +313,18 @@ export interface BankConnectionAccount {
   lastSyncedAt?: number;
   /** The balance the bank last reported, to compare with Ledger's. */
   bankBalance?: number | null;
+}
+
+/** A receipt photo or document attached to a transaction. Encrypted at rest and synced like the rest. */
+export interface Attachment {
+  id: string;
+  transactionId: string;
+  name: string;
+  /** MIME type: image/jpeg, image/png, image/webp or application/pdf. */
+  type: string;
+  /** Bytes, after compression. */
+  size: number;
+  /** base64 (no data: prefix). */
+  data: string;
+  createdAt: number;
 }

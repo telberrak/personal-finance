@@ -1,11 +1,13 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { ocrAssets } from './ocr-assets.ts';
 import { SECURITY_HEADERS } from './security-headers.ts';
 
 export default defineConfig({
   plugins: [
     react(),
+    ocrAssets(),
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
@@ -14,6 +16,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png}', 'assets/geist-*.woff2'],
         // Shows Web Push reminders and opens the app when one is tapped.
         importScripts: ['push-sw.js'],
+        // Receipt reading (12 MB) is not pre-cached: it is cached the first time it is used.
+        globIgnores: ['ocr/**'],
+        runtimeCaching: [{ urlPattern: /\/ocr\//, handler: 'CacheFirst', options: { cacheName: 'ocr' } }],
       },
       manifest: {
         name: 'Ledger',

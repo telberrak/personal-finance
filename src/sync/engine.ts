@@ -95,15 +95,25 @@ async function apply(records: SyncedRecord[], cursor: number): Promise<void> {
 
 async function push(state: SyncState, keys: SyncKeys): Promise<void> {
   for (;;) {
-    const entries: OutboxEntry[] = await db.outbox.limit(LIMITS.changesPerPush).toArray();
-    if (!entries.length) return;
-    const changes = await Promise.all(
-      entries.map(async (e) => {
+    const batch: OutboxEntry[] = await db.outbox.limit(LIMITS.changesPerPush).toArray();
+    if (!batch.length) return;
+    const sealed = await Promise.all(
+      batch.map(async (e) => {
         const value = ((await db.table(e.table).get(e.key)) ?? null) as Record<string, unknown> | null;
         const v = value && e.table === 'settings' ? withoutDeviceSettings(value) : value;
         return { rkey: await keys.rkey(e.table, e.key), blob: keys.seal({ t: e.table, k: e.key, v }) };
       }),
     );
+    // Large records (attachments) are sent a few at a time, under the server's request limit.
+    let size = 0;
+    let count = 0;
+    for (const c of sealed) {
+      if (count > 0 && size + c.blob.length > LIMITS.pushChars) break;
+      size += c.blob.length;
+      count += 1;
+    }
+    const entries = batch.slice(0, count);
+    const changes = sealed.slice(0, count);
     const res = await api<PushResponse>('/sync/push', { body: { changes }, token: state.token });
     await db.transaction('rw', db.outbox, db.syncState, async () => {
       // Entries that changed again during the push stay queued.
