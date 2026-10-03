@@ -1745,6 +1745,6 @@ dialog::backdrop {
   border-radius: 14px;
   background: var(--surface);
   border: 1px solid var(--border);
-  word-break: break-all;
+  overflow-wrap: anywhere; /* breaks after the dashes, keeping groups whole */
   user-select: all;
 }
