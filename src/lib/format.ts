@@ -67,3 +67,12 @@ export function formatList(items: string[]): string {
     return items.join(', ');
   }
 }
+
+/** A country's name in the display language, from its ISO 3166 code ("GB" → "United Kingdom"). */
+export function regionName(code: string): string {
+  try {
+    return new Intl.DisplayNames([config.locale], { type: 'region' }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}

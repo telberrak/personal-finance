@@ -191,6 +191,7 @@ export async function seedDemoData(ref: ISODate = today()): Promise<void> {
     db.rules,
     db.payeeAliases,
     db.importBatches,
+    db.bankConnections,
   ];
   await db.transaction('rw', tables, async () => {
     await Promise.all(tables.filter((t) => t !== db.settings).map((t) => t.clear()));

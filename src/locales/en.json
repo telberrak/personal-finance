@@ -599,7 +599,9 @@
     "syncOff": "Off — only on this device",
     "syncOn": "On — {{email}}",
     "notifications": "Notifications",
-    "notificationsDetail": "Reminders, alerts and quiet hours"
+    "notificationsDetail": "Reminders, alerts and quiet hours",
+    "banks": "Bank connections",
+    "banksDetail": "Bring transactions in automatically"
   },
   "colors": {
     "groceries": "Blue",
@@ -930,5 +932,37 @@
     "test": "Send a test notification",
     "testTitle": "Notifications are working",
     "testBody": "This is how Ledger will remind you."
+  },
+  "banks": {
+    "title": "Bank connections",
+    "intro": "Connect your bank to bring transactions in automatically. Ledger can only read balances and transactions: it can never move money.",
+    "needsSync": "Bank connections need sync, because the connection is made through the Ledger server.",
+    "setUpSync": "Set up sync",
+    "unavailable": "Bank connections are not available on this server yet.",
+    "connect": "Connect a bank",
+    "reconnect": "Reconnect",
+    "fetchNow": "Get new transactions",
+    "fetched_one": "{{count}} new transaction added",
+    "fetched_other": "{{count}} new transactions added",
+    "failed": "Could not reach your bank. Try again later.",
+    "connected": "{{name}} is connected. Choose where its transactions go.",
+    "notConnected": "The bank did not confirm the connection. Try again.",
+    "pending": "Waiting for the bank to confirm.",
+    "expired": "This connection has expired. Reconnect to keep transactions coming in.",
+    "validUntil": "Connected until {{date}}. Banks ask you to confirm every 90 days.",
+    "dontImport": "Don’t import",
+    "lastFetched": "Last checked {{date}}",
+    "balanceDiffers": "Your bank says {{bank}}; Ledger says {{ledger}}.",
+    "matchBalance": "Match the bank",
+    "disconnect": "Disconnect",
+    "disconnectTitle": "Disconnect {{name}}?",
+    "disconnectBody": "No new transactions will come in. Transactions already imported stay.",
+    "privacy": "Transactions pass through the Ledger server on their way to your device and are never stored there. The bank data service sees them too, as it does for any connected app.",
+    "chooseBank": "Choose your bank",
+    "country": "Country",
+    "search": "Search",
+    "loading": "Loading banks…",
+    "noneFound": "No bank found.",
+    "consentNote": "You will confirm the connection on your bank’s own website or app, then come back here."
   }
 }

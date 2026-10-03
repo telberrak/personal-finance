@@ -18,6 +18,7 @@ afterAll(() => sql?.close());
 beforeEach(async () => {
   sent.length = 0;
   await sql.query('TRUNCATE users, email_codes, challenges, server_settings CASCADE');
+  await sql.query('DELETE FROM bank_links');
   app = createApp({ sql, mailer, config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] } });
 });
 
@@ -211,5 +212,77 @@ describe('push reminders', () => {
     await call('PUT', '/push/reminders', { reminders: [{ at: Date.now(), title: 'x', body: 'y', tag: 'z' }] }, s.token);
     await sendDueReminders(sql, push, new Date(Date.now() + 1000));
     expect(await sql.query('SELECT 1 FROM push_subscriptions')).toHaveLength(0);
+  });
+});
+
+describe('bank connections', () => {
+  it('links the sandbox bank and streams its transactions without storing them', async () => {
+    const { sandboxProvider } = await import('./banks.ts');
+    app = createApp({
+      sql,
+      mailer,
+      banks: sandboxProvider(),
+      config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] },
+    });
+    const s = await signIn();
+    const institutions: { id: string }[] = await (await call('GET', '/banks/institutions?country=GB', undefined, s.token)).json();
+    expect(institutions[0].id).toBe('SANDBOX_LEDGER');
+    expect(
+      (await call('POST', '/banks/links', { institutionId: 'SANDBOX_LEDGER', returnTo: 'https://evil.example/x' }, s.token)).status,
+    ).toBe(400);
+    const link: { id: string; url: string } = await (
+      await call(
+        'POST',
+        '/banks/links',
+        { institutionId: 'SANDBOX_LEDGER', institutionName: 'Sandbox', returnTo: 'http://localhost:5173/settings/banks' },
+        s.token,
+      )
+    ).json();
+    expect(link.url).toBe(`http://localhost:5173/settings/banks?link=${link.id}`);
+    const accounts: { status: string; accounts: { id: string; balance: number }[] } = await (
+      await call('GET', `/banks/links/${link.id}/accounts`, undefined, s.token)
+    ).json();
+    expect(accounts.status).toBe('linked');
+    const from = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+    const res: { transactions: { date: string; amount: number }[]; balance: number } = await (
+      await call('GET', `/banks/links/${link.id}/accounts/sbx-current/transactions?from=${from}`, undefined, s.token)
+    ).json();
+    expect(res.transactions.length).toBeGreaterThan(10);
+    expect(res.transactions.every((t) => t.date >= from && Number.isInteger(t.amount))).toBe(true);
+    expect(JSON.stringify(await sql.query('SELECT * FROM bank_links'))).not.toContain('PRET');
+
+    const other = await signIn('other@e.co');
+    expect((await call('GET', `/banks/links/${link.id}/accounts`, undefined, other.token)).status).toBe(404);
+    expect((await call('DELETE', `/banks/links/${link.id}`, undefined, s.token)).status).toBe(200);
+    expect(await sql.query('SELECT 1 FROM bank_links')).toHaveLength(0);
+  });
+
+  it('maps GoCardless responses', async () => {
+    const { goCardlessProvider } = await import('./banks.ts');
+    const fake = (async (url: string) => {
+      const u = String(url);
+      const body = u.includes('/token/new/')
+        ? { access: 'tok', access_expires: 3600 }
+        : u.includes('/transactions/')
+          ? {
+              transactions: {
+                booked: [
+                  {
+                    transactionId: 'a1',
+                    bookingDate: '2026-10-01',
+                    transactionAmount: { amount: '-12.50', currency: 'GBP' },
+                    remittanceInformationUnstructured: 'TESCO',
+                  },
+                ],
+                pending: [],
+              },
+            }
+          : {};
+      return new Response(JSON.stringify(body), { status: 200 });
+    }) as typeof fetch;
+    const p = goCardlessProvider('id', 'key', fake);
+    expect(await p.transactions('acc', '2026-09-01')).toEqual([
+      { id: 'a1', date: '2026-10-01', amount: -1250, description: 'TESCO', currency: 'GBP' },
+    ]);
   });
 });

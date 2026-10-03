@@ -93,6 +93,21 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX reminders_due ON reminders(send_at);
   `,
+  // 3: Open Banking connections (P5). No transactions are stored.
+  `
+  CREATE TABLE bank_links (
+    id uuid PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider text NOT NULL,
+    provider_ref text NOT NULL,
+    institution_id text NOT NULL,
+    institution_name text NOT NULL,
+    status text NOT NULL,
+    expires_at timestamptz NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE INDEX bank_links_user ON bank_links(user_id);
+  `,
 ];
 
 export async function migrate(sql: Sql): Promise<void> {

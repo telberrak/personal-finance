@@ -18,6 +18,7 @@ import {
 import { LIMITS, type Change, type Me, type PullResponse, type PushResponse, type Session } from '../shared/api.ts';
 import type { Sql } from './db.ts';
 import type { Mailer } from './mailer.ts';
+import { bankRoutes, type BankProvider } from './banks.ts';
 import { pushRoutes, type PushSender } from './push.ts';
 import { RateLimiter } from './rate-limit.ts';
 
@@ -49,7 +50,19 @@ const fail = (status: 400 | 401 | 403 | 404 | 409 | 413 | 429, error: string): n
 
 type Env = { Variables: { userId: string; sessionId: string } };
 
-export function createApp({ sql, mailer, config, push }: { sql: Sql; mailer: Mailer; config: Config; push?: PushSender }) {
+export function createApp({
+  sql,
+  mailer,
+  config,
+  push,
+  banks,
+}: {
+  sql: Sql;
+  mailer: Mailer;
+  config: Config;
+  push?: PushSender;
+  banks?: BankProvider;
+}) {
   const app = new Hono<Env>().basePath('/api');
   const limiter = new RateLimiter();
   const lastCodes = new Map<string, string>();
@@ -377,6 +390,7 @@ export function createApp({ sql, mailer, config, push }: { sql: Sql; mailer: Mai
   });
 
   pushRoutes(authed, sql, push);
+  bankRoutes(authed, sql, banks, config.origins);
 
   app.route('/', authed);
   app.notFound((c) => c.json({ error: 'Not found.' }, 404));

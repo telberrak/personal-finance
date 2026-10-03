@@ -17,6 +17,7 @@ const SCREENS = [
   '/settings/rules',
   '/settings/sync',
   '/notifications',
+  '/settings/banks',
 ];
 
 for (const path of SCREENS) {

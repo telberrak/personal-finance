@@ -136,6 +136,7 @@ describe('forecastBalance', () => {
     const data: FinanceData = {
       accounts: [{ id: 'a', name: 'Current', type: 'current', openingBalance: 130000, includeInSafeToSpend: true }],
       categories: [],
+      bankConnections: [],
       transactions: [
         ...history,
         tx({ date: '2026-08-25', amount: 200000, payee: 'Salary' }),

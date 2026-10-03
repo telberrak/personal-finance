@@ -41,6 +41,7 @@ const ALL_TABLES = () => [
   db.payeeAliases,
   db.importBatches,
   db.goals,
+  db.bankConnections,
 ];
 
 /** Throws a ValidationError with the translated message for `key` (under errors.* in the locale files). */
@@ -98,6 +99,7 @@ export async function eraseAllData(): Promise<void> {
       db.payeeAliases.clear(),
       db.importBatches.clear(),
       db.goals.clear(),
+      db.bankConnections.clear(),
     ]);
     await db.accounts.put({ id: newId(), name: t('accounts.defaultName'), type: 'current', openingBalance: 0, includeInSafeToSpend: true });
     if ((await db.categories.count()) === 0) await db.categories.bulkPut([...defaultCategories(), transferCategory()]);
@@ -500,6 +502,7 @@ export interface ImportRow {
   payee: string;
   categoryId: string;
   recurringId?: string;
+  externalId?: string;
 }
 
 /** Saves an import in one go, tagged with a batch id so it can be undone. */
@@ -518,6 +521,7 @@ export async function importTransactions(accountId: string, fileName: string, ro
     rawPayee: r.rawPayee,
     categoryId: r.categoryId,
     recurringId: r.recurringId,
+    externalId: r.externalId,
     importBatchId: batch.id,
     fingerprint: fingerprint(accountId, r.date, r.amount, r.rawPayee),
     createdAt: now,
@@ -592,24 +596,26 @@ export interface Backup {
 }
 
 export async function createBackup(): Promise<Backup> {
-  const [accounts, categories, transactions, recurring, budgets, rules, payeeAliases, importBatches, goals, settings] = await Promise.all([
-    db.accounts.toArray(),
-    db.categories.toArray(),
-    db.transactions.toArray(),
-    db.recurring.toArray(),
-    db.budgets.toArray(),
-    db.rules.toArray(),
-    db.payeeAliases.toArray(),
-    db.importBatches.toArray(),
-    db.goals.toArray(),
-    // Lock settings belong to this device; the keyring is never exported.
-    db.settings.toArray().then((all) => all.map(({ pinHash: _h, pinSalt: _s, lockAfterMinutes: _l, ...rest }) => rest)),
-  ]);
+  const [accounts, categories, transactions, recurring, budgets, rules, payeeAliases, importBatches, goals, bankConnections, settings] =
+    await Promise.all([
+      db.accounts.toArray(),
+      db.categories.toArray(),
+      db.transactions.toArray(),
+      db.recurring.toArray(),
+      db.budgets.toArray(),
+      db.rules.toArray(),
+      db.payeeAliases.toArray(),
+      db.importBatches.toArray(),
+      db.goals.toArray(),
+      db.bankConnections.toArray(),
+      // Lock settings belong to this device; the keyring is never exported.
+      db.settings.toArray().then((all) => all.map(({ pinHash: _h, pinSalt: _s, lockAfterMinutes: _l, ...rest }) => rest)),
+    ]);
   return {
     format: BACKUP_FORMAT,
     version: 2,
     exportedAt: new Date().toISOString(),
-    data: { accounts, categories, transactions, recurring, budgets, rules, payeeAliases, importBatches, goals, settings },
+    data: { accounts, categories, transactions, recurring, budgets, rules, payeeAliases, importBatches, goals, bankConnections, settings },
   };
 }
 
@@ -643,6 +649,7 @@ export async function restoreBackup(json: string): Promise<{ transactions: numbe
     await db.payeeAliases.bulkPut(arr('payeeAliases'));
     await db.importBatches.bulkPut(arr('importBatches'));
     await db.goals.bulkPut(arr('goals'));
+    await db.bankConnections.bulkPut(arr('bankConnections'));
     const restored = (arr('settings') as Partial<Settings>[])[0] ?? {};
     await db.settings.put({
       ...DEFAULT_SETTINGS,

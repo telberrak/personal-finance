@@ -9,6 +9,7 @@ import { useFinanceData } from './db/db';
 import { useSecurityMode } from './db/security';
 import { startSync } from './sync/engine';
 import { useNotifier } from './notify/notifier';
+import { useBankAutoSync } from './banks/banks';
 import { Notifications } from './pages/Notifications';
 import { applyLocale } from './i18n';
 import type { FinanceData } from './db/types';
@@ -31,6 +32,7 @@ const Import = page(() => import('./pages/Import'), 'Import');
 const Reports = page(() => import('./pages/Reports'), 'Reports');
 const Rules = page(() => import('./pages/Rules'), 'Rules');
 const Sync = page(() => import('./pages/Sync'), 'Sync');
+const Banks = page(() => import('./pages/Banks'), 'Banks');
 
 export function App() {
   // While locked nothing can be decrypted, so the screens (and their data queries) are not mounted.
@@ -49,6 +51,7 @@ function Unlocked() {
   useTheme(data?.settings.theme);
   useAutoLock(data?.settings.lockAfterMinutes);
   useNotifier(data);
+  useBankAutoSync(data);
   // Sync runs while unlocked (it needs to read and write the data).
   useEffect(() => startSync(), []);
 
@@ -78,6 +81,7 @@ function Unlocked() {
               <Route path="settings/categories" element={<Categories data={data} />} />
               <Route path="settings/rules" element={<Rules data={data} />} />
               <Route path="settings/sync" element={<Sync data={data} />} />
+              <Route path="settings/banks" element={<Banks data={data} />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

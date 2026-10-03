@@ -129,6 +129,21 @@ export function computeAlerts(data: FinanceData, now: Date): Alert[] {
     }
   }
 
+  // Bank connections: a week before consent runs out.
+  for (const c of data.bankConnections ?? []) {
+    if (c.status !== 'linked') continue;
+    const expires = toISO(new Date(c.expiresAt));
+    if (daysBetween(today, expires) > 8 + 7) continue;
+    out.push({
+      id: `bankConsent:${c.id}:${expires}`,
+      type: 'bankConsent',
+      at: at(addDays(expires, -7), '09:00'),
+      title: t('alerts.bankConsent.title'),
+      body: t('alerts.bankConsent.body'),
+      link: '/settings/banks',
+    });
+  }
+
   // Budgets at 80% and 100% of this period. Shown when it happens.
   const period = periodFor(today, data.settings.budgetPeriod, data.settings.payday);
   for (const p of budgetProgress(data.budgets, data.categories, data.transactions, period)) {

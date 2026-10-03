@@ -5,14 +5,12 @@ import { Loading, PageHeader } from '../components/Layout';
 import { Field } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
 import { importTransactions, undoImport, ValidationError, type ImportRow } from '../db/repo';
-import { OTHER_EXPENSE_ID, OTHER_INCOME_ID, type FinanceData } from '../db/types';
+import type { FinanceData } from '../db/types';
 import { formatDate, formatShort, toISO } from '../lib/dates';
 import { parseCsv } from '../lib/csv';
-import { detectPreset, guessMapping, mapRows, markDuplicates, type ColumnMapping, type DateFormat } from '../lib/importer';
-import { findBillMatch, paidOccurrenceKeys } from '../lib/matching';
+import { detectPreset, guessMapping, mapRows, type ColumnMapping, type DateFormat } from '../lib/importer';
+import { prepareRows } from '../lib/importPrep';
 import { formatMoney } from '../lib/money';
-import { applyAlias, normalisePayee } from '../lib/payees';
-import { suggestCategory } from '../lib/rules';
 import { t } from '../i18n';
 
 interface PreviewRow extends ImportRow {
@@ -41,33 +39,13 @@ export function Import({ data }: { data?: FinanceData }) {
     if (!data || !rows || !mapping || !account) return [];
     const parsed = mapRows(rows, mapping);
     const valid = parsed.filter((r) => !r.error) as ((typeof parsed)[number] & { date: string; amount: number })[];
-    const withDupes = markDuplicates(valid, data.transactions, account);
-    const dupeByLine = new Map(withDupes.map((r) => [r.line, r.duplicate]));
-    const expense = new Set(data.categories.filter((c) => c.kind === 'expense' && !c.system && !c.archived).map((c) => c.id));
-    const income = new Set(data.categories.filter((c) => c.kind === 'income' && !c.archived).map((c) => c.id));
-    const taken = paidOccurrenceKeys(data.recurring, data.transactions);
+    const prepared = new Map(prepareRows(data, account, valid).map((r) => [r.line, r]));
 
     return parsed.map((r) => {
       const base = { line: r.line, rawPayee: r.rawPayee, date: r.date ?? '', amount: r.amount ?? 0 };
-      if (r.error) return { ...base, payee: r.rawPayee, categoryId: '', duplicate: false, error: r.error, include: false };
-      // A rename saved for the exact bank description wins; otherwise tidy it up, then apply any rename of the tidy name.
-      const aliasedRaw = applyAlias(r.rawPayee, data.aliases);
-      const payee = aliasedRaw !== r.rawPayee ? aliasedRaw : applyAlias(normalisePayee(r.rawPayee), data.aliases);
-      const duplicate = dupeByLine.get(r.line) ?? false;
-      const allowed = base.amount < 0 ? expense : income;
-      let categoryId =
-        suggestCategory(payee, data.rules, data.transactions, allowed) ?? (base.amount < 0 ? OTHER_EXPENSE_ID : OTHER_INCOME_ID);
-      let recurringId: string | undefined;
-      let billName: string | undefined;
-      if (!duplicate) {
-        const match = findBillMatch({ date: base.date, amount: base.amount, payee }, data.recurring, taken);
-        if (match) {
-          taken.add(`${match.rule.id}|${match.occurrence}`);
-          recurringId = match.rule.id;
-          billName = match.rule.name;
-          categoryId = match.rule.categoryId;
-        }
-      }
+      const p = prepared.get(r.line);
+      if (r.error || !p) return { ...base, payee: r.rawPayee, categoryId: '', duplicate: false, error: r.error, include: false };
+      const { payee, categoryId, recurringId, billName, duplicate } = p;
       const o = overrides[r.line] ?? {};
       return {
         ...base,

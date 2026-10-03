@@ -64,6 +64,8 @@ What the server can see: your email address, when each device last synced, how m
 
 **Push reminders** (P4): a device that turns on notifications uploads its upcoming reminders as a time and a generic sentence such as "A bill is due tomorrow", never names, amounts or balances. Details are only shown by the app itself.
 
+**Bank connections** (P5) are the one exception to end-to-end encryption: transactions from a connected bank pass through the server (in memory, never stored) and the provider on their way to the device. See [OPEN_BANKING.md](OPEN_BANKING.md).
+
 Details and deployment: [SERVER.md](SERVER.md).
 
 ## Hosting headers

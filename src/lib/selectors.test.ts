@@ -47,7 +47,7 @@ describe('billOccurrences', () => {
   });
 });
 
-const empty = { categories: [], budgets: [], rules: [], aliases: [], importBatches: [], goals: [] };
+const empty = { categories: [], budgets: [], rules: [], aliases: [], importBatches: [], goals: [], bankConnections: [] };
 
 describe('safeToSpend', () => {
   it('subtracts unpaid bills before payday and savings, from everyday accounts only', () => {

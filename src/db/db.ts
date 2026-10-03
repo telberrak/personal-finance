@@ -11,6 +11,7 @@ import {
   type Category,
   type FinanceData,
   type Goal,
+  type BankConnection,
   type ImportBatch,
   type KeyEntry,
   type Notice,
@@ -48,6 +49,7 @@ export class FinanceDB extends Dexie {
   outbox!: EntityTable<OutboxEntry, 'id'>;
   syncState!: EntityTable<SyncState, 'id'>;
   notices!: EntityTable<Notice, 'id'>;
+  bankConnections!: EntityTable<BankConnection, 'id'>;
 
   constructor(name = 'ledger') {
     super(name);
@@ -103,6 +105,8 @@ export class FinanceDB extends Dexie {
     this.version(4).stores({ outbox: 'id', syncState: 'id' });
     // v5: notifications already shown or read on this device.
     this.version(5).stores({ notices: 'id' });
+    // v6: Open Banking connections (synced).
+    this.version(6).stores({ bankConnections: 'id' });
 
     this.use(encryptionMiddleware);
     this.use(outboxMiddleware);
@@ -118,18 +122,20 @@ export const db = new FinanceDB();
  */
 export function useFinanceData(): FinanceData | undefined {
   return useLiveQuery(async () => {
-    const [accounts, categories, transactions, recurring, budgets, rules, aliases, importBatches, goals, settings] = await Promise.all([
-      db.accounts.toArray(),
-      db.categories.orderBy('order').toArray(),
-      db.transactions.orderBy('date').reverse().toArray(),
-      db.recurring.toArray(),
-      db.budgets.toArray(),
-      db.rules.orderBy('priority').toArray(),
-      db.payeeAliases.toArray(),
-      db.importBatches.orderBy('importedAt').reverse().toArray(),
-      db.goals.toArray(),
-      db.settings.get('app'),
-    ]);
+    const [accounts, categories, transactions, recurring, budgets, rules, aliases, importBatches, goals, bankConnections, settings] =
+      await Promise.all([
+        db.accounts.toArray(),
+        db.categories.orderBy('order').toArray(),
+        db.transactions.orderBy('date').reverse().toArray(),
+        db.recurring.toArray(),
+        db.budgets.toArray(),
+        db.rules.orderBy('priority').toArray(),
+        db.payeeAliases.toArray(),
+        db.importBatches.orderBy('importedAt').reverse().toArray(),
+        db.goals.toArray(),
+        db.bankConnections.toArray(),
+        db.settings.get('app'),
+      ]);
     return {
       accounts,
       categories,
@@ -140,6 +146,7 @@ export function useFinanceData(): FinanceData | undefined {
       aliases,
       importBatches,
       goals,
+      bankConnections,
       settings: { ...DEFAULT_SETTINGS, ...settings },
     };
   });

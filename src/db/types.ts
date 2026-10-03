@@ -58,6 +58,8 @@ export interface Transaction {
   importBatchId?: string;
   /** account|date|amount|payee key used to skip duplicates on import. */
   fingerprint?: string;
+  /** The bank's id for a transaction from a bank connection (P5). */
+  externalId?: string;
   createdAt?: number;
   updatedAt?: number;
 }
@@ -189,6 +191,7 @@ export interface FinanceData {
   aliases: PayeeAlias[];
   importBatches: ImportBatch[];
   goals: Goal[];
+  bankConnections: BankConnection[];
   settings: Settings;
 }
 
@@ -250,4 +253,26 @@ export interface Notice {
   id: string;
   seenAt?: number;
   notifiedAt?: number;
+}
+
+/** A bank connected through Open Banking (P5). Synced, so every device knows the mapping. */
+export interface BankConnection {
+  /** The server's link id. */
+  id: string;
+  institutionName: string;
+  status: 'pending' | 'linked' | 'expired' | 'failed';
+  /** ISO timestamp: consent must be renewed before this (usually 90 days). */
+  expiresAt: string;
+  accounts: BankConnectionAccount[];
+}
+
+export interface BankConnectionAccount {
+  bankAccountId: string;
+  name: string;
+  mask: string | null;
+  /** The Ledger account its transactions go into; undefined when not imported. */
+  accountId?: string;
+  lastSyncedAt?: number;
+  /** The balance the bank last reported, to compare with Ledger's. */
+  bankBalance?: number | null;
 }

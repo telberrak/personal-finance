@@ -89,3 +89,38 @@ export interface Vault {
 export interface ApiError {
   error: string;
 }
+
+// ------------------------------------------------------------------ Open Banking (P5)
+
+export interface Institution {
+  id: string;
+  name: string;
+  logo: string | null;
+}
+
+export interface BankLink {
+  id: string;
+  institutionName: string;
+  status: 'pending' | 'linked' | 'expired' | 'failed';
+  expiresAt: string;
+}
+
+export interface BankAccount {
+  id: string;
+  name: string;
+  /** Last digits only, e.g. "••6789". */
+  mask: string | null;
+  currency: string;
+  /** In minor units, as the bank reports it. */
+  balance: number | null;
+}
+
+export interface BankTransaction {
+  /** The bank's id, used to skip transactions already imported. */
+  id: string;
+  date: string;
+  /** Minor units; negative is money out. */
+  amount: number;
+  description: string;
+  currency: string;
+}

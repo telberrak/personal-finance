@@ -18,6 +18,7 @@ const SCREENS = [
   '/settings/accounts',
   '/settings/sync',
   '/notifications',
+  '/settings/banks',
 ];
 
 // Elements whose text is the user's data (payees, category and account names) or formatted values.

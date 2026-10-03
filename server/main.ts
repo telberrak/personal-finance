@@ -16,6 +16,7 @@ import { createApp } from './app.ts';
 import { openPglite, openPostgres } from './db.ts';
 import { consoleMailer, resendMailer } from './mailer.ts';
 import { sendDueReminders, webPushSender } from './push.ts';
+import { goCardlessProvider, sandboxProvider } from './banks.ts';
 
 const env = process.env;
 const port = Number(env.PORT ?? 8787);
@@ -27,10 +28,19 @@ const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, env.MAIL_FR
 if (!env.RESEND_API_KEY && !dev) console.warn('RESEND_API_KEY is not set: sign-in codes are only printed to this log.');
 
 const push = await webPushSender(sql, env);
+// Open Banking: GoCardless when its keys are set; the sandbox bank in development or when asked for.
+const banks =
+  env.GOCARDLESS_SECRET_ID && env.GOCARDLESS_SECRET_KEY
+    ? goCardlessProvider(env.GOCARDLESS_SECRET_ID, env.GOCARDLESS_SECRET_KEY)
+    : dev || env.BANKS_SANDBOX === '1'
+      ? sandboxProvider()
+      : undefined;
+
 const app = createApp({
   sql,
   mailer,
   push,
+  banks,
   config: {
     rpID: env.RP_ID ?? 'localhost',
     rpName: 'Ledger',

@@ -124,6 +124,8 @@ See [SERVER.md](SERVER.md).
 
 ## P5 — Open Banking — XL (after P3; regulated)
 
+**Status (3 October 2026): done in code.** GoCardless Bank Account Data adapter and a sandbox bank; connect, map, automatic import, balance matching, 90-day re-consent reminders. Going live needs a provider account and terms, and a privacy-notice review: see [OPEN_BANKING.md](OPEN_BANKING.md).
+
 - **Provider:** an AISP such as TrueLayer, Yapily or GoCardless Bank Account Data. Check coverage of UK, French and Moroccan/Middle-East banks if those markets matter, plus pricing and terms.
 - **Regulation:** operate as the provider's agent, or register with the FCA (and EU equivalents).
 - **Sync flow:** connect a bank, then transactions sync in the background and go through the existing import pipeline (clean-up, rules, duplicate check, bill matching). Re-consent every 90 days, with reminders.
