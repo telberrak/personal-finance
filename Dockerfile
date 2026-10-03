@@ -1,4 +1,4 @@
-# Ledger sync API. Build: docker build -t ledger-api .   Run: docker run -p 8787:8787 -e DATABASE_URL=... ledger-api
+# Mizan sync API. Build: docker build -t mizan-api .   Run: docker run -p 8787:8787 -e DATABASE_URL=... mizan-api
 FROM node:24-slim
 WORKDIR /app
 ENV NODE_ENV=production

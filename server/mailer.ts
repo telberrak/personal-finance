@@ -21,8 +21,8 @@ export function resendMailer(apiKey: string, from: string): Mailer {
         body: JSON.stringify({
           from,
           to: email,
-          subject: `Your Ledger code: ${code}`,
-          text: `Your Ledger sign-in code is ${code}. It expires in 10 minutes.\n\nIf you did not ask for it, you can ignore this email.`,
+          subject: `Your Mizan code: ${code}`,
+          text: `Your Mizan sign-in code is ${code}. It expires in 10 minutes.\n\nIf you did not ask for it, you can ignore this email.`,
         }),
       });
       if (!res.ok) throw new Error(`Email provider returned ${res.status}`);

@@ -1,5 +1,5 @@
 /**
- * The Ledger sync API. It stores accounts, sessions, passkeys and encrypted records. It never
+ * The Mizan sync API. It stores accounts, sessions, passkeys and encrypted records. It never
  * receives keys or readable financial data: records arrive encrypted on the device, and record
  * keys are HMACs, so the server cannot tell which table or record a change belongs to.
  */
@@ -27,7 +27,7 @@ import { feedbackRoutes } from './feedback.ts';
 import { RateLimiter } from './rate-limit.ts';
 
 export interface Config {
-  /** WebAuthn relying party: the app's host name, e.g. 'ledger.example.com' or 'localhost'. */
+  /** WebAuthn relying party: the app's host name, e.g. 'mizan.example.com' or 'localhost'. */
   rpID: string;
   rpName: string;
   /** Origins the app is served from, for WebAuthn checks. */

@@ -1,10 +1,10 @@
 # Privacy policy
 
-Draft, last updated 3 October 2026. Ledger is provided by {{operator}}. Questions: {{email}}.
+Draft, last updated 3 October 2026. Mizan is provided by {{operator}}. Questions: {{email}}.
 
 ## In short
 
-- You can use Ledger without an account. Your money data then stays on your device.
+- You can use Mizan without an account. Your money data then stays on your device.
 - If you turn on sync, your data is **end-to-end encrypted** on your device before it is uploaded. We store it but cannot read it.
 - No adverts, no tracking, no cookies. Anonymous usage counts are sent only if you turn them on.
 
@@ -53,7 +53,7 @@ You can access, correct, export (Settings → Backup) and delete your data, obje
 
 ## Children
 
-Ledger is not intended for children under 16.
+Mizan is not intended for children under 16.
 
 ## Changes
 

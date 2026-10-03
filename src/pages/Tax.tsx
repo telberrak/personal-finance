@@ -28,7 +28,7 @@ export function Tax({ data }: { data?: FinanceData }) {
     for (const s of summary)
       for (const x of s.items)
         lines.push([t(s.heading.label), x.date, x.payee, (Math.abs(x.amount) / 100).toFixed(2), x.note ?? ''].map(esc).join(','));
-    downloadFile(`ledger-tax-${yearLabel(year)}.csv`, lines.join('\n'), 'text/csv');
+    downloadFile(`mizan-tax-${yearLabel(year)}.csv`, lines.join('\n'), 'text/csv');
   }
 
   return (

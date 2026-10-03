@@ -137,7 +137,7 @@ export function Settings({ data }: { data?: FinanceData }) {
   }
 
   async function onCsv() {
-    downloadFile(`ledger-transactions-${today()}.csv`, await transactionsCsv(), 'text/csv');
+    downloadFile(`mizan-transactions-${today()}.csv`, await transactionsCsv(), 'text/csv');
   }
 
   async function onRestoreFile(file: File | undefined) {

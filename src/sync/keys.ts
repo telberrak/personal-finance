@@ -12,6 +12,8 @@ import { fromB64, fromUtf8, keyFromBytes, randomBytes, seal, toB64, unseal, utf8
 
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 const RECOVERY_BYTES = 20;
+// Labels keep the app's original name: they are part of the encryption, and changing them would
+// make existing vaults and records unreadable.
 const VAULT_AAD = utf8('ledger-vault');
 const RECORD_AAD = utf8('ledger-sync-record');
 

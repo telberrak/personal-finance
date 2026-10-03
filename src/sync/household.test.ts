@@ -27,7 +27,7 @@ beforeEach(async () => {
   const app = createApp({
     sql,
     mailer: { sendCode: async (e, c) => void codes.set(e, c) },
-    config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost'] },
+    config: { rpID: 'localhost', rpName: 'Mizan', origins: ['http://localhost'] },
   });
   vi.stubGlobal('fetch', (input: string, init?: RequestInit) => app.request(input, init));
 });

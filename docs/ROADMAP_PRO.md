@@ -1,4 +1,4 @@
-# Ledger — roadmap to a professional app
+# Mizan — roadmap to a professional app
 
 What comes after the current app (Phases 0–4 of [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)), ordered by importance.
 Each phase lists its dependencies, so independent work can go ahead while decisions are pending.
@@ -206,7 +206,7 @@ See [SERVER.md](SERVER.md).
 
 ## P13 — Launch readiness — M
 
-**Status (3 October 2026): done in code.** Help, privacy policy and terms (three languages), About with status, changelog and feedback, opt-in cookie-free usage counts, first-run tour, marketing site. Left for you: the final name (the "Ledger" trademark is held by Ledger SAS), legal review, support mailbox, beta and stores. See [LAUNCH.md](LAUNCH.md).
+**Status (3 October 2026): done in code.** Help, privacy policy and terms (three languages), About with status, changelog and feedback, opt-in cookie-free usage counts, first-run tour, marketing site. Left for you: a trademark check of the name Mizan, legal review, support mailbox, beta and stores. See [LAUNCH.md](LAUNCH.md).
 
 - Final name, logo and a marketing site.
 - Privacy policy, terms, cookie-free analytics (opt-in), and UK GDPR / EU GDPR notices in all three languages.

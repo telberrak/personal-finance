@@ -27,7 +27,7 @@ npm run native:ios       # open Xcode, then Product > Archive
 To use sync and bank connections from the native apps, build them with the API's full origin, since they are not served by your web host:
 
 ```bash
-VITE_API_ORIGIN=https://ledger.example.com npm run native:sync
+VITE_API_ORIGIN=https://mizan.example.com npm run native:sync
 ```
 
 and add `capacitor://localhost,https://localhost` to the server's `APP_ORIGINS`, which also controls CORS.

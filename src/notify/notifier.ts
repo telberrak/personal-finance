@@ -1,6 +1,6 @@
 /**
  * Delivers alerts (src/lib/alerts.ts):
- * - while Ledger is open: system notifications when an alert falls due;
+ * - while Mizan is open: system notifications when an alert falls due;
  * - while it is closed: Web Push, if you sync. The server gets each upcoming reminder's time and
  *   a generic sentence only.
  * Each alert is notified once per device (the notices table) and uses its id as the

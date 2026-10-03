@@ -14,7 +14,7 @@ export { randomBytes };
 export class LockedError extends Error {
   name = 'LockedError';
   constructor() {
-    super('Ledger is locked.');
+    super('Mizan is locked.');
   }
 }
 

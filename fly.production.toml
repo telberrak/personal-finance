@@ -1,5 +1,5 @@
 # Fly.io, production. Deploy: fly deploy -c fly.production.toml (see docs/SERVER.md)
-app = "ledger-api"
+app = "mizan-api"
 primary_region = "lhr" # London: data stays in the UK
 
 [build]

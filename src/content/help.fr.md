@@ -6,7 +6,7 @@ Le solde de vos comptes courants, moins les factures encore dues avant la procha
 
 ## Comment ajouter une transaction ?
 
-Touchez **+** (ou **Ajouter une transaction** sur ordinateur). Ledger propose une catégorie d’après vos règles, votre historique et les enseignes connues. Joignez la photo d’un reçu et Ledger peut en lire le montant et la date.
+Touchez **+** (ou **Ajouter une transaction** sur ordinateur). Mizan propose une catégorie d’après vos règles, votre historique et les enseignes connues. Joignez la photo d’un reçu et Mizan peut en lire le montant et la date.
 
 ## Comment fonctionnent les factures ?
 
@@ -16,7 +16,7 @@ Ajoutez prélèvements, virements permanents et abonnements dans **Factures**. L
 
 Oui : **Importer** lit les fichiers CSV de la plupart des banques françaises et britanniques. Les doublons sont ignorés et les paiements rapprochés des factures. Avec la synchronisation, vous pouvez aussi connecter une banque dans **Réglages → Connexions bancaires**.
 
-## Comment utiliser Ledger sur plusieurs appareils ?
+## Comment utiliser Mizan sur plusieurs appareils ?
 
 Activez **Réglages → Synchronisation et appareils**. Connectez-vous avec un code reçu par e-mail, puis enregistrez votre **clé de récupération** : elle est nécessaire pour ajouter un autre appareil. Vos données sont chiffrées avant de quitter l’appareil.
 

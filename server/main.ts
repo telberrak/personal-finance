@@ -42,7 +42,7 @@ async function openLocal(): Promise<Sql> {
 }
 
 const sql = env.DATABASE_URL ? await openPostgres(env.DATABASE_URL) : await openLocal();
-const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, env.MAIL_FROM ?? 'Ledger <login@example.com>') : consoleMailer;
+const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, env.MAIL_FROM ?? 'Mizan <login@example.com>') : consoleMailer;
 if (!env.RESEND_API_KEY && !dev) console.warn('RESEND_API_KEY is not set: sign-in codes are only printed to this log.');
 
 const push = await webPushSender(sql, env);
@@ -61,7 +61,7 @@ const app = createApp({
   banks,
   config: {
     rpID: env.RP_ID ?? 'localhost',
-    rpName: 'Ledger',
+    rpName: 'Mizan',
     // Native apps: add capacitor://localhost (iOS) and https://localhost (Android) in production.
     origins: (
       env.APP_ORIGINS ?? 'http://localhost:5173,http://localhost:4173,http://localhost:4174,capacitor://localhost,https://localhost'
@@ -75,7 +75,7 @@ const app = createApp({
 });
 
 const server = serve({ fetch: app.fetch, port }, () =>
-  console.log(`Ledger API on http://localhost:${port}/api (${env.DATABASE_URL ? 'Postgres' : 'PGlite'})`),
+  console.log(`Mizan API on http://localhost:${port}/api (${env.DATABASE_URL ? 'Postgres' : 'PGlite'})`),
 );
 
 // Push reminders when they are due.

@@ -15,8 +15,8 @@ test('connect the sandbox bank and bring its transactions in', async ({ page }, 
 
   await page.goto('/settings/banks');
   await page.getByRole('button', { name: 'Connect a bank' }).click();
-  await page.getByRole('dialog', { name: 'Choose your bank' }).getByRole('button', { name: 'Ledger Sandbox Bank' }).click();
-  await expect(page.getByText(/Ledger Sandbox Bank is connected/)).toBeVisible();
+  await page.getByRole('dialog', { name: 'Choose your bank' }).getByRole('button', { name: 'Mizan Sandbox Bank' }).click();
+  await expect(page.getByText(/Mizan Sandbox Bank is connected/)).toBeVisible();
   await page.getByLabel(/Sandbox current account/).selectOption({ label: 'Current account' });
   await page.getByRole('button', { name: 'Get new transactions' }).click();
   await expect(page.getByText(/\d+ new transactions added/)).toBeVisible({ timeout: 15_000 });

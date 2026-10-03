@@ -796,6 +796,7 @@ export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>): Prom
 
 // ---------------------------------------------------------------- backup
 
+// Format ids keep the original name so older backups still restore.
 const BACKUP_FORMAT = 'ledger-backup';
 
 export interface Backup {
@@ -937,4 +938,4 @@ export function daysSinceBackup(settings: Settings, now = Date.now()): number | 
   return settings.lastBackupAt === undefined ? undefined : Math.floor((now - settings.lastBackupAt) / 86_400_000);
 }
 
-export const backupFileName = () => `ledger-backup-${today()}.json`;
+export const backupFileName = () => `mizan-backup-${today()}.json`;

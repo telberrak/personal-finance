@@ -44,8 +44,8 @@
     "savingsNotNegative": "Savings must be zero or more.",
     "thresholdNotNegative": "Threshold must be zero or more.",
     "pinDigits": "Use 4 to 8 digits.",
-    "notBackup": "This file is not a Ledger backup.",
-    "backupTooNew": "This backup is from a newer version of Ledger.",
+    "notBackup": "This file is not a Mizan backup.",
+    "backupTooNew": "This backup is from a newer version of Mizan.",
     "backupIncomplete": "The backup is missing accounts or transactions.",
     "invalidDateValue": "Invalid date: {{date}}",
     "pickSpendingCategories": "Pick spending categories.",
@@ -169,7 +169,7 @@
     "friends": "Friends"
   },
   "app": {
-    "name": "Ledger"
+    "name": "Mizan"
   },
   "common": {
     "previousMonth": "Previous month",
@@ -341,24 +341,24 @@
   },
   "lock": {
     "wrongPin": "That PIN is not right. Try again.",
-    "title": "Ledger is locked",
+    "title": "Mizan is locked",
     "intro": "Enter your PIN to open the app.",
     "pin": "PIN",
     "unlock": "Unlock",
     "forgot": "Forgot your PIN? Clear this site’s data in your browser settings to start again (restore a backup afterwards).",
     "usePasskey": "Unlock with a passkey",
     "useBiometric": "Unlock with Face ID or fingerprint",
-    "biometricReason": "Unlock Ledger",
+    "biometricReason": "Unlock Mizan",
     "biometricFailed": "Could not unlock with biometrics. Use your PIN."
   },
   "error": {
     "title": "Something went wrong",
     "body": "Your data is safe on this device. Reloading usually fixes this.",
-    "reload": "Reload Ledger",
+    "reload": "Reload Mizan",
     "details": "Technical details"
   },
   "update": {
-    "ready": "A new version of Ledger is ready.",
+    "ready": "A new version of Mizan is ready.",
     "later": "Later",
     "update": "Update"
   },
@@ -539,7 +539,7 @@
     "header": "First row is a header",
     "flip": "Flip signs (money out shows as positive)",
     "preview": "Preview",
-    "summary": "{{toImport}} to import · {{duplicates}} already in Ledger · {{errors}} unreadable · {{bills}} matched to bills",
+    "summary": "{{toImport}} to import · {{duplicates}} already in Mizan · {{errors}} unreadable · {{bills}} matched to bills",
     "rows": "Rows to import",
     "include": "Include",
     "includeLine": "Import line {{line}}",
@@ -803,7 +803,7 @@
   },
   "welcome": {
     "setupFailed": "Could not finish setup.",
-    "title": "Welcome to Ledger",
+    "title": "Welcome to Mizan",
     "intro": "Track everyday spending, direct debits and budgets, and always know what is safe to spend until payday. Everything stays on this device.",
     "setup": "Set up my account",
     "demo": "Explore with demo data",
@@ -812,7 +812,7 @@
     "currentBalance": "Current balance",
     "savingsPlaceholder": "Per month, e.g. 200",
     "start": "Start",
-    "haveAccount": "Already use Ledger? Sign in to sync",
+    "haveAccount": "Already use Mizan? Sign in to sync",
     "back": "Back"
   },
   "time": {
@@ -829,15 +829,15 @@
     "pinChanged": "PIN changed",
     "offBody": "Your data on this device will no longer be encrypted, and passkeys will be removed.",
     "passkey": "Passkey",
-    "passkeyName": "Ledger on this device",
+    "passkeyName": "Mizan on this device",
     "passkeyAddedOn": "Added {{date}}",
     "addPasskey": "Unlock with fingerprint, face or security key",
     "passkeyAdded": "Passkey added. You can now unlock with it.",
     "passkeyFailed": "Could not add the passkey.",
     "passkeyCancelled": "No passkey was created.",
-    "passkeyNoPrf": "This device’s passkeys cannot unlock Ledger. Use your PIN.",
+    "passkeyNoPrf": "This device’s passkeys cannot unlock Mizan. Use your PIN.",
     "passkeyNone": "No passkey is set up.",
-    "passkeyUnknown": "That passkey cannot unlock Ledger. Use your PIN.",
+    "passkeyUnknown": "That passkey cannot unlock Mizan. Use your PIN.",
     "removePasskeyTitle": "Remove this passkey?",
     "remove": "Remove",
     "lockNow": "Lock now",
@@ -862,7 +862,7 @@
     "browser": "Browser",
     "thisDevice": "this device",
     "deviceName": "{{browser}} on {{os}}",
-    "intro": "Sign in to keep Ledger in step across your phone and computer. Your data is encrypted on this device before it is uploaded.",
+    "intro": "Sign in to keep Mizan in step across your phone and computer. Your data is encrypted on this device before it is uploaded.",
     "privacyNote": "Only your email address is stored readable. Transactions, amounts and names are encrypted with a key that never leaves your devices.",
     "email": "Email",
     "sendCode": "Email me a sign-in code",
@@ -873,7 +873,7 @@
     "signInPasskey": "Sign in with a passkey",
     "signedOutRemote": "{{email}} was signed out on this device. Sign in again to keep syncing.",
     "codeWrong": "That code is not right, or it has expired.",
-    "passkeyUnknown": "That passkey is not linked to a Ledger account.",
+    "passkeyUnknown": "That passkey is not linked to a Mizan account.",
     "unreachable": "Cannot reach the sync server. Check your connection and try again.",
     "tooMany": "Too many attempts. Wait a few minutes and try again.",
     "failed": "Something went wrong. Try again.",
@@ -887,13 +887,13 @@
     "replaceBody": "Transactions, bills, budgets and goals on this device will be replaced with your synced data. Download a backup first if you want to keep them.",
     "replace": "Replace",
     "saveKeyTitle": "Save your recovery key",
-    "saveKeyBody": "You need this key to sync another device or to recover your data. Write it down or keep it in a password manager. Ledger cannot show it to anyone else or reset it.",
+    "saveKeyBody": "You need this key to sync another device or to recover your data. Write it down or keep it in a password manager. Mizan cannot show it to anyone else or reset it.",
     "copy": "Copy",
     "copied": "Recovery key copied",
     "savedIt": "I have saved it",
     "syncing": "Syncing…",
     "offline": "Offline. Changes will sync when you are back online.",
-    "error": "Could not sync. Ledger will try again.",
+    "error": "Could not sync. Mizan will try again.",
     "pending_one": "{{count}} change waiting to sync",
     "pending_other": "{{count}} changes waiting to sync",
     "upToDate": "Up to date · synced {{when}}",
@@ -967,7 +967,7 @@
       "budget": "Budget update",
       "lowBalance": "Balance warning",
       "unusual": "Unusual payment",
-      "body": "Open Ledger to see the details.",
+      "body": "Open Mizan to see the details.",
       "cardDue": "A card payment is due soon",
       "returnBy": "A return window closes soon",
       "warranty": "A warranty ends next month"
@@ -994,8 +994,8 @@
     "settings": "Notification settings",
     "unsupported": "This browser cannot show notifications. Alerts still appear here.",
     "enable": "Notifications on this device",
-    "enableHint": "Shown while Ledger is open, and when it is closed if you use sync. Pushed reminders contain no names or amounts.",
-    "enableHintNoPush": "Shown while Ledger is open.",
+    "enableHint": "Shown while Mizan is open, and when it is closed if you use sync. Pushed reminders contain no names or amounts.",
+    "enableHintNoPush": "Shown while Mizan is open.",
     "blocked": "Notifications are blocked for this site. Allow them in your browser settings.",
     "type": {
       "billDue": "Bill due tomorrow",
@@ -1015,12 +1015,12 @@
     "quietNote": "Notifications during quiet hours wait until they end.",
     "test": "Send a test notification",
     "testTitle": "Notifications are working",
-    "testBody": "This is how Ledger will remind you."
+    "testBody": "This is how Mizan will remind you."
   },
   "banks": {
     "title": "Bank connections",
-    "intro": "Connect your bank to bring transactions in automatically. Ledger can only read balances and transactions: it can never move money.",
-    "needsSync": "Bank connections need sync, because the connection is made through the Ledger server.",
+    "intro": "Connect your bank to bring transactions in automatically. Mizan can only read balances and transactions: it can never move money.",
+    "needsSync": "Bank connections need sync, because the connection is made through the Mizan server.",
     "setUpSync": "Set up sync",
     "unavailable": "Bank connections are not available on this server yet.",
     "connect": "Connect a bank",
@@ -1036,12 +1036,12 @@
     "validUntil": "Connected until {{date}}. Banks ask you to confirm every 90 days.",
     "dontImport": "Don’t import",
     "lastFetched": "Last checked {{date}}",
-    "balanceDiffers": "Your bank says {{bank}}; Ledger says {{ledger}}.",
+    "balanceDiffers": "Your bank says {{bank}}; Mizan says {{ledger}}.",
     "matchBalance": "Match the bank",
     "disconnect": "Disconnect",
     "disconnectTitle": "Disconnect {{name}}?",
     "disconnectBody": "No new transactions will come in. Transactions already imported stay.",
-    "privacy": "Transactions pass through the Ledger server on their way to your device and are never stored there. The bank data service sees them too, as it does for any connected app.",
+    "privacy": "Transactions pass through the Mizan server on their way to your device and are never stored there. The bank data service sees them too, as it does for any connected app.",
     "chooseBank": "Choose your bank",
     "country": "Country",
     "search": "Search",
@@ -1063,7 +1063,7 @@
     "valuedOn": "valued {{date}}",
     "update": "Update value",
     "updateValue": "Update value",
-    "valueIntro": "What is {{name}} worth? Ledger uses the latest value, plus any transactions after it.",
+    "valueIntro": "What is {{name}} worth? Mizan uses the latest value, plus any transactions after it.",
     "value": "Value",
     "valueHint": "Enter the value as an amount, for example 12500.",
     "valueSaved": "Value saved"
@@ -1276,7 +1276,7 @@
     "linkIntro": "Send this link to the person you want to invite. It works once, for a week, and contains the household key: share it privately.",
     "copied": "Invitation link copied",
     "share": "Share",
-    "shareTitle": "Join my household on Ledger",
+    "shareTitle": "Join my household on Mizan",
     "accounts": "Shared accounts",
     "sharedByOther": "Shared by someone else",
     "accountsNote": "Shared accounts appear for everyone in the household, with their transactions and bills. Custom categories show as uncategorised for others.",
@@ -1337,7 +1337,7 @@
     },
     "add": {
       "title": "Add as you go",
-      "body": "Tap + to add spending or income. Ledger suggests the category, and you can import a bank statement instead."
+      "body": "Tap + to add spending or income. Mizan suggests the category, and you can import a bank statement instead."
     },
     "bills": {
       "title": "Never miss a bill",

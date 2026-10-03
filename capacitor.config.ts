@@ -6,8 +6,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   // Reverse-DNS id registered with Apple and Google. Change before the first store upload; it cannot change after.
-  appId: 'app.ledger.money',
-  appName: 'Ledger',
+  appId: 'app.mizan.money',
+  appName: 'Mizan',
   webDir: 'dist',
   // Serve the app as https://localhost inside the app, so secure-context APIs (crypto.subtle) work.
   server: { androidScheme: 'https', iosScheme: 'capacitor' },

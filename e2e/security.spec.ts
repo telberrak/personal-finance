@@ -60,7 +60,7 @@ test('setting a PIN encrypts the data on the device', async ({ page }) => {
   expect(stored).not.toContain('Current account');
 
   await page.getByRole('button', { name: 'Lock now' }).click();
-  await expect(page.getByRole('heading', { name: 'Ledger is locked' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mizan is locked' })).toBeVisible();
   await page.getByLabel('PIN').fill('2468');
   await page.getByRole('button', { name: 'Unlock' }).click();
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
@@ -76,7 +76,7 @@ test('locks after the chosen time without activity', async ({ page }) => {
   await setPin(page);
   await page.getByLabel('Lock after').selectOption('1');
   await page.clock.runFor(70_000);
-  await expect(page.getByRole('heading', { name: 'Ledger is locked' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mizan is locked' })).toBeVisible();
 });
 
 test('hide amounts masks every amount', async ({ page }) => {

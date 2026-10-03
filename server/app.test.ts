@@ -22,7 +22,7 @@ beforeEach(async () => {
   await sql.query('DELETE FROM spaces');
   await sql.query('DELETE FROM feedback');
   await sql.query('DELETE FROM event_counts');
-  app = createApp({ sql, mailer, config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] } });
+  app = createApp({ sql, mailer, config: { rpID: 'localhost', rpName: 'Mizan', origins: ['http://localhost:5173'] } });
 });
 
 /** Responses whose JSON is typed by the variable it is assigned to (tests only). */
@@ -182,28 +182,28 @@ describe('push reminders', () => {
     const { sendDueReminders } = await import('./push.ts');
     const sent: string[] = [];
     const push = { publicKey: 'pk', send: async (_s: unknown, payload: string) => (sent.push(payload), 'ok' as const) };
-    app = createApp({ sql, mailer, push, config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] } });
+    app = createApp({ sql, mailer, push, config: { rpID: 'localhost', rpName: 'Mizan', origins: ['http://localhost:5173'] } });
     const s = await signIn();
     expect(await (await call('GET', '/push/key', undefined, s.token)).json()).toEqual({ publicKey: 'pk' });
     const sub = { endpoint: 'https://push.example/abc', keys: { p256dh: 'p', auth: 'a' } };
     expect((await call('PUT', '/push/subscription', sub, s.token)).status).toBe(200);
     const soon = Date.now() + 60_000;
     const reminders = [
-      { at: soon, title: 'A bill is due tomorrow', body: 'Open Ledger', tag: 't1' },
+      { at: soon, title: 'A bill is due tomorrow', body: 'Open Mizan', tag: 't1' },
       { at: soon + 86_400_000, title: 'Later', body: 'x', tag: 't2' },
     ];
     expect((await call('PUT', '/push/reminders', { reminders }, s.token)).status).toBe(200);
     // Replacing the list keeps only the new one.
     expect((await call('PUT', '/push/reminders', { reminders }, s.token)).status).toBe(200);
     expect(await sendDueReminders(sql, push, new Date(soon + 1000))).toBe(1);
-    expect(JSON.parse(sent[0])).toEqual({ title: 'A bill is due tomorrow', body: 'Open Ledger', tag: 't1' });
+    expect(JSON.parse(sent[0])).toEqual({ title: 'A bill is due tomorrow', body: 'Open Mizan', tag: 't1' });
     expect(await sendDueReminders(sql, push, new Date(soon + 2000))).toBe(0);
   });
 
   it('drops a subscription the browser has removed, and validates input', async () => {
     const { sendDueReminders } = await import('./push.ts');
     const push = { publicKey: 'pk', send: async () => 'gone' as const };
-    app = createApp({ sql, mailer, push, config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] } });
+    app = createApp({ sql, mailer, push, config: { rpID: 'localhost', rpName: 'Mizan', origins: ['http://localhost:5173'] } });
     const s = await signIn();
     expect(
       (await call('PUT', '/push/subscription', { endpoint: 'http://insecure', keys: { p256dh: 'p', auth: 'a' } }, s.token)).status,
@@ -225,7 +225,7 @@ describe('bank connections', () => {
       sql,
       mailer,
       banks: sandboxProvider(),
-      config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] },
+      config: { rpID: 'localhost', rpName: 'Mizan', origins: ['http://localhost:5173'] },
     });
     const s = await signIn();
     const institutions: { id: string }[] = await (await call('GET', '/banks/institutions?country=GB', undefined, s.token)).json();
@@ -294,7 +294,7 @@ it('allows the native apps through CORS, and nobody else', async () => {
   app = createApp({
     sql,
     mailer,
-    config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173', 'capacitor://localhost'] },
+    config: { rpID: 'localhost', rpName: 'Mizan', origins: ['http://localhost:5173', 'capacitor://localhost'] },
   });
   const ok = await app.request('/api/health', { headers: { origin: 'capacitor://localhost' } });
   expect(ok.headers.get('access-control-allow-origin')).toBe('capacitor://localhost');
@@ -331,7 +331,7 @@ it('serves ECB exchange rates, cached', async () => {
   let calls = 0;
   const xml = `<Cube><Cube time='2026-10-02'><Cube currency='USD' rate='1.0800'/><Cube currency='GBP' rate='0.8600'/></Cube></Cube>`;
   const fetchRates = (async () => (calls++, new Response(xml))) as unknown as typeof fetch;
-  app = createApp({ sql, mailer, fetchRates, config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] } });
+  app = createApp({ sql, mailer, fetchRates, config: { rpID: 'localhost', rpName: 'Mizan', origins: ['http://localhost:5173'] } });
   const body: { date: string; rates: Record<string, number> } = await (await call('GET', '/rates')).json();
   expect(body).toEqual({ date: '2026-10-02', rates: { USD: 1.08, GBP: 0.86 } });
   await call('GET', '/rates');

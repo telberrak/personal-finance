@@ -19,8 +19,8 @@ npm run server:dev
 | `PORT`                                                           | Default 8787                                                                                                       |
 | `DATABASE_URL`                                                   | Postgres connection string. Without it, PGlite in `LEDGER_DATA_DIR`                                                |
 | `LEDGER_DATA_DIR`                                                | PGlite folder (default `.ledger-api-data`), or `memory`                                                            |
-| `RP_ID`                                                          | The app's host name, for passkeys, e.g. `ledger.example.com`                                                       |
-| `APP_ORIGINS`                                                    | Comma-separated origins the app is served from, e.g. `https://ledger.example.com`                                  |
+| `RP_ID`                                                          | The app's host name, for passkeys, e.g. `mizan.example.com`                                                        |
+| `APP_ORIGINS`                                                    | Comma-separated origins the app is served from, e.g. `https://mizan.example.com`                                   |
 | `RESEND_API_KEY`, `MAIL_FROM`                                    | Send sign-in codes with [Resend](https://resend.com). `MAIL_FROM` must be verified                                 |
 | `LEDGER_ENV`                                                     | `production` or `staging`; reported by `/api/health`                                                               |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`         | Web Push keys (`npx web-push generate-vapid-keys`). Without them, keys are generated once and kept in the database |
@@ -35,14 +35,14 @@ Two environments are configured: [`fly.production.toml`](../fly.production.toml)
 1. Create the apps and a Postgres database (Fly Postgres, Neon or Supabase in London), then set secrets:
 
    ```bash
-   fly apps create ledger-api
-   fly secrets set -c fly.production.toml DATABASE_URL=postgres://… RP_ID=ledger.example.com APP_ORIGINS=https://ledger.example.com RESEND_API_KEY=… MAIL_FROM="Ledger <login@ledger.example.com>"
+   fly apps create mizan-api
+   fly secrets set -c fly.production.toml DATABASE_URL=postgres://… RP_ID=mizan.example.com APP_ORIGINS=https://mizan.example.com RESEND_API_KEY=… MAIL_FROM="Mizan <login@mizan.example.com>"
    ```
 
 2. Deploy: `fly deploy -c fly.staging.toml`, check it, then `fly deploy -c fly.production.toml`.
 3. Point the app at it. The app calls `/api` on its own origin, so the host must forward `/api/*` to the API:
    - **Netlify:** uncomment the `/api/*` redirect in [`netlify.toml`](../netlify.toml) and set the API host.
-   - **Vercel:** add a rewrite before the single-page one: `{ "source": "/api/(.*)", "destination": "https://ledger-api.fly.dev/api/$1" }`.
+   - **Vercel:** add a rewrite before the single-page one: `{ "source": "/api/(.*)", "destination": "https://mizan-api.fly.dev/api/$1" }`.
 
    Serving the API from the same origin keeps the Content-Security-Policy at `connect-src 'self'` and avoids CORS.
 

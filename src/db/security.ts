@@ -202,7 +202,7 @@ export async function addPasskey(): Promise<void> {
   const salt = randomBytes(32);
   const cred = (await navigator.credentials.create({
     publicKey: {
-      rp: { name: 'Ledger' },
+      rp: { name: 'Mizan' },
       user: { id: randomBytes(16) as BufferSource, name: t('security.passkeyName'), displayName: t('security.passkeyName') },
       challenge: randomBytes(32) as BufferSource,
       pubKeyCredParams: [

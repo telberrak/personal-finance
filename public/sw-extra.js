@@ -29,7 +29,7 @@ self.addEventListener('push', (event) => {
   } catch {
     data = {};
   }
-  const title = data.title || 'Ledger';
+  const title = data.title || 'Mizan';
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || '',

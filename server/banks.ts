@@ -57,7 +57,7 @@ export function sandboxProvider(): BankProvider {
   return {
     name: 'sandbox',
     async institutions() {
-      return [{ id: 'SANDBOX_LEDGER', name: 'Ledger Sandbox Bank', logo: null }];
+      return [{ id: 'SANDBOX_LEDGER', name: 'Mizan Sandbox Bank', logo: null }];
     },
     async createLink({ institutionId, redirect }) {
       if (institutionId !== 'SANDBOX_LEDGER') fail(400, 'Unknown bank.');

@@ -61,6 +61,7 @@ export class FinanceDB extends Dexie {
   people!: EntityTable<Person, 'id'>;
   ious!: EntityTable<Iou, 'id'>;
 
+  // The database keeps the app's original name ('ledger'): renaming it would hide everyone's data.
   constructor(name = 'ledger') {
     super(name);
     // Migration policy: never edit a released version. To change the schema, add

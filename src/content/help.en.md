@@ -6,7 +6,7 @@ Your everyday accounts' balance, minus bills still due before your next payday, 
 
 ## How do I add a transaction?
 
-Tap **+** (or **Add transaction** on a computer). Ledger suggests a category from your rules, your history and well-known shops. Attach a receipt photo and Ledger can read the amount and date from it.
+Tap **+** (or **Add transaction** on a computer). Mizan suggests a category from your rules, your history and well-known shops. Attach a receipt photo and Mizan can read the amount and date from it.
 
 ## How do bills work?
 
@@ -16,7 +16,7 @@ Add direct debits, standing orders and subscriptions under **Bills**. Payments a
 
 Yes: **Import** reads CSV files from most UK and French banks. Duplicates are skipped and payments are matched to bills. With sync on you can also connect a bank under **Settings → Bank connections**.
 
-## How do I use Ledger on several devices?
+## How do I use Mizan on several devices?
 
 Turn on **Settings → Sync and devices**. Sign in with an emailed code, then save your **recovery key**: you need it to add another device. Your data is encrypted before it leaves the device.
 

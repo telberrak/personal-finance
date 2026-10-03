@@ -1,6 +1,6 @@
 # Languages and translation
 
-Ledger ships in English, French and Arabic (right to left). Adding a language means adding a translation file, not changing screens.
+Mizan ships in English, French and Arabic (right to left). Adding a language means adding a translation file, not changing screens.
 
 **Status of the translations:** `fr.json` and `ar.json` are complete first drafts. Before promoting the app in those languages, have native speakers review them, especially financial terms (see the glossary below) and the Arabic plural forms.
 

@@ -1,10 +1,10 @@
 # Politique de confidentialité
 
-Projet, mis à jour le 3 octobre 2026. Ledger est fourni par {{operator}}. Questions : {{email}}.
+Projet, mis à jour le 3 octobre 2026. Mizan est fourni par {{operator}}. Questions : {{email}}.
 
 ## En bref
 
-- Vous pouvez utiliser Ledger sans compte. Vos données financières restent alors sur votre appareil.
+- Vous pouvez utiliser Mizan sans compte. Vos données financières restent alors sur votre appareil.
 - Si vous activez la synchronisation, vos données sont **chiffrées de bout en bout** sur votre appareil avant l’envoi. Nous les stockons sans pouvoir les lire.
 - Pas de publicité, pas de pistage, pas de cookies. Des statistiques d’usage anonymes ne sont envoyées que si vous les activez.
 
@@ -53,7 +53,7 @@ Vous pouvez accéder à vos données, les corriger, les exporter (Réglages → 
 
 ## Mineurs
 
-Ledger n’est pas destiné aux moins de 16 ans.
+Mizan n’est pas destiné aux moins de 16 ans.
 
 ## Modifications
 

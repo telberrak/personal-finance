@@ -1,6 +1,6 @@
 # Security and threat model
 
-Ledger keeps all data on your device, in the browser's IndexedDB. Sync between devices is optional; when it is on, the server stores only ciphertext (see [Sync](#sync)). This document says what is protected, against whom, and where the limits are.
+Mizan keeps all data on your device, in the browser's IndexedDB. Sync between devices is optional; when it is on, the server stores only ciphertext (see [Sync](#sync)). This document says what is protected, against whom, and where the limits are.
 
 ## What is protected
 
@@ -20,7 +20,7 @@ Ledger keeps all data on your device, in the browser's IndexedDB. Sync between d
   - by each passkey, using a key derived (HKDF) from the passkey's WebAuthn PRF output. The PRF output never leaves the authenticator without your fingerprint, face or device PIN.
 - **Changing the PIN** re-wraps the data key; the data is not re-encrypted. **Turning the lock off** decrypts everything and deletes the wrapped keys.
 - **Where it happens.** A Dexie middleware (`src/db/encryption.ts`) sits directly above IndexedDB. Everything above it, including the app code, sees plain objects; everything below it is ciphertext. Encryption is synchronous so IndexedDB transactions stay open.
-- **Locking** removes the data key from memory and unmounts every screen. Ledger locks:
+- **Locking** removes the data key from memory and unmounts every screen. Mizan locks:
   - when it is reloaded or reopened;
   - after the chosen time in the background (or as soon as it is hidden, with "Immediately");
   - after the same time without taps or key presses (at least one minute);

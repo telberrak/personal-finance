@@ -194,8 +194,8 @@ describe('backup', () => {
   });
 
   it('rejects files that are not backups', async () => {
-    await expect(restoreBackup('{"hello":1}')).rejects.toThrow('not a Ledger backup');
-    await expect(restoreBackup('not json')).rejects.toThrow('not a Ledger backup');
+    await expect(restoreBackup('{"hello":1}')).rejects.toThrow('not a Mizan backup');
+    await expect(restoreBackup('not json')).rejects.toThrow('not a Mizan backup');
   });
 });
 

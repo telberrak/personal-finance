@@ -10,7 +10,7 @@
 # Uncomment and set the host (docs/SERVER.md). It must come before the single-page rule.
 # [[redirects]]
 #   from = "/api/*"
-#   to = "https://ledger-api.fly.dev/api/:splat"
+#   to = "https://mizan-api.fly.dev/api/:splat"
 #   status = 200
 #   force = true
 

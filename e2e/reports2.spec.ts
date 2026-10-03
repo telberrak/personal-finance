@@ -40,5 +40,5 @@ test('reports: custom range, comparison, trends, year in review and tax', async 
   await page.goto('/tax');
   await expect(page.getByText('Freelance client')).toBeVisible();
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export CSV' }).click()]);
-  expect(download.suggestedFilename()).toMatch(/^ledger-tax-\d{4}–\d{2}\.csv$/);
+  expect(download.suggestedFilename()).toMatch(/^mizan-tax-\d{4}–\d{2}\.csv$/);
 });

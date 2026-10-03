@@ -1,5 +1,5 @@
 /**
- * Bank connections on the device: connect, map bank accounts to Ledger accounts, and bring
+ * Bank connections on the device: connect, map bank accounts to Mizan accounts, and bring
  * transactions in through the same pipeline as CSV imports (tidy payees, rules, bills, duplicates).
  * Needs a sync account, because the provider's keys live on the server.
  */
@@ -85,7 +85,7 @@ export async function refreshConnection(id: string): Promise<BankConnection | un
   return merged;
 }
 
-/** Chooses which Ledger account a bank account's transactions go into (undefined: none). */
+/** Chooses which Mizan account a bank account's transactions go into (undefined: none). */
 export async function mapBankAccount(connectionId: string, bankAccountId: string, accountId: string | undefined): Promise<void> {
   const conn = await db.bankConnections.get(connectionId);
   if (!conn) return;
@@ -164,7 +164,7 @@ export function useBankAutoSync(data: FinanceData | undefined) {
   }, [has]);
 }
 
-/** Bank balance minus Ledger's balance for the account, when the bank reported one. */
+/** Bank balance minus Mizan's balance for the account, when the bank reported one. */
 export function balanceDifference(data: FinanceData, accountId: string, bankBalance: number | null | undefined): number | null {
   const account = data.accounts.find((a) => a.id === accountId);
   // Foreign-currency accounts are converted for totals, so they are not compared here.
@@ -172,7 +172,7 @@ export function balanceDifference(data: FinanceData, accountId: string, bankBala
   return bankBalance - accountBalance(account, data.transactions);
 }
 
-/** Makes Ledger's balance match the bank's by adjusting the account's opening balance. */
+/** Makes Mizan's balance match the bank's by adjusting the account's opening balance. */
 export async function matchBankBalance(account: Account, difference: number): Promise<void> {
   await saveAccount({ ...account, openingBalance: account.openingBalance + difference });
 }

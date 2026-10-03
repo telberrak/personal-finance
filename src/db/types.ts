@@ -339,10 +339,10 @@ export interface BankConnectionAccount {
   bankAccountId: string;
   name: string;
   mask: string | null;
-  /** The Ledger account its transactions go into; undefined when not imported. */
+  /** The Mizan account its transactions go into; undefined when not imported. */
   accountId?: string;
   lastSyncedAt?: number;
-  /** The balance the bank last reported, to compare with Ledger's. */
+  /** The balance the bank last reported, to compare with Mizan's. */
   bankBalance?: number | null;
 }
 

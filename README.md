@@ -1,4 +1,4 @@
-# Ledger
+# Mizan
 
 A personal finance app for everyday money: daily spending, direct debits and bills, and monthly budgets.
 It is a mobile-first progressive web app (PWA). It runs in any browser and can be installed on a phone's home screen.

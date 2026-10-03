@@ -123,7 +123,7 @@ test('language and currency settings change how amounts look', async ({ page }) 
 });
 
 // Real languages: every screen, no raw keys, no untranslated English in Arabic, no sideways scroll.
-const BRANDS = /^(Ledger|PIN|PDF|CSV|Face ID|Monzo\.me|PayPal\.me|Revolut|Gift Aid|BNC|HTTPS|localhost|APR|ECB)$/;
+const BRANDS = /^(Mizan|PIN|PDF|CSV|Face ID|Monzo\.me|PayPal\.me|Revolut|Gift Aid|BNC|HTTPS|localhost|APR|ECB)$/;
 for (const lang of ['fr', 'ar'] as const) {
   test(`every screen works in ${lang === 'fr' ? 'French' : 'Arabic'}`, async ({ page }, info) => {
     test.skip(info.project.name.endsWith('-dark'), 'one theme is enough');

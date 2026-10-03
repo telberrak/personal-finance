@@ -25,8 +25,8 @@ export default defineConfig({
         runtimeCaching: [{ urlPattern: /\/ocr\//, handler: 'CacheFirst', options: { cacheName: 'ocr' } }],
       },
       manifest: {
-        name: 'Ledger',
-        short_name: 'Ledger',
+        name: 'Mizan',
+        short_name: 'Mizan',
         description: 'Everyday money: spending, bills and budgets.',
         theme_color: '#14161A',
         background_color: '#F4F5F2',

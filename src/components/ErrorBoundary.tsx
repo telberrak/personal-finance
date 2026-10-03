@@ -14,7 +14,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('Ledger crashed', error, info.componentStack);
+    console.error('Mizan crashed', error, info.componentStack);
   }
 
   render() {

@@ -33,7 +33,7 @@ test('importing a CSV skips duplicates, matches bills and can be undone', async 
   await page.goto('/import');
   await page.locator('input[type=file]').setInputFiles({ name: 'monzo.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
   await expect(page.getByText('Recognised: Monzo')).toBeVisible();
-  await expect(page.getByText('1 to import · 1 already in Ledger')).toBeVisible();
+  await expect(page.getByText('1 to import · 1 already in Mizan')).toBeVisible();
   await expect(page.getByText('Corner Coffee', { exact: true })).toBeVisible(); // cleaned-up payee
 
   await page.getByRole('button', { name: 'Import 1 transaction' }).click();
@@ -79,7 +79,7 @@ test('reports, goals and backup', async ({ page }) => {
   await page.getByRole('button', { name: 'Download backup' }).click();
   const backup = page.getByRole('dialog', { name: 'Download backup' });
   const [download] = await Promise.all([page.waitForEvent('download'), backup.getByRole('button', { name: 'Download backup' }).click()]);
-  expect(download.suggestedFilename()).toMatch(/^ledger-backup-\d{4}-\d{2}-\d{2}\.json$/);
+  expect(download.suggestedFilename()).toMatch(/^mizan-backup-\d{4}-\d{2}-\d{2}\.json$/);
   await expect(page.getByText('Last backup: today.')).toBeVisible();
 });
 
@@ -93,7 +93,7 @@ test('app lock asks for the PIN after reopening', async ({ page }) => {
   await expect(page.getByText('App lock is on')).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Ledger is locked' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mizan is locked' })).toBeVisible();
   await page.getByLabel('PIN').fill('1111');
   await page.getByRole('button', { name: 'Unlock' }).click();
   await expect(page.getByRole('alert')).toContainText('not right');

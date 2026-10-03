@@ -1,5 +1,5 @@
 /*
- * Design tokens from the Ledger design canvas.
+ * Design tokens from the Mizan design canvas.
  * Light is the default; dark applies when the OS prefers it (unless the user picked light),
  * or when the user picked dark in Settings (data-theme on <html>).
  */

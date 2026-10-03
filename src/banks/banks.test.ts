@@ -76,7 +76,7 @@ beforeEach(async () => {
     sql,
     mailer: { sendCode: async (email, code) => void codes.set(email, code) },
     banks: sandboxProvider(),
-    config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost'] },
+    config: { rpID: 'localhost', rpName: 'Mizan', origins: ['http://localhost'] },
   });
   vi.stubGlobal('fetch', (input: string, init?: RequestInit) => app.request(input, init));
   await resetDb();
@@ -98,7 +98,7 @@ describe('bank connections', () => {
     expect(conn.status).toBe('linked');
     expect(conn.accounts[0]).toMatchObject({ bankAccountId: 'sbx-current', name: 'Sandbox current account' });
 
-    // Nothing is imported until the bank account is mapped to a Ledger account.
+    // Nothing is imported until the bank account is mapped to a Mizan account.
     expect(await syncBanks(await load(), true)).toBe(0);
     await mapBankAccount(id, 'sbx-current', 'current');
     const before = await db.transactions.count();

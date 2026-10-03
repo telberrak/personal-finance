@@ -1,5 +1,5 @@
 # Fly.io, staging. Deploy: fly deploy -c fly.staging.toml (see docs/SERVER.md)
-app = "ledger-api-staging"
+app = "mizan-api-staging"
 primary_region = "lhr" # London: data stays in the UK
 
 [build]

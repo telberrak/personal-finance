@@ -2,6 +2,11 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.14.1 — Renamed to Mizan
+
+- The app is now called **Mizan** (ميزان, "balance") in every language, on the website, in emails and in the native apps (new app id `app.mizan.money`).
+- Existing data, backups and synced vaults keep working: internal identifiers are unchanged.
+
 ## 0.14.0 — P13: launch readiness
 
 - Help, privacy policy and terms in English, French and Arabic (legal texts are drafts for review).
@@ -62,7 +67,7 @@ All notable changes. Versions follow [semantic versioning](https://semver.org); 
 ## 0.6.0 — P5: Open Banking
 
 - Connect a bank (read-only) through an authorised provider; transactions come in automatically every few hours through the usual import pipeline, never twice.
-- Map bank accounts to Ledger accounts, match the bank's balance, reconnect reminders before consent expires.
+- Map bank accounts to Mizan accounts, match the bank's balance, reconnect reminders before consent expires.
 - Server: provider interface with GoCardless Bank Account Data and a sandbox bank. Transactions are never stored on the server.
 
 ## 0.5.0 — P4: notifications and reminders

@@ -2,9 +2,9 @@
 
 Projet, mis à jour le 3 octobre 2026. Ces conditions vous lient à {{operator}} ({{email}}).
 
-## Ce qu’est Ledger
+## Ce qu’est Mizan
 
-Ledger vous aide à enregistrer et comprendre votre propre argent : dépenses, factures, budgets, objectifs et prévisions. Ce n’est **ni un conseil financier, ni un conseil en investissement, ni un conseil fiscal**, et il ne peut effectuer aucun paiement. Les prévisions et suggestions sont des estimations fondées sur ce que vous enregistrez.
+Mizan vous aide à enregistrer et comprendre votre propre argent : dépenses, factures, budgets, objectifs et prévisions. Ce n’est **ni un conseil financier, ni un conseil en investissement, ni un conseil fiscal**, et il ne peut effectuer aucun paiement. Les prévisions et suggestions sont des estimations fondées sur ce que vous enregistrez.
 
 ## Vos données et vos responsabilités
 
@@ -27,7 +27,7 @@ Nous faisons en sorte que le service reste disponible sans pouvoir le garantir. 
 
 ## Responsabilité
 
-Ledger est fourni en l’état. Dans les limites permises par la loi, nous ne sommes pas responsables des pertes liées aux décisions que vous prenez en l’utilisant, ni des pertes de données qu’une sauvegarde aurait évitées. Rien dans ces conditions ne limite une responsabilité qui ne peut l’être légalement, ni vos droits de consommateur.
+Mizan est fourni en l’état. Dans les limites permises par la loi, nous ne sommes pas responsables des pertes liées aux décisions que vous prenez en l’utilisant, ni des pertes de données qu’une sauvegarde aurait évitées. Rien dans ces conditions ne limite une responsabilité qui ne peut l’être légalement, ni vos droits de consommateur.
 
 ## Droit applicable
 

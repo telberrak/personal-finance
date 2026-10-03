@@ -1,7 +1,7 @@
 /**
  * Calls to the sync API. On the web it is served under /api on the app's own origin, so the CSP
  * stays 'self'. The native apps are not served by the web host, so they are built with
- * VITE_API_ORIGIN (e.g. https://ledger.example.com) and the server allows them through CORS.
+ * VITE_API_ORIGIN (e.g. https://mizan.example.com) and the server allows them through CORS.
  */
 import type { ApiError } from '../../shared/api.ts';
 

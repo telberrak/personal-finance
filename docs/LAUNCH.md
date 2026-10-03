@@ -4,11 +4,11 @@ What is ready in the code, and what only you can do before a public launch.
 
 ## 1. Name and brand: decide first
 
-**"Ledger" is a risky name.** Ledger SAS (the hardware crypto-wallet company) holds trademarks for "Ledger" in software and financial services in the UK and EU, and an app called Ledger in finance invites confusion and a legal challenge. Choose a final name before spending on a domain, store listings or marketing.
+**The app is called Mizan** (ميزان, "balance" or "scales"), chosen in October 2026 to replace the working name "Ledger", which clashed with Ledger SAS's trademarks. Mizan reads the same in English, French and Arabic.
 
-- Check candidates on the UK IPO and EUIPO registers (classes 9 and 36), app stores and domains.
-- Ideas in the spirit of the app (check availability yourself): _Payday_, _Saferoom_, _Tally_, _Pennywise_ (taken in several places), _Kept_, _Daybook_.
-- Renaming is cheap in the code: change `APP_NAME` in [`src/brand.ts`](../src/brand.ts), `app.name` in the three locale files, the PWA `manifest` in [`vite.config.ts`](../vite.config.ts), `appName`/`appId` in [`capacitor.config.ts`](../capacitor.config.ts), the icon in `public/`, and the [`site/`](../site) pages.
+- Before spending on a domain, store listings or marketing, check "Mizan" on the UK IPO and EUIPO registers (classes 9 and 36), the App Store, Google Play and domains. Watch for confusion with Meezan Bank (Pakistan).
+- Internal identifiers keep the old name on purpose: the browser database (`ledger`), encryption labels (`ledger-vault`, `ledger-dek`, ...), backup format ids and `LEDGER_*` environment variables. Changing them would make existing data, backups and vaults unreadable.
+- Renaming again is cheap in the code: change `APP_NAME` in [`src/brand.ts`](../src/brand.ts), the locale files, the PWA `manifest` in [`vite.config.ts`](../vite.config.ts), `appName`/`appId` in [`capacitor.config.ts`](../capacitor.config.ts) (and the Android/iOS projects), the icon in `public/`, and the [`site/`](../site) pages. The store app id (`app.mizan.money`) cannot change after the first upload.
 
 ## 2. Operator details and support
 

@@ -1,14 +1,14 @@
 # Open Banking
 
-Ledger can read balances and transactions from banks through an account information service provider (AISP). It never initiates payments.
+Mizan can read balances and transactions from banks through an account information service provider (AISP). It never initiates payments.
 
 ## How it works
 
 1. You turn on sync (the connection is made by the server, which holds the provider's keys).
 2. **Settings → Bank connections → Connect a bank:** choose a country and bank. The server creates a consent request at the provider and sends you to the bank to approve it.
-3. The bank sends you back to Ledger, which lists the accounts you shared. Choose the Ledger account each one feeds.
+3. The bank sends you back to Mizan, which lists the accounts you shared. Choose the Mizan account each one feeds.
 4. Transactions come in at start-up and every 6 hours (or on **Get new transactions**). They go through the same pipeline as CSV imports: payee clean-up and renames, rules, category history, bill matching. The bank's transaction ids are kept, so nothing is imported twice.
-5. When the bank's balance differs from Ledger's, a **Match the bank** button adjusts the account's opening balance.
+5. When the bank's balance differs from Mizan's, a **Match the bank** button adjusts the account's opening balance.
 6. Consent lasts 90 days. A notification reminds you a week before; **Reconnect** renews it.
 
 ## Providers
@@ -26,7 +26,7 @@ Morocco and most Middle-East markets are not covered by PSD2-style Open Banking;
 Reading account data for someone is a regulated activity (account information services). The simplest compliant route is to **use a provider that is itself authorised** and to operate under its licence as an agent or under its terms for apps that display data to the account holder only:
 
 - GoCardless Bank Account Data is authorised by the FCA (UK) and the Bank of Spain (EU) as an AISP; its terms allow apps to show users their own data.
-- If Ledger ever processes the data for other purposes (credit scoring, sharing with third parties) or offers it commercially at scale, get legal advice: you may need your own FCA registration as an AISP or agent.
+- If Mizan ever processes the data for other purposes (credit scoring, sharing with third parties) or offers it commercially at scale, get legal advice: you may need your own FCA registration as an AISP or agent.
 - The privacy notice (P13) must name the provider and explain the data flow below.
 
 **Before going live:** sign the provider's terms with your own (business) account, complete its onboarding, and have the privacy notice reviewed. None of this can be done from the code.
