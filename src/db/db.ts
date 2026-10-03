@@ -2,6 +2,7 @@ import Dexie, { type EntityTable } from 'dexie';
 import { t } from '../i18n';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { encryptionMiddleware } from './encryption';
+import { outboxMiddleware } from './outbox';
 import {
   DEFAULT_SETTINGS,
   TRANSFER_CATEGORY_ID,
@@ -12,6 +13,8 @@ import {
   type Goal,
   type ImportBatch,
   type KeyEntry,
+  type OutboxEntry,
+  type SyncState,
   type PayeeAlias,
   type Recurring,
   type Rule,
@@ -41,6 +44,8 @@ export class FinanceDB extends Dexie {
   importBatches!: EntityTable<ImportBatch, 'id'>;
   goals!: EntityTable<Goal, 'id'>;
   keyring!: EntityTable<KeyEntry, 'id'>;
+  outbox!: EntityTable<OutboxEntry, 'id'>;
+  syncState!: EntityTable<SyncState, 'id'>;
 
   constructor(name = 'ledger') {
     super(name);
@@ -91,7 +96,12 @@ export class FinanceDB extends Dexie {
       keyring: 'id',
     });
 
+    // v4: sync. The outbox lists records changed since the last push; syncState holds the
+    // session and sync key (encrypted at rest like everything else).
+    this.version(4).stores({ outbox: 'id', syncState: 'id' });
+
     this.use(encryptionMiddleware);
+    this.use(outboxMiddleware);
   }
 }
 

@@ -1734,3 +1734,17 @@ dialog::backdrop {
 [dir='rtl'] .line-svg {
   transform: scaleX(-1);
 }
+
+/* Sync recovery key: large, monospaced and easy to copy by hand. */
+.recovery-key {
+  font-family: ui-monospace, 'Cascadia Mono', Menlo, monospace;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  word-break: break-all;
+  user-select: all;
+}

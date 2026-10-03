@@ -303,6 +303,7 @@ export function Settings({ data }: { data?: FinanceData }) {
             detail={t('settings.rulesCount', { count: data.rules.length })}
           />
           <LinkRow to="/import" icon="upload" title={t('settings.importStatement')} detail={t('settings.importDetail')} />
+          <SyncRow />
         </div>
       </Section>
 
@@ -681,5 +682,17 @@ function PasswordForm({
         </button>
       </div>
     </form>
+  );
+}
+
+function SyncRow() {
+  const state = useLiveQuery(() => db.syncState.get('sync'));
+  return (
+    <LinkRow
+      to="/settings/sync"
+      icon="upload"
+      title={t('settings.sync')}
+      detail={state?.syncKey ? t('settings.syncOn', { email: state.email }) : t('settings.syncOff')}
+    />
   );
 }

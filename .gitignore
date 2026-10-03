@@ -6,3 +6,4 @@ dev-dist
 coverage
 playwright-report
 test-results
+.ledger-server-data/

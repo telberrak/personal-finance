@@ -32,7 +32,7 @@ describe('schema migration', () => {
 
     const db = new FinanceDB(NAME);
     await db.open();
-    expect(db.verno).toBe(3);
+    expect(db.verno).toBe(4);
     expect(await db.transactions.get('t1')).toMatchObject({ payee: 'Tesco', amount: -250 });
     expect(await db.accounts.get('current')).toMatchObject({ includeInSafeToSpend: true });
     expect(await db.accounts.get('card')).toMatchObject({ includeInSafeToSpend: false });
@@ -42,7 +42,7 @@ describe('schema migration', () => {
     db.close();
   });
 
-  it('upgrades version 2 to 3, dropping the indexes on payee data', async () => {
+  it('upgrades version 2, dropping the indexes on payee data', async () => {
     const v2 = new Dexie(NAME);
     v2.version(2).stores({
       accounts: 'id',
@@ -64,7 +64,7 @@ describe('schema migration', () => {
 
     const db = new FinanceDB(NAME);
     await db.open();
-    expect(db.verno).toBe(3);
+    expect(db.verno).toBe(4);
     expect(await db.transactions.get('t1')).toMatchObject({ payee: 'Tesco', fingerprint: 'f' });
     expect(await db.payeeAliases.get('p1')).toMatchObject({ from: 'tesco stores' });
     expect(db.transactions.schema.indexes.map((i) => i.name)).not.toContain('fingerprint');

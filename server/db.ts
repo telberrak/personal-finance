@@ -1,0 +1,132 @@
+/**
+ * Database access. Production uses Postgres (DATABASE_URL); tests and local development use
+ * PGlite, which is Postgres compiled to WebAssembly, so no database server is needed.
+ * Queries are plain parameterised SQL.
+ */
+import type { PGlite } from '@electric-sql/pglite';
+import type pg from 'pg';
+
+export interface Sql {
+  query<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<T[]>;
+  /** Runs `fn` in one transaction, committed if it resolves and rolled back if it throws. */
+  transaction<T>(fn: (tx: Sql) => Promise<T>): Promise<T>;
+  close(): Promise<void>;
+}
+
+/** Schema changes, applied in order once each. Never edit a released one: add a new entry. */
+const MIGRATIONS: string[] = [
+  `
+  CREATE TABLE users (
+    id uuid PRIMARY KEY,
+    email text NOT NULL UNIQUE,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    -- Per-user change counter: pushes for one user are serialised on this row, so sequence
+    -- numbers are committed in order and a pull never skips a change.
+    seq bigint NOT NULL DEFAULT 0
+  );
+  CREATE TABLE sessions (
+    id uuid PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash text NOT NULL UNIQUE,
+    device_name text NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    last_seen_at timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE INDEX sessions_user ON sessions(user_id);
+  CREATE TABLE email_codes (
+    email text PRIMARY KEY,
+    code_hash text NOT NULL,
+    expires_at timestamptz NOT NULL,
+    attempts int NOT NULL DEFAULT 0
+  );
+  CREATE TABLE passkeys (
+    id text PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    public_key bytea NOT NULL,
+    counter bigint NOT NULL DEFAULT 0,
+    transports text[] NOT NULL DEFAULT '{}',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    last_used_at timestamptz
+  );
+  CREATE INDEX passkeys_user ON passkeys(user_id);
+  CREATE TABLE challenges (
+    id uuid PRIMARY KEY,
+    challenge text NOT NULL,
+    user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+    expires_at timestamptz NOT NULL
+  );
+  -- The sync key, encrypted on the device with the recovery key. The server cannot open it.
+  CREATE TABLE vaults (
+    user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    envelope text NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+  );
+  -- One row per synced record. rkey is an HMAC of the record's table and id; blob is ciphertext.
+  CREATE TABLE records (
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rkey text NOT NULL,
+    seq bigint NOT NULL,
+    blob text,
+    PRIMARY KEY (user_id, rkey)
+  );
+  CREATE INDEX records_user_seq ON records(user_id, seq);
+  `,
+];
+
+export async function migrate(sql: Sql): Promise<void> {
+  await sql.query('CREATE TABLE IF NOT EXISTS schema_migrations (version int PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
+  const done = new Set((await sql.query<{ version: number }>('SELECT version FROM schema_migrations')).map((r) => r.version));
+  for (const [i, migration] of MIGRATIONS.entries()) {
+    if (done.has(i + 1)) continue;
+    await sql.transaction(async (tx) => {
+      const statements = migration.replace(/--.*$/gm, '').split(';');
+      for (const statement of statements.filter((s) => s.trim())) await tx.query(statement);
+      await tx.query('INSERT INTO schema_migrations (version) VALUES ($1)', [i + 1]);
+    });
+  }
+}
+
+type PgliteLike = Pick<PGlite, 'query'>;
+
+function pgliteSql(db: PgliteLike, root: PGlite): Sql {
+  return {
+    query: async <T>(text: string, params?: unknown[]) => (await db.query<T>(text, params)).rows,
+    transaction: (fn) => root.transaction((tx) => fn(pgliteSql(tx, root))),
+    close: () => root.close(),
+  };
+}
+
+/** In-memory when `dataDir` is undefined (tests), or stored in a folder (local development). */
+export async function openPglite(dataDir?: string): Promise<Sql> {
+  const { PGlite } = await import('@electric-sql/pglite');
+  const db = new PGlite(dataDir);
+  const sql = pgliteSql(db, db);
+  await migrate(sql);
+  return sql;
+}
+
+export async function openPostgres(url: string): Promise<Sql> {
+  const { default: pgModule } = await import('pg');
+  const pool = new pgModule.Pool({ connectionString: url, max: 10 });
+  const client = (c: pg.Pool | pg.PoolClient): Sql => ({
+    query: async <T>(text: string, params?: unknown[]) => (await c.query(text, params)).rows as T[],
+    transaction: async (fn) => {
+      const conn = await pool.connect();
+      try {
+        await conn.query('BEGIN');
+        const result = await fn(client(conn));
+        await conn.query('COMMIT');
+        return result;
+      } catch (err) {
+        await conn.query('ROLLBACK');
+        throw err;
+      } finally {
+        conn.release();
+      }
+    },
+    close: () => pool.end(),
+  });
+  const sql = client(pool);
+  await migrate(sql);
+  return sql;
+}

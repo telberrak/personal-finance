@@ -32,10 +32,12 @@ export default defineConfig({
     }),
   ],
   // The production preview (and so the e2e tests) runs under the same headers as the hosted app.
-  preview: { headers: SECURITY_HEADERS },
+  // The sync API (npm run server) is reached at /api on the app's own origin.
+  server: { proxy: { '/api': process.env.LEDGER_API ?? 'http://localhost:8787' } },
+  preview: { headers: SECURITY_HEADERS, proxy: { '/api': process.env.LEDGER_API ?? 'http://localhost:8787' } },
   test: {
     environment: 'jsdom',
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'server/**/*.test.ts'],
     setupFiles: ['src/test/setup.ts'],
   },
 });

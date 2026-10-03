@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 import { AppShell, Loading } from './components/Layout';
 import { LockScreen, useAutoLock } from './components/LockScreen';
@@ -7,6 +7,7 @@ import { ToastProvider } from './components/ui/Toast';
 import { useTheme } from './components/useTheme';
 import { useFinanceData } from './db/db';
 import { useSecurityMode } from './db/security';
+import { startSync } from './sync/engine';
 import { applyLocale } from './i18n';
 import type { FinanceData } from './db/types';
 import { Activity } from './pages/Activity';
@@ -27,6 +28,7 @@ const Goals = page(() => import('./pages/Goals'), 'Goals');
 const Import = page(() => import('./pages/Import'), 'Import');
 const Reports = page(() => import('./pages/Reports'), 'Reports');
 const Rules = page(() => import('./pages/Rules'), 'Rules');
+const Sync = page(() => import('./pages/Sync'), 'Sync');
 
 export function App() {
   // While locked nothing can be decrypted, so the screens (and their data queries) are not mounted.
@@ -44,6 +46,8 @@ function Unlocked() {
   if (data) applyLocale(data.settings.language, data.settings.currency, data.settings.hideAmounts);
   useTheme(data?.settings.theme);
   useAutoLock(data?.settings.lockAfterMinutes);
+  // Sync runs while unlocked (it needs to read and write the data).
+  useEffect(() => startSync(), []);
 
   let content;
   if (!data) content = <Loading />;
@@ -69,6 +73,7 @@ function Unlocked() {
               <Route path="settings/accounts" element={<Accounts data={data} />} />
               <Route path="settings/categories" element={<Categories data={data} />} />
               <Route path="settings/rules" element={<Rules data={data} />} />
+              <Route path="settings/sync" element={<Sync data={data} />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

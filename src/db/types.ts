@@ -205,3 +205,29 @@ export interface KeyEntry {
   credentialId?: string;
   createdAt: number;
 }
+
+/** A record changed on this device and not yet sent to the sync server. */
+export interface OutboxEntry {
+  /** `${table}/${key}` */
+  id: string;
+  table: string;
+  key: string;
+  /** When it changed (ms); a push only clears entries that did not change again meanwhile. */
+  at: number;
+}
+
+/** This device's sync account. One row, id 'sync'. */
+export interface SyncState {
+  id: 'sync';
+  token: string;
+  userId: string;
+  email: string;
+  deviceId: string;
+  /** base64 sync key, from the account's vault. Absent until this device has the recovery key. */
+  syncKey?: string;
+  /** Shown again in Settings so it can be written down later. */
+  recoveryKey?: string;
+  /** Highest server sequence number applied here. */
+  cursor: number;
+  lastSyncAt?: number;
+}

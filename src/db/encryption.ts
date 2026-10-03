@@ -15,8 +15,8 @@ export const ENCRYPTED_FIELD = '_e';
 /** Settings the lock screen and app shell need before unlocking. Everything else is encrypted. */
 export const SETTINGS_PLAIN = new Set(['id', 'onboarded', 'theme', 'language', 'currency', 'lockAfterMinutes', 'hideAmounts']);
 
-/** Tables stored as they are: the keyring only holds wrapped keys. */
-const UNENCRYPTED_TABLES = new Set(['keyring']);
+/** Tables stored as they are: the keyring only holds wrapped keys, the outbox only table names and ids. */
+const UNENCRYPTED_TABLES = new Set(['keyring', 'outbox']);
 
 type Row = Record<string, unknown>;
 

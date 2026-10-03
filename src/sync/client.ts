@@ -1,0 +1,39 @@
+/** Calls to the sync API (served under /api on the app's own origin, so the CSP stays 'self'). */
+import type { ApiError } from '../../shared/api.ts';
+
+export class SyncApiError extends Error {
+  name = 'SyncApiError';
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+/** Status 0: the server could not be reached. */
+export async function api<T>(path: string, opts: { method?: string; body?: unknown; token?: string } = {}): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, {
+      method: opts.method ?? (opts.body === undefined ? 'GET' : 'POST'),
+      headers: {
+        ...(opts.body === undefined ? {} : { 'content-type': 'application/json' }),
+        ...(opts.token ? { authorization: `Bearer ${opts.token}` } : {}),
+      },
+      body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+    });
+  } catch {
+    throw new SyncApiError(0, 'offline');
+  }
+  const text = await res.text();
+  let data: unknown;
+  try {
+    data = text ? JSON.parse(text) : undefined;
+  } catch {
+    // A static host without the API answers with the app's HTML.
+    throw new SyncApiError(res.ok ? 0 : res.status, 'not the sync server');
+  }
+  if (!res.ok) throw new SyncApiError(res.status, (data as ApiError | undefined)?.error ?? res.statusText);
+  return data as T;
+}
