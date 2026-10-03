@@ -140,3 +140,18 @@ test('a passkey can unlock the app', async ({ page }) => {
   await page.getByRole('button', { name: 'Unlock with a passkey' }).click();
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
 });
+
+// Regression: filtered updates (bulk edit, rename payee, apply rule) go through a wrapped cursor
+// when data is encrypted; real browsers reject native cursor getters on a wrong `this`.
+test('bulk edits work with encryption on', async ({ page }) => {
+  await setPin(page);
+  await page.goto('/search'); // a reload: the app starts locked
+  await page.getByLabel('PIN').fill('2468');
+  await page.getByRole('button', { name: 'Unlock' }).click();
+  await page.getByLabel('Text').fill('tesco');
+  await page.getByRole('button', { name: 'Select', exact: true }).click();
+  await page.getByLabel('Select all shown').check();
+  await page.getByLabel('Move to category').selectOption({ label: 'Shopping' });
+  await page.getByRole('button', { name: 'Apply' }).click();
+  await expect(page.getByText(/^[1-9]\d* transactions? moved to Shopping/)).toBeVisible();
+});

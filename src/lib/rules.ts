@@ -1,3 +1,5 @@
+import { learnedCategory } from './learn';
+import { findMerchant } from './merchants';
 import type { Rule, Transaction } from '../db/types';
 import { payeeKey } from './payees';
 
@@ -21,7 +23,8 @@ export function findRule(rules: Rule[], payee: string): Rule | undefined {
 }
 
 /**
- * Category for a payee: an explicit rule wins, then the category last used for the same payee.
+ * Category for a payee, in order of trust: an explicit rule, the category last used for the same
+ * payee, the merchant directory, then what the on-device learner infers from similar payees.
  * `allowed` limits the answer to categories that fit (e.g. expense categories for money out).
  */
 export function suggestCategory(payee: string, rules: Rule[], history: Transaction[], allowed: Set<string>): string | undefined {
@@ -33,5 +36,9 @@ export function suggestCategory(payee: string, rules: Rule[], history: Transacti
   const key = payeeKey(payee);
   if (!key) return undefined;
   // history is newest first
-  return history.find((t) => !t.transferId && allowed.has(t.categoryId) && payeeKey(t.payee) === key)?.categoryId;
+  const previous = history.find((t) => !t.transferId && allowed.has(t.categoryId) && payeeKey(t.payee) === key)?.categoryId;
+  if (previous) return previous;
+  const merchant = findMerchant(payee);
+  if (merchant && allowed.has(merchant.categoryId)) return merchant.categoryId;
+  return learnedCategory(payee, history, allowed)?.categoryId;
 }

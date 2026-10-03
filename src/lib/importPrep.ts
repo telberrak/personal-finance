@@ -7,6 +7,7 @@ import type { ISODate } from './dates';
 import { markDuplicates } from './importer';
 import { findBillMatch, paidOccurrenceKeys } from './matching';
 import type { Pence } from './money';
+import { findMerchant } from './merchants';
 import { applyAlias, normalisePayee } from './payees';
 import { suggestCategory } from './rules';
 
@@ -34,9 +35,12 @@ export function prepareRows<T extends RawRow>(data: FinanceData, accountId: stri
   const taken = paidOccurrenceKeys(data.recurring, data.transactions);
 
   return withDupes.map((r) => {
-    // A rename saved for the exact bank description wins; otherwise tidy it up, then apply any rename of the tidy name.
+    // Your renames win (of the exact bank description, then of the tidied one); then the merchant
+    // directory's clean name; then the tidied description.
     const aliasedRaw = applyAlias(r.rawPayee, data.aliases);
-    const payee = aliasedRaw !== r.rawPayee ? aliasedRaw : applyAlias(normalisePayee(r.rawPayee), data.aliases);
+    const tidy = normalisePayee(r.rawPayee);
+    const renamed = aliasedRaw !== r.rawPayee ? aliasedRaw : applyAlias(tidy, data.aliases);
+    const payee = renamed !== tidy ? renamed : (findMerchant(r.rawPayee)?.name ?? tidy);
     const duplicate = (r.externalId !== undefined && known.has(r.externalId)) || r.duplicate;
     const allowed = r.amount < 0 ? expense : income;
     let categoryId = suggestCategory(payee, data.rules, data.transactions, allowed) ?? (r.amount < 0 ? OTHER_EXPENSE_ID : OTHER_INCOME_ID);

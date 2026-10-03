@@ -110,6 +110,16 @@ export async function eraseAllData(): Promise<void> {
 
 export type NewTransaction = Omit<Transaction, 'id'>;
 
+/** Trimmed, de-duplicated (ignoring case), at most 10 tags of up to 40 characters. Undefined when empty. */
+export function cleanTags(tags: string[] | undefined): string[] | undefined {
+  const out: string[] = [];
+  for (const raw of tags ?? []) {
+    const tag = raw.trim().replace(/\s+/g, ' ').slice(0, 40);
+    if (tag && !out.some((x) => x.toLowerCase() === tag.toLowerCase())) out.push(tag);
+  }
+  return out.length ? out.slice(0, 10) : undefined;
+}
+
 function validateTransaction(t: NewTransaction): void {
   check(isPence(t.amount) && t.amount !== 0, 'errors.amountNonZero');
   check(ISO_DATE.test(t.date), 'errors.invalidDateValue', { date: t.date });
@@ -119,7 +129,13 @@ function validateTransaction(t: NewTransaction): void {
 }
 
 export async function addTransaction(input: NewTransaction): Promise<string> {
-  const t = { ...input, payee: input.payee.trim(), note: input.note?.trim() || undefined, createdAt: Date.now() };
+  const t = {
+    ...input,
+    payee: input.payee.trim(),
+    note: input.note?.trim() || undefined,
+    tags: cleanTags(input.tags),
+    createdAt: Date.now(),
+  };
   validateTransaction(t);
   const id = newId();
   await db.transactions.add({ ...t, id });
@@ -137,6 +153,7 @@ export async function updateTransaction(id: string, patch: Partial<NewTransactio
     const next = { ...current, ...patch, updatedAt: Date.now() };
     if (patch.payee !== undefined) next.payee = patch.payee.trim();
     if (patch.note !== undefined) next.note = patch.note.trim() || undefined;
+    if (patch.tags !== undefined) next.tags = cleanTags(patch.tags);
     validateTransaction(next);
     await db.transactions.put(next);
     if (current.splitId) {
@@ -146,6 +163,48 @@ export async function updateTransaction(id: string, patch: Partial<NewTransactio
       }
     }
   });
+}
+
+// ---------------------------------------------------------------- bulk edit
+
+/** Moves transactions to a category. Transfers are skipped (they have their own). Returns how many changed. */
+export async function bulkRecategorise(ids: string[], categoryId: string): Promise<number> {
+  const wanted = new Set(ids);
+  return db.transactions
+    .filter((t) => wanted.has(t.id) && !t.transferId && t.categoryId !== categoryId)
+    .modify({ categoryId, updatedAt: Date.now() });
+}
+
+/** Adds (or removes) a tag on transactions. Returns how many changed. */
+export async function bulkTag(ids: string[], tag: string, add = true): Promise<number> {
+  const clean = cleanTags([tag])?.[0];
+  check(clean, 'errors.tagRequired');
+  const wanted = new Set(ids);
+  const key = clean.toLowerCase();
+  return db.transactions
+    .filter((t) => wanted.has(t.id) && add !== !!t.tags?.some((x) => x.toLowerCase() === key))
+    .modify((t) => {
+      t.tags = add ? cleanTags([...(t.tags ?? []), clean]) : cleanTags((t.tags ?? []).filter((x) => x.toLowerCase() !== key));
+      t.updatedAt = Date.now();
+    });
+}
+
+/** Deletes transactions with their linked pieces. Returns everything deleted, for undo. */
+export async function bulkDelete(ids: string[]): Promise<Transaction[]> {
+  return db.transaction('rw', db.transactions, async () => {
+    const deleted = new Map<string, Transaction>();
+    for (const id of ids) {
+      const t = await db.transactions.get(id);
+      if (!t || deleted.has(id)) continue;
+      for (const x of await linkedGroup(t)) deleted.set(x.id, x);
+    }
+    await db.transactions.bulkDelete([...deleted.keys()]);
+    return [...deleted.values()];
+  });
+}
+
+export async function restoreTransactions(transactions: Transaction[]): Promise<void> {
+  await db.transactions.bulkPut(transactions);
 }
 
 /** The transaction and anything paired with it: both halves of a transfer, or every piece of a split. */

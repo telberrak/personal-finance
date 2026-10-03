@@ -1,6 +1,7 @@
 import type { ISODate } from '../lib/dates';
 import type { Pence } from '../lib/money';
 import type { Frequency } from '../lib/recurring';
+import type { SavedSearch } from '../lib/search';
 
 export type AccountType = 'current' | 'savings' | 'cash' | 'credit' | 'loan' | 'mortgage' | 'investment' | 'pension' | 'property';
 
@@ -86,6 +87,8 @@ export interface Transaction {
   fingerprint?: string;
   /** The bank's id for a transaction from a bank connection (P5). */
   externalId?: string;
+  /** Your own labels across categories, e.g. "Holiday 2027" or "Work expense". */
+  tags?: string[];
   createdAt?: number;
   updatedAt?: number;
 }
@@ -187,6 +190,8 @@ export interface Settings {
   hideAmounts?: boolean;
   /** This device's notification choices. */
   notifications?: NotificationSettings;
+  /** Searches saved on the Search page (synced). */
+  savedSearches?: SavedSearch[];
   /** Lock again after this many minutes in the background. */
   lockAfterMinutes: number;
   /** Payees whose "add as bill?" suggestion was dismissed (payee keys). */

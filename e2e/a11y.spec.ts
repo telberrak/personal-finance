@@ -19,6 +19,7 @@ const SCREENS = [
   '/notifications',
   '/settings/banks',
   '/networth',
+  '/search',
 ];
 
 for (const path of SCREENS) {

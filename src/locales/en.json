@@ -52,7 +52,8 @@
     "pickIncomeCategories": "Pick income categories.",
     "splitAmountLocked": "Change the amounts of a split with Edit split.",
     "splitPartAmount": "Every part needs an amount.",
-    "trialDate": "Enter the date the free trial ends."
+    "trialDate": "Enter the date the free trial ends.",
+    "tagRequired": "Enter a tag."
   },
   "transactions": {
     "transferTo": "Transfer to {{name}}",
@@ -156,7 +157,8 @@
     "settings": "Settings",
     "dataLocal": "Your data stays on this device.",
     "dataSynced": "Synced, end-to-end encrypted.",
-    "networth": "Net worth"
+    "networth": "Net worth",
+    "search": "Search"
   },
   "app": {
     "name": "Ledger"
@@ -268,7 +270,8 @@
     "moneyIn": "Money in",
     "net": "Net",
     "count": "Transactions",
-    "shown": "{{shown}} of {{total}} shown"
+    "shown": "{{shown}} of {{total}} shown",
+    "advancedSearch": "Search and edit"
   },
   "columns": {
     "payee": "Payee",
@@ -436,7 +439,9 @@
     "category": "Category",
     "date": "Date",
     "note": "Note",
-    "optional": "Optional"
+    "optional": "Optional",
+    "tags": "Tags",
+    "tagsPlaceholder": "Holiday 2027, Work expense"
   },
   "goals": {
     "title": "Goals",
@@ -1025,5 +1030,57 @@
     "extraSaves_one": "Paying {{amount}} more a month clears your debts {{count}} month sooner and saves {{interest}} in interest.",
     "extraSaves_other": "Paying {{amount}} more a month clears your debts {{count}} months sooner and saves {{interest}} in interest.",
     "same": "Both strategies give the same result for your debts."
+  },
+  "search": {
+    "title": "Search",
+    "subtitle": "Find transactions, then edit many at once",
+    "saved": "Saved searches",
+    "removeSaved": "Remove saved search {{name}}",
+    "filters": "Filters",
+    "text": "Text",
+    "textPlaceholder": "Payee, note or tag",
+    "from": "From",
+    "to": "To",
+    "min": "At least",
+    "max": "At most",
+    "any": "Any",
+    "direction": "Money",
+    "both": "In and out",
+    "out": "Money out",
+    "in": "Money in",
+    "clear": "Clear filters",
+    "save": "Save this search",
+    "savedDone": "Search saved",
+    "select": "Select",
+    "doneSelecting": "Done",
+    "summary_one": "{{count}} transaction · in {{in}} · out {{out}}",
+    "summary_other": "{{count}} transactions · in {{in}} · out {{out}}",
+    "bulk": "Edit selected",
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected",
+    "moveTo": "Move to category",
+    "apply": "Apply",
+    "moved_one": "{{count}} transaction moved to {{name}}",
+    "moved_other": "{{count}} transactions moved to {{name}}",
+    "tagToAdd": "Tag",
+    "addTag": "Add tag",
+    "removeTag": "Remove tag",
+    "tagged_one": "Tagged {{count}} transaction “{{tag}}”",
+    "tagged_other": "Tagged {{count}} transactions “{{tag}}”",
+    "untagged_one": "Removed “{{tag}}” from {{count}} transaction",
+    "untagged_other": "Removed “{{tag}}” from {{count}} transactions",
+    "deleteSelected": "Delete selected",
+    "deleteTitle_one": "Delete {{count}} transaction?",
+    "deleteTitle_other": "Delete {{count}} transactions?",
+    "deleteBody": "Linked transfers and split pieces are deleted with them. You can undo straight after.",
+    "deleted_one": "{{count}} transaction deleted",
+    "deleted_other": "{{count}} transactions deleted",
+    "failed": "Could not change the transactions.",
+    "none": "No transactions match.",
+    "selectAll": "Select all shown",
+    "selectOne": "Select {{name}} on {{date}}",
+    "more_one": "{{count}} more not shown. Narrow the search to see them.",
+    "more_other": "{{count}} more not shown. Narrow the search to see them.",
+    "backToActivity": "‹ Activity"
   }
 }

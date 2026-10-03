@@ -2,7 +2,7 @@ import type { Account, Category, Transaction } from '../db/types';
 import { dayHeading, type ISODate } from '../lib/dates';
 import { formatMoney } from '../lib/money';
 import { Link } from 'react-router';
-import { catVar } from './rows';
+import { catVar, MerchantTile } from './rows';
 import { t } from '../i18n';
 
 /** Desktop transaction list: one table, a header row per day with that day's total. */
@@ -46,9 +46,7 @@ export function TransactionTable({
                 <tr key={tx.id}>
                   <td>
                     <div className="row" style={{ gap: 12 }}>
-                      <div className="tile tile--sm" style={catVar(category?.color)} aria-hidden="true">
-                        {tx.transferId ? '⇄' : tx.payee.charAt(0).toUpperCase()}
-                      </div>
+                      <MerchantTile tx={tx} category={category} small />
                       <div className="stack grow" style={{ gap: 0 }}>
                         <Link to={`/transactions/${tx.id}`} className="item-title row-link">
                           {tx.payee}
@@ -69,6 +67,11 @@ export function TransactionTable({
                           {t('tags.split')}
                         </span>
                       )}
+                      {tx.tags?.map((tag) => (
+                        <span className="tag tag--user" key={tag} translate="no">
+                          {tag}
+                        </span>
+                      ))}
                     </div>
                   </td>
                   <td>

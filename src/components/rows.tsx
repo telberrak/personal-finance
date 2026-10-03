@@ -5,6 +5,7 @@ import { dayOfMonth, monthAbbr, type ISODate } from '../lib/dates';
 import { formatMoney } from '../lib/money';
 import { Icon } from './Icon';
 import { t } from '../i18n';
+import { findMerchant } from '../lib/merchants';
 
 /** Inline style that sets the category colour variable used by .tile, .dot, .chip--cat and .bar. */
 export const catVar = (color: CategoryColor | undefined): CSSProperties => ({ '--c': `var(--cat-${color ?? 'fun'})` }) as CSSProperties;
@@ -13,9 +14,7 @@ export function TransactionRow({ tx, category, accountName }: { tx: Transaction;
   const meta = [tx.transferId ? accountName : (category?.name ?? t('common.uncategorised')), tx.time].filter(Boolean).join(' · ');
   return (
     <Link to={`/transactions/${tx.id}`} className="list-row list-row--link">
-      <div className="tile" style={catVar(category?.color)} aria-hidden="true">
-        {tx.transferId ? '⇄' : tx.payee.charAt(0).toUpperCase()}
-      </div>
+      <MerchantTile tx={tx} category={category} />
       <div className="grow stack" style={{ gap: 2 }}>
         <span className="item-title">{tx.payee}</span>
         <span className="item-meta">
@@ -30,6 +29,11 @@ export function TransactionRow({ tx, category, accountName }: { tx: Transaction;
               {t('tags.split')}
             </span>
           )}
+          {tx.tags?.map((tag) => (
+            <span className="tag tag--user" key={tag} translate="no">
+              {tag}
+            </span>
+          ))}
         </span>
       </div>
       <span className={'amount' + (tx.amount > 0 && !tx.transferId ? ' amount--in' : '')}>{formatMoney(tx.amount, { sign: true })}</span>
@@ -77,6 +81,20 @@ export function BillRow({
           {formatMoney(rule.amount)}
         </span>
       )}
+    </div>
+  );
+}
+
+/** The payee's initial on its merchant's brand colour when known, else the category colour. */
+export function MerchantTile({ tx, category, small }: { tx: Transaction; category?: Category; small?: boolean }) {
+  const merchant = tx.transferId ? undefined : findMerchant(tx.payee);
+  return (
+    <div
+      className={small ? 'tile tile--sm' : 'tile'}
+      style={merchant ? { background: merchant.color, color: '#fff' } : catVar(category?.color)}
+      aria-hidden="true"
+    >
+      {tx.transferId ? '⇄' : (merchant?.name ?? tx.payee).charAt(0).toUpperCase()}
     </div>
   );
 }

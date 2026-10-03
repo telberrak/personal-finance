@@ -1783,3 +1783,45 @@ dialog::backdrop {
 .callout--warn {
   background: var(--warn-soft);
 }
+
+/* User tags on transactions: outlined so they read apart from system tags. */
+.tag--user {
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+/* Saved-search chips. */
+.saved-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+.chip-remove {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* A selectable result: checkbox, then the transaction row. */
+.select-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline-start: 12px;
+}
+.select-row > .list-row {
+  flex: 1;
+  min-width: 0;
+}
+.select-row > input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}

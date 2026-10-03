@@ -2,6 +2,14 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.8.0 — P7: smarter categorisation, tags and search
+
+- Merchant directory of 130+ common UK merchants: clean names on import, likely categories, brand-coloured tiles.
+- Categories learned on the device from your own history (naive Bayes over payee words) when no rule or exact match applies.
+- Tags on transactions, shown in Activity and searchable.
+- Search page: text, dates, amounts, account, category, tag and direction; saved searches; select many to recategorise, tag, untag or delete (with undo).
+- Fix: filtered updates (rename payee, apply a rule to past transactions, bulk edit) silently changed nothing in real browsers since 0.3.0, because the encryption layer's cursor wrapper broke native cursor getters.
+
 ## 0.7.0 — P6: debts, credit cards and net worth
 
 - New account types: loan, mortgage, investments, pension and property. Credit cards record limit, statement and due days, minimum payment and APR; loans and mortgages their APR and monthly payment.

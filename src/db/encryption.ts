@@ -54,20 +54,29 @@ function decryptRow(table: string, row: unknown): unknown {
   return JSON.parse(fromUtf8(unseal(fromB64((row as Row)[ENCRYPTED_FIELD] as string), key, utf8(table))));
 }
 
-/** Cursor whose `value` is decrypted (synchronously, once per position). */
+/**
+ * Cursor whose `value` is decrypted (synchronously, once per position). A Proxy rather than
+ * Object.create: native IDBCursor getters (key, primaryKey) throw when called on any object other
+ * than the real cursor, so everything except `value` is read from, and bound to, the original.
+ */
 function decryptingCursor(table: string, cursor: DBCoreCursor): DBCoreCursor {
   let lastRaw: unknown;
   let lastValue: unknown;
-  return Object.create(cursor, {
-    value: {
-      get() {
-        const raw = cursor.value;
+  return new Proxy(cursor, {
+    get(target, prop) {
+      if (prop === 'value') {
+        const raw = target.value;
         if (raw !== lastRaw) {
           lastRaw = raw;
           lastValue = decryptRow(table, raw);
         }
         return lastValue;
-      },
+      }
+      const v = Reflect.get(target, prop, target);
+      return typeof v === 'function' ? v.bind(target) : v;
+    },
+    set(target, prop, value) {
+      return Reflect.set(target, prop, value, target);
     },
   });
 }

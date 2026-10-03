@@ -10,6 +10,7 @@ import { addTransaction, addTransfer, deleteTransaction, saveRule, updateTransac
 import type { FinanceData, Transaction } from '../db/types';
 import { today } from '../lib/dates';
 import { parseMoney } from '../lib/money';
+import { allTags } from '../lib/search';
 import { formatMoney } from '../lib/money';
 import { suggestCategory } from '../lib/rules';
 import { SplitEditor } from './SplitEditor';
@@ -68,6 +69,9 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
   const [categoryId, setCategoryId] = useState<string | undefined>(existing?.categoryId);
   const [categoryTouched, setCategoryTouched] = useState(!!existing);
   const [note, setNote] = useState(existing?.note ?? '');
+  const [tagsText, setTagsText] = useState(existing?.tags?.join(', ') ?? '');
+  const transactions = data?.transactions;
+  const knownTags = useMemo(() => allTags(transactions ?? []), [transactions]);
   const [saving, setSaving] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
   const splitGroup = existing?.splitId
@@ -127,6 +131,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
         payee,
         categoryId: selectedCategory!.id,
         note,
+        tags: tagsText.split(','),
       };
       if (existing) {
         await updateTransaction(existing.id, fields);
@@ -307,6 +312,23 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
                   />
                 )}
               </Field>
+              <Field label={t('fields.tags')}>
+                {(id) => (
+                  <input
+                    id={id}
+                    autoComplete="off"
+                    list="known-tags"
+                    placeholder={t('fields.tagsPlaceholder')}
+                    value={tagsText}
+                    onChange={(e) => setTagsText(e.target.value)}
+                  />
+                )}
+              </Field>
+              <datalist id="known-tags">
+                {knownTags.map((tag) => (
+                  <option key={tag} value={tag} />
+                ))}
+              </datalist>
             </div>
           )}
 

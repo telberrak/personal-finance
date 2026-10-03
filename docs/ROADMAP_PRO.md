@@ -143,6 +143,8 @@ See [SERVER.md](SERVER.md).
 
 ## P7 — Smarter categorisation, tags and search — L
 
+**Status (3 October 2026): done.** Merchant directory (UK; FR/AR regions to add with P12), on-device learning, tags, Search page with saved searches and bulk edit. Logos are brand-coloured monograms: shipping real logos needs trademark permission.
+
 - **Merchant directory:** clean names and logos for common UK (later FR/AR-region) merchants, stored locally and sent with the app.
 - **Learning:** suggest a category from your own corrections (a lightweight on-device model built from payee tokens).
 - **Tags** across categories, e.g. "Holiday 2027" or "Work expense".

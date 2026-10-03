@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { Icon } from '../components/Icon';
 import { Loading, MonthSwitcher, PageHeader } from '../components/Layout';
 import { TransactionRow } from '../components/rows';
@@ -74,6 +74,9 @@ export function Activity({ data }: { data?: FinanceData }) {
 
   const chips = (
     <div className="chips" role="group" aria-label={t('activity.filter.label')}>
+      <Link to="/search" className="chip">
+        {t('activity.advancedSearch')}
+      </Link>
       {FILTERS.map((f) => (
         <button key={f} type="button" className="chip" aria-pressed={filter === f} onClick={() => setFilter(f)}>
           {t(`activity.filter.${f}`)}
