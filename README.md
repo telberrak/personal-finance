@@ -96,4 +96,4 @@ src/
 
 ## Roadmap
 
-The full phased plan is in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md). Phases 0 to 4 are built. Phase 5 (multi-device sync, Open Banking, push notifications) needs a backend and is optional.
+The full phased plan is in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md). What comes next — the roadmap to a professional, multi-language (English, French, Arabic) app — is in [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md). Phases 0 to 4 are built. Phase 5 (multi-device sync, Open Banking, push notifications) needs a backend and is optional.
