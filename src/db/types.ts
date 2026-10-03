@@ -150,9 +150,11 @@ export interface Settings {
   /** Warn when the forecast balance drops below this. */
   lowBalanceThreshold: Pence;
   lastBackupAt?: number;
-  /** PBKDF2 hash of the app-lock PIN, base64. */
+  /** Legacy (before encryption): PBKDF2 hash of the app-lock PIN. Replaced by the keyring on the next unlock. */
   pinHash?: string;
   pinSalt?: string;
+  /** Blur amounts on screen ("privacy mode"). */
+  hideAmounts?: boolean;
   /** Lock again after this many minutes in the background. */
   lockAfterMinutes: number;
   /** Payees whose "add as bill?" suggestion was dismissed (payee keys). */
@@ -184,4 +186,22 @@ export interface FinanceData {
   importBatches: ImportBatch[];
   goals: Goal[];
   settings: Settings;
+}
+
+/**
+ * A copy of the data key, wrapped (encrypted) by a key derived from the PIN or from a passkey.
+ * Stored unencrypted: it is useless without the PIN or passkey.
+ */
+export interface KeyEntry {
+  /** 'pin', or 'passkey:<credential id>'. */
+  id: string;
+  kind: 'pin' | 'passkey';
+  /** base64: PBKDF2 salt for a PIN, PRF input for a passkey. */
+  salt: string;
+  iterations?: number;
+  /** base64(iv ‖ AES-GCM(data key)). */
+  wrapped: string;
+  /** base64url credential id (passkeys). */
+  credentialId?: string;
+  createdAt: number;
 }

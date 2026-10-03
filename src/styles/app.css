@@ -1727,7 +1727,7 @@ dialog::backdrop {
 
 /* Arabic script: the Latin display font has no Arabic glyphs. */
 :root[dir='rtl'] {
-  --font: 'Geist', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', system-ui, sans-serif;
+  --font: 'Geist Variable', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', system-ui, sans-serif;
 }
 
 /* The forecast line is drawn left to right; in RTL it reads right to left like its date labels. */

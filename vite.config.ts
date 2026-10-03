@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { SECURITY_HEADERS } from './security-headers.ts';
 
 export default defineConfig({
   plugins: [
@@ -8,6 +9,10 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
+      workbox: {
+        // Works offline with the Latin font; the Arabic font is cached by the browser once used.
+        globPatterns: ['**/*.{js,css,html,svg,png}', 'assets/geist-*.woff2'],
+      },
       manifest: {
         name: 'Ledger',
         short_name: 'Ledger',
@@ -26,6 +31,8 @@ export default defineConfig({
       },
     }),
   ],
+  // The production preview (and so the e2e tests) runs under the same headers as the hosted app.
+  preview: { headers: SECURITY_HEADERS },
   test: {
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],

@@ -75,7 +75,9 @@ test('reports, goals and backup', async ({ page }) => {
   await expect(card).toContainText('£100.00');
 
   await page.goto('/settings');
-  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download backup' }).click()]);
+  await page.getByRole('button', { name: 'Download backup' }).click();
+  const backup = page.getByRole('dialog', { name: 'Download backup' });
+  const [download] = await Promise.all([page.waitForEvent('download'), backup.getByRole('button', { name: 'Download backup' }).click()]);
   expect(download.suggestedFilename()).toMatch(/^ledger-backup-\d{4}-\d{2}-\d{2}\.json$/);
   await expect(page.getByText('Last backup: today.')).toBeVisible();
 });

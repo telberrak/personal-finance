@@ -3,8 +3,19 @@ import { formatConfig, isolate, isolateEnd, isolateStart, numberFormat } from '.
 /** All money is stored as integer minor units (pence, cents...) to avoid floating-point drift. */
 export type Pence = number;
 
+const MASK = '•••';
+
+/** The currency symbol around a mask, in the locale's order: "£•••", "••• €". */
+function masked(): string {
+  return numberFormat({ style: 'currency', currency: formatConfig().currency, maximumFractionDigits: 0, minimumFractionDigits: 0 })
+    .formatToParts(0)
+    .map((p) => (p.type === 'integer' ? MASK : p.value))
+    .join('');
+}
+
 /** £1,234.50, −£23.40, or +£42.00 when `sign` is set and the amount is positive. Uses the display locale and currency. */
 export function formatMoney(pence: Pence, opts: { sign?: boolean } = {}): string {
+  if (formatConfig().hideAmounts) return isolate(masked());
   const body = numberFormat({ style: 'currency', currency: formatConfig().currency }).format(Math.abs(pence) / 100);
   if (pence < 0) return isolate('−' + body);
   if (opts.sign && pence > 0) return isolate('+' + body);
@@ -13,6 +24,7 @@ export function formatMoney(pence: Pence, opts: { sign?: boolean } = {}): string
 
 /** Whole units with no minor part, for compact labels: £750. */
 export function formatWhole(pence: Pence): string {
+  if (formatConfig().hideAmounts) return isolate(masked());
   return isolate(
     numberFormat({ style: 'currency', currency: formatConfig().currency, maximumFractionDigits: 0, minimumFractionDigits: 0 }).format(
       Math.round(pence / 100),
@@ -66,6 +78,7 @@ export const MONEY_INPUT_CHARS = /[^\d\u0660-\u0669\u06F0-\u06F9.,\u066B\u066C\s
  * using the locale's own number parts rather than assuming '.'.
  */
 export function moneyParts(pence: Pence): { main: string; fraction: string } {
+  if (formatConfig().hideAmounts) return { main: isolate(masked()), fraction: '' };
   const parts = numberFormat({ style: 'currency', currency: formatConfig().currency }).formatToParts(Math.abs(pence) / 100);
   const at = parts.findIndex((p) => p.type === 'decimal');
   const join = (ps: Intl.NumberFormatPart[]) => ps.map((p) => p.value).join('');

@@ -302,7 +302,8 @@
     "intro": "Enter your PIN to open the app.",
     "pin": "PIN",
     "unlock": "Unlock",
-    "forgot": "Forgot your PIN? Clear this site’s data in your browser settings to start again (restore a backup afterwards)."
+    "forgot": "Forgot your PIN? Clear this site’s data in your browser settings to start again (restore a backup afterwards).",
+    "usePasskey": "Unlock with a passkey"
   },
   "error": {
     "title": "Something went wrong",
@@ -569,7 +570,7 @@
     "minutes_other": "{{count}} minutes",
     "oneHour": "1 hour",
     "turnOffLock": "Turn off app lock",
-    "lockNote": "The PIN keeps others out of the app on this device. If you forget it, clear this site’s data in your browser to start again.",
+    "lockNote": "A PIN keeps others out of the app and encrypts your data on this device.",
     "backup": "Backup",
     "notBackedUp": "Not backed up yet.",
     "backupToday": "Last backup: today.",
@@ -745,5 +746,37 @@
     "inDays_other": "In {{count}} days",
     "daysAgo_one": "{{count}} day ago",
     "daysAgo_other": "{{count}} days ago"
+  },
+  "security": {
+    "alreadyOn": "The app lock is already on.",
+    "pinChanged": "PIN changed",
+    "offBody": "Your data on this device will no longer be encrypted, and passkeys will be removed.",
+    "passkey": "Passkey",
+    "passkeyName": "Ledger on this device",
+    "passkeyAddedOn": "Added {{date}}",
+    "addPasskey": "Unlock with fingerprint, face or security key",
+    "passkeyAdded": "Passkey added. You can now unlock with it.",
+    "passkeyFailed": "Could not add the passkey.",
+    "passkeyCancelled": "No passkey was created.",
+    "passkeyNoPrf": "This device’s passkeys cannot unlock Ledger. Use your PIN.",
+    "passkeyNone": "No passkey is set up.",
+    "passkeyUnknown": "That passkey cannot unlock Ledger. Use your PIN.",
+    "removePasskeyTitle": "Remove this passkey?",
+    "remove": "Remove",
+    "lockNow": "Lock now",
+    "encryptedNote": "Your data on this device is encrypted and can only be opened with your PIN or a passkey. A longer PIN is harder to guess. If you forget it, the data cannot be recovered: clear this site’s data and restore a backup.",
+    "hideAmounts": "Hide amounts",
+    "hideAmountsHint": "Show £••• instead of balances and amounts, for when others can see your screen",
+    "password": "Password",
+    "backupPasswordIntro": "Add a password to encrypt the backup file. Without one, anyone who gets the file can read it.",
+    "passwordShort_one": "Use at least {{count}} character.",
+    "passwordShort_other": "Use at least {{count}} characters.",
+    "passwordMismatch": "The passwords do not match.",
+    "passwordWarning": "Keep this password safe: without it the backup cannot be opened.",
+    "noPasswordNote": "Leave empty for an unencrypted backup.",
+    "downloadEncrypted": "Download encrypted backup",
+    "openBackup": "Encrypted backup",
+    "openBackupIntro": "{{file}} is protected. Enter the password it was saved with.",
+    "wrongPassword": "That password is not right, or the file is damaged."
   }
 }

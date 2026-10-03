@@ -41,7 +41,7 @@
   --radius-lg: 20px;
   --radius-md: 16px;
   --radius-sm: 12px;
-  --font: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {

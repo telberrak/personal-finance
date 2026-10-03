@@ -29,7 +29,7 @@ Sizes are rough effort for one developer: **S** ≈ under a day, **M** ≈ 1–3
 
 **Recommended order of work:**
 
-- **Now:** P1, then P2, which need no decisions.
+- **Now:** P1 and P2 are done; both needed no decisions.
 - **Then:** P6 → P7 → P8 → P9, while you decide on P3 (cost, hosting, regulation).
 - **After the P3 decision:** P3 → P4 → P5, then P10, P11, P12 and P13.
 
@@ -66,6 +66,15 @@ Goal: the app looks exactly the same in English, but nothing in the code assumes
 **Done when:** English output is unchanged, the pseudo-locales show no hard-coded text, RTL pseudo-locale screenshots look mirrored and correct, and lint blocks raw strings.
 
 ## P2 — Security hardening — M
+
+**Status (3 October 2026): done.** It covers:
+
+- AES-256-GCM encryption at rest through a Dexie middleware, with the data key wrapped by the PIN (PBKDF2) and by passkeys (WebAuthn PRF); existing data and old PINs migrate on the next unlock; schema v3 drops the indexes on payee data;
+- passkey unlock, shown only where the browser supports it, tested with a virtual authenticator;
+- a strict CSP and security headers for `vite preview`, Netlify and Vercel, with the fonts bundled;
+- auto-lock on inactivity, "Lock now", and a "hide amounts" privacy mode;
+- password-encrypted backups;
+- `npm audit` in CI and a threat model: [SECURITY.md](SECURITY.md).
 
 | #   | Task                                                                                                                                                                       | Size |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |

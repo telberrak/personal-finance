@@ -8,7 +8,6 @@ import { newId } from '../lib/id';
 import { fingerprint } from '../lib/importer';
 import type { Pence } from '../lib/money';
 import { payeeKey } from '../lib/payees';
-import { hashPin, isValidPin } from '../lib/pin';
 import { db, transferCategory } from './db';
 import { defaultCategories, seedDemoData } from './seed';
 import {
@@ -80,11 +79,11 @@ export async function startWithDemoData(): Promise<void> {
   await seedDemoData();
 }
 
-/** Replaces everything with fresh demo data, keeping theme and lock settings. */
+/** Replaces everything with fresh demo data, keeping the theme and lock settings. */
 export async function resetDemoData(): Promise<void> {
   const keep = await db.settings.get('app');
   await startWithDemoData();
-  if (keep) await db.settings.update('app', { theme: keep.theme, pinHash: keep.pinHash, pinSalt: keep.pinSalt });
+  if (keep) await db.settings.update('app', { theme: keep.theme, lockAfterMinutes: keep.lockAfterMinutes, hideAmounts: keep.hideAmounts });
 }
 
 /** Removes all money data but keeps settings, categories and an empty account, so the app stays usable. */
@@ -478,7 +477,8 @@ export async function renamePayee(from: string, to: string): Promise<number> {
   const key = payeeKey(from);
   check(key && to.trim(), 'errors.newNameRequired');
   return db.transaction('rw', db.payeeAliases, db.transactions, async () => {
-    const existing = await db.payeeAliases.where('from').equals(key).first();
+    // Not indexed: payee names are encrypted at rest.
+    const existing = await db.payeeAliases.filter((a) => a.from === key).first();
     await db.payeeAliases.put({ id: existing?.id ?? newId(), from: key, to: to.trim() });
     return db.transactions
       .filter((t) => payeeKey(t.payee) === key || (!!t.rawPayee && payeeKey(t.rawPayee) === key))
@@ -579,16 +579,6 @@ export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>): Prom
   });
 }
 
-export async function setPin(pin: string): Promise<void> {
-  check(isValidPin(pin), 'errors.pinDigits');
-  const { hash, salt } = await hashPin(pin);
-  await updateSettings({ pinHash: hash, pinSalt: salt });
-}
-
-export async function clearPin(): Promise<void> {
-  await db.settings.update('app', { pinHash: undefined, pinSalt: undefined });
-}
-
 // ---------------------------------------------------------------- backup
 
 const BACKUP_FORMAT = 'ledger-backup';
@@ -611,8 +601,8 @@ export async function createBackup(): Promise<Backup> {
     db.payeeAliases.toArray(),
     db.importBatches.toArray(),
     db.goals.toArray(),
-    // The PIN is tied to this device and never leaves it.
-    db.settings.toArray().then((all) => all.map(({ pinHash: _h, pinSalt: _s, ...rest }) => rest)),
+    // Lock settings belong to this device; the keyring is never exported.
+    db.settings.toArray().then((all) => all.map(({ pinHash: _h, pinSalt: _s, lockAfterMinutes: _l, ...rest }) => rest)),
   ]);
   return {
     format: BACKUP_FORMAT,
@@ -626,7 +616,7 @@ export async function markBackedUp(): Promise<void> {
   await updateSettings({ lastBackupAt: Date.now() });
 }
 
-/** Replaces all data with a backup file's contents. The app-lock PIN on this device is kept. */
+/** Replaces all data with a backup file's contents. This device's lock (PIN, passkeys) is kept. */
 export async function restoreBackup(json: string): Promise<{ transactions: number }> {
   let parsed: Backup;
   try {
@@ -660,6 +650,7 @@ export async function restoreBackup(json: string): Promise<{ transactions: numbe
       onboarded: true,
       pinHash: keep?.pinHash,
       pinSalt: keep?.pinSalt,
+      lockAfterMinutes: keep?.lockAfterMinutes ?? DEFAULT_SETTINGS.lockAfterMinutes,
       lastBackupAt: Date.now(),
     });
   });

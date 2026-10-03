@@ -101,8 +101,10 @@ See [docs/TRANSLATING.md](docs/TRANSLATING.md).
 - **Settings:**
   - accounts (with an "everyday" flag for safe to spend), categories, rules and payee names;
   - theme, payday, savings and the low-balance warning;
-  - PIN lock;
-  - backup, restore and CSV export.
+  - security: a PIN that also encrypts your data on the device, passkey unlock (fingerprint, face, security key), auto-lock and "hide amounts";
+  - backup (optionally password-encrypted), restore and CSV export.
+
+How the data is protected, and the limits: [docs/SECURITY.md](docs/SECURITY.md).
 
 ## Roadmap
 

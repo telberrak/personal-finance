@@ -1,50 +1,80 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
-import type { Settings } from '../db/types';
-import { verifyPin } from '../lib/pin';
-import { t } from '../i18n';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/db';
+import { lockNow, unlockWithPasskey, unlockWithPin, useSecurityMode } from '../db/security';
+import { DEFAULT_SETTINGS } from '../db/types';
+import { applyLocale, t } from '../i18n';
+import { Icon } from './Icon';
+import { useTheme } from './useTheme';
+
+const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const;
 
 /**
- * Locked when a PIN is set: on start, and after the app has been in the background longer than
- * the chosen time.
+ * Locks again after `minutes` in the background (0: as soon as the app is hidden), or after the
+ * same time without any taps or key presses (at least one minute).
  */
-export function useAppLock(settings: Settings | undefined) {
-  const hasPin = !!settings?.pinHash;
-  // Decided once, when settings first load: setting a PIN mid-session must not lock you out there and then.
-  const [locked, setLocked] = useState<boolean>();
-  if (settings && locked === undefined) setLocked(hasPin);
-  const hiddenAt = useRef<number | undefined>(undefined);
-  const minutes = settings?.lockAfterMinutes ?? 5;
-
+export function useAutoLock(minutes: number | undefined) {
+  const active = useSecurityMode() === 'unlocked';
   useEffect(() => {
-    if (!hasPin) return;
+    if (!active || minutes === undefined) return;
+    let lastActive = Date.now();
+    let hiddenAt: number | undefined;
+    const idleLimit = Math.max(minutes, 1) * 60_000;
+    const onActivity = () => (lastActive = Date.now());
     const onVisibility = () => {
-      if (document.visibilityState === 'hidden') hiddenAt.current = Date.now();
-      else if (hiddenAt.current !== undefined && Date.now() - hiddenAt.current >= minutes * 60_000) setLocked(true);
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+        if (minutes === 0) lockNow();
+      } else if (hiddenAt !== undefined && Date.now() - hiddenAt >= minutes * 60_000) lockNow();
+      else lastActive = Date.now();
     };
+    const timer = window.setInterval(() => {
+      if (Date.now() - lastActive >= idleLimit) lockNow();
+    }, 10_000);
+    ACTIVITY_EVENTS.forEach((e) => window.addEventListener(e, onActivity, { passive: true, capture: true }));
     document.addEventListener('visibilitychange', onVisibility);
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, [hasPin, minutes]);
-
-  return { locked: hasPin && locked !== false, unlock: () => setLocked(false) };
+    return () => {
+      window.clearInterval(timer);
+      ACTIVITY_EVENTS.forEach((e) => window.removeEventListener(e, onActivity, { capture: true }));
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [active, minutes]);
 }
 
-export function LockScreen({ settings, onUnlock }: { settings: Settings; onUnlock: () => void }) {
+export function LockScreen() {
+  // Only the settings the lock screen needs (theme, language) are readable while locked.
+  const stored = useLiveQuery(async () => (await db.settings.get('app')) ?? null);
+  const hasPasskey = useLiveQuery(async () => (await db.keyring.toArray()).some((k) => k.kind === 'passkey'), [], false);
+  const settings = { ...DEFAULT_SETTINGS, ...stored };
+  if (stored !== undefined) applyLocale(settings.language, settings.currency);
+  useTheme(settings.theme);
+
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (!settings.pinHash || !settings.pinSalt) return onUnlock();
     setChecking(true);
-    const ok = await verifyPin(pin, settings.pinHash, settings.pinSalt);
+    const ok = await unlockWithPin(pin).catch(() => false);
     setChecking(false);
-    if (ok) onUnlock();
-    else {
+    if (!ok) {
       setError(t('lock.wrongPin'));
       setPin('');
     }
   }
+
+  async function passkey() {
+    setError('');
+    try {
+      await unlockWithPasskey();
+    } catch (err) {
+      // Cancelling the browser prompt is not an error worth showing.
+      if (!(err instanceof DOMException && err.name === 'NotAllowedError')) setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  if (stored === undefined) return null;
 
   return (
     <main className="welcome">
@@ -80,6 +110,12 @@ export function LockScreen({ settings, onUnlock }: { settings: Settings; onUnloc
         <button type="submit" className="btn btn--primary" disabled={pin.length < 4 || checking}>
           {t('lock.unlock')}
         </button>
+        {hasPasskey && (
+          <button type="button" className="btn" onClick={passkey}>
+            <Icon name="lock" size={18} />
+            {t('lock.usePasskey')}
+          </button>
+        )}
         <p className="small muted">{t('lock.forgot')}</p>
       </form>
     </main>

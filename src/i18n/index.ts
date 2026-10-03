@@ -63,19 +63,22 @@ function sessionOverride(): string | undefined {
 let arabicFontLoaded = false;
 
 /** Applies language, text direction and number/date formatting. Safe to call on every render. */
-export function applyLocale(languageCode: string, currency: string): Language {
+export function applyLocale(languageCode: string, currency: string, hideAmounts = false): Language {
   const lang = languageOf(sessionOverride() ?? languageCode);
   if (i18next.language !== lang.code) void i18next.changeLanguage(lang.code);
-  configureFormatting({ locale: lang.formatLocale, currency, isolate: lang.dir === 'rtl' });
+  configureFormatting({ locale: lang.formatLocale, currency, isolate: lang.dir === 'rtl', hideAmounts });
   const html = document.documentElement;
   if (html.lang !== lang.code) html.lang = lang.code;
   if (html.dir !== lang.dir) html.dir = lang.dir;
   if (lang.dir === 'rtl' && !arabicFontLoaded) {
     arabicFontLoaded = true;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap';
-    document.head.appendChild(link);
+    // Bundled but loaded on demand: only right-to-left languages need it.
+    void Promise.all([
+      import('@fontsource/ibm-plex-sans-arabic/arabic-400.css'),
+      import('@fontsource/ibm-plex-sans-arabic/arabic-500.css'),
+      import('@fontsource/ibm-plex-sans-arabic/arabic-600.css'),
+      import('@fontsource/ibm-plex-sans-arabic/arabic-700.css'),
+    ]);
   }
   return lang;
 }

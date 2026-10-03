@@ -1,11 +1,12 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 import { AppShell, Loading } from './components/Layout';
-import { LockScreen, useAppLock } from './components/LockScreen';
+import { LockScreen, useAutoLock } from './components/LockScreen';
 import { ConfirmProvider } from './components/ui/Dialog';
 import { ToastProvider } from './components/ui/Toast';
 import { useTheme } from './components/useTheme';
 import { useFinanceData } from './db/db';
+import { useSecurityMode } from './db/security';
 import { applyLocale } from './i18n';
 import type { FinanceData } from './db/types';
 import { Activity } from './pages/Activity';
@@ -28,15 +29,24 @@ const Reports = page(() => import('./pages/Reports'), 'Reports');
 const Rules = page(() => import('./pages/Rules'), 'Rules');
 
 export function App() {
+  // While locked nothing can be decrypted, so the screens (and their data queries) are not mounted.
+  const locked = useSecurityMode() === 'locked';
+  return (
+    <ToastProvider>
+      <ConfirmProvider>{locked ? <LockScreen /> : <Unlocked />}</ConfirmProvider>
+    </ToastProvider>
+  );
+}
+
+function Unlocked() {
   const data = useFinanceData();
   // Language, text direction and number/date formats must be in place before anything renders.
-  if (data) applyLocale(data.settings.language, data.settings.currency);
+  if (data) applyLocale(data.settings.language, data.settings.currency, data.settings.hideAmounts);
   useTheme(data?.settings.theme);
-  const lock = useAppLock(data?.settings);
+  useAutoLock(data?.settings.lockAfterMinutes);
 
   let content;
   if (!data) content = <Loading />;
-  else if (lock.locked) content = <LockScreen settings={data.settings} onUnlock={lock.unlock} />;
   else if (!data.settings.onboarded) content = <Welcome />;
   else
     content = (
@@ -66,9 +76,5 @@ export function App() {
       </BrowserRouter>
     );
 
-  return (
-    <ToastProvider>
-      <ConfirmProvider>{content}</ConfirmProvider>
-    </ToastProvider>
-  );
+  return content;
 }

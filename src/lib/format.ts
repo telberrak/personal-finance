@@ -13,15 +13,23 @@ export interface FormatConfig {
    * order inside Arabic text (an Arabic-formatted amount resolves to RTL by itself).
    */
   isolate: boolean;
+  /** Privacy mode: amounts show as "£•••" (Settings → Security → Hide amounts). */
+  hideAmounts: boolean;
 }
 
-let config: FormatConfig = { locale: 'en-GB', currency: 'GBP', isolate: false };
+let config: FormatConfig = { locale: 'en-GB', currency: 'GBP', isolate: false, hideAmounts: false };
 const numberCache = new Map<string, Intl.NumberFormat>();
 const dateCache = new Map<string, Intl.DateTimeFormat>();
 
 export function configureFormatting(next: Partial<FormatConfig>): void {
   const merged = { ...config, ...next };
-  if (merged.locale === config.locale && merged.currency === config.currency && merged.isolate === config.isolate) return;
+  if (
+    merged.locale === config.locale &&
+    merged.currency === config.currency &&
+    merged.isolate === config.isolate &&
+    merged.hideAmounts === config.hideAmounts
+  )
+    return;
   config = merged;
   numberCache.clear();
   dateCache.clear();

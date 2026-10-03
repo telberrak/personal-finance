@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from 'dexie';
 import { t } from '../i18n';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { encryptionMiddleware } from './encryption';
 import {
   DEFAULT_SETTINGS,
   TRANSFER_CATEGORY_ID,
@@ -10,6 +11,7 @@ import {
   type FinanceData,
   type Goal,
   type ImportBatch,
+  type KeyEntry,
   type PayeeAlias,
   type Recurring,
   type Rule,
@@ -38,12 +40,15 @@ export class FinanceDB extends Dexie {
   payeeAliases!: EntityTable<PayeeAlias, 'id'>;
   importBatches!: EntityTable<ImportBatch, 'id'>;
   goals!: EntityTable<Goal, 'id'>;
+  keyring!: EntityTable<KeyEntry, 'id'>;
 
   constructor(name = 'ledger') {
     super(name);
     // Migration policy: never edit a released version. To change the schema, add
     // this.version(n + 1).stores({...}).upgrade(tx => ...) below the last one, and add a
     // migration test in db.test.ts that opens a database written at version n.
+    // Upgrades run before unlocking, so they can change the schema but cannot read or write the
+    // contents of encrypted records (see docs/SECURITY.md).
     this.version(1).stores({
       accounts: 'id',
       categories: 'id, order',
@@ -77,6 +82,16 @@ export class FinanceDB extends Dexie {
           await tx.table('settings').put({ ...DEFAULT_SETTINGS, ...old, onboarded: old.onboarded ?? hadData });
         }
       });
+
+    // v3: encryption at rest. Indexed fields are stored readable, so indexes on payee-derived
+    // values (import fingerprints, payee aliases) are dropped; the keyring holds the wrapped data key.
+    this.version(3).stores({
+      transactions: 'id, date, accountId, categoryId, recurringId, transferId, importBatchId',
+      payeeAliases: 'id',
+      keyring: 'id',
+    });
+
+    this.use(encryptionMiddleware);
   }
 }
 

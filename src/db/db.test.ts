@@ -32,13 +32,44 @@ describe('schema migration', () => {
 
     const db = new FinanceDB(NAME);
     await db.open();
-    expect(db.verno).toBe(2);
+    expect(db.verno).toBe(3);
     expect(await db.transactions.get('t1')).toMatchObject({ payee: 'Tesco', amount: -250 });
     expect(await db.accounts.get('current')).toMatchObject({ includeInSafeToSpend: true });
     expect(await db.accounts.get('card')).toMatchObject({ includeInSafeToSpend: false });
     expect(await db.categories.get('transfer')).toMatchObject({ system: true });
     expect(await db.settings.get('app')).toMatchObject({ payday: 28, theme: 'dark', onboarded: true, budgetPeriod: 'month' });
     expect(await db.transactions.where('transferId').equals('x').count()).toBe(0); // the new index works
+    db.close();
+  });
+
+  it('upgrades version 2 to 3, dropping the indexes on payee data', async () => {
+    const v2 = new Dexie(NAME);
+    v2.version(2).stores({
+      accounts: 'id',
+      categories: 'id, order',
+      transactions: 'id, date, accountId, categoryId, recurringId, transferId, importBatchId, fingerprint',
+      recurring: 'id',
+      budgets: 'id, categoryId',
+      settings: 'id',
+      rules: 'id, priority',
+      payeeAliases: 'id, &from',
+      importBatches: 'id, importedAt',
+      goals: 'id',
+    });
+    await v2
+      .table('transactions')
+      .put({ id: 't1', accountId: 'a', date: '2026-10-01', amount: -250, payee: 'Tesco', categoryId: 'g', fingerprint: 'f' });
+    await v2.table('payeeAliases').put({ id: 'p1', from: 'tesco stores', to: 'Tesco' });
+    v2.close();
+
+    const db = new FinanceDB(NAME);
+    await db.open();
+    expect(db.verno).toBe(3);
+    expect(await db.transactions.get('t1')).toMatchObject({ payee: 'Tesco', fingerprint: 'f' });
+    expect(await db.payeeAliases.get('p1')).toMatchObject({ from: 'tesco stores' });
+    expect(db.transactions.schema.indexes.map((i) => i.name)).not.toContain('fingerprint');
+    expect(db.payeeAliases.schema.indexes).toHaveLength(0);
+    expect(await db.keyring.count()).toBe(0);
     db.close();
   });
 });

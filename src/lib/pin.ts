@@ -1,5 +1,6 @@
 /**
- * App-lock PIN hashing with PBKDF2 (WebCrypto). Only the salted hash is stored.
+ * Legacy app-lock PIN hashing (PBKDF2). Since P2 the PIN unwraps the encryption key instead
+ * (src/db/security.ts); these checks remain to migrate a PIN set by an older version.
  * WebCrypto needs a secure origin (HTTPS or localhost), so the lock is unavailable over plain http on a LAN.
  */
 const ITERATIONS = 210_000;

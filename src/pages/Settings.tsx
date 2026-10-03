@@ -1,4 +1,5 @@
-import { useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router';
 import { Icon, type IconName } from '../components/Icon';
 import { Loading, PageHeader } from '../components/Layout';
@@ -9,20 +10,33 @@ import { useToast } from '../components/ui/Toast';
 import { useIsDesktop } from '../components/useMediaQuery';
 import {
   backupFileName,
-  clearPin,
   createBackup,
   daysSinceBackup,
   eraseAllData,
   markBackedUp,
   resetDemoData,
   restoreBackup,
-  setPin,
   transactionsCsv,
   updateSettings,
   ValidationError,
 } from '../db/repo';
-import type { FinanceData, ThemePreference } from '../db/types';
-import { today } from '../lib/dates';
+import { db } from '../db/db';
+import {
+  addPasskey,
+  changePin,
+  decryptBackup,
+  disableEncryption,
+  enableEncryption,
+  encryptBackup,
+  isEncryptedBackup,
+  lockNow,
+  MIN_BACKUP_PASSWORD,
+  passkeysSupported,
+  removePasskey,
+  SecurityError,
+} from '../db/security';
+import type { FinanceData, Settings as AppSettings, ThemePreference } from '../db/types';
+import { formatDate, toISO, today } from '../lib/dates';
 import { currencyName, formatMoney, parseMoney } from '../lib/money';
 import { isValidPin, pinSupported } from '../lib/pin';
 import { CURRENCIES, LANGUAGES, t } from '../i18n';
@@ -89,7 +103,8 @@ export function Settings({ data }: { data?: FinanceData }) {
   const toast = useToast();
   const isDesktop = useIsDesktop();
   const fileInput = useRef<HTMLInputElement>(null);
-  const [pinSheet, setPinSheet] = useState(false);
+  const [backupSheet, setBackupSheet] = useState(false);
+  const [lockedFile, setLockedFile] = useState<{ name: string; text: string }>();
   if (!data) return <Loading />;
   const { settings } = data;
   const backupAge = daysSinceBackup(settings);
@@ -118,13 +133,6 @@ export function Settings({ data }: { data?: FinanceData }) {
     toast({ message: t('settings.eraseDone') });
   }
 
-  async function onBackup() {
-    const backup = await createBackup();
-    downloadFile(backupFileName(), JSON.stringify(backup, null, 2), 'application/json');
-    await markBackedUp();
-    toast({ message: t('settings.backupDone') });
-  }
-
   async function onCsv() {
     downloadFile(`ledger-transactions-${today()}.csv`, await transactionsCsv(), 'text/csv');
   }
@@ -138,19 +146,21 @@ export function Settings({ data }: { data?: FinanceData }) {
       danger: true,
     });
     if (!ok) return;
-    try {
-      const { transactions } = await restoreBackup(await file.text());
-      toast({ message: t('settings.restored', { count: transactions }) });
-    } catch (err) {
-      toast({ message: err instanceof ValidationError ? err.message : t('settings.restoreFailed') });
-    }
+    const text = await file.text();
+    if (isEncryptedBackup(text)) setLockedFile({ name: file.name, text });
+    else await restore(text);
   }
 
-  async function onRemovePin() {
-    const ok = await confirm({ title: t('settings.lockOffTitle'), confirmLabel: t('settings.turnOff') });
-    if (!ok) return;
-    await clearPin();
-    toast({ message: t('settings.lockOffDone') });
+  /** Returns false if the restore failed (the message is shown). */
+  async function restore(text: string): Promise<boolean> {
+    try {
+      const { transactions } = await restoreBackup(text);
+      toast({ message: t('settings.restored', { count: transactions }) });
+      return true;
+    } catch (err) {
+      toast({ message: err instanceof ValidationError ? err.message : t('settings.restoreFailed') });
+      return false;
+    }
   }
 
   return (
@@ -296,51 +306,7 @@ export function Settings({ data }: { data?: FinanceData }) {
         </div>
       </Section>
 
-      <Section title={t('settings.security')}>
-        <div className="list">
-          <div className="list-row">
-            <div className="tile" aria-hidden="true">
-              <Icon name="lock" size={20} />
-            </div>
-            <div className="grow stack" style={{ gap: 2 }}>
-              <span className="item-title">{t('settings.appLock')}</span>
-              <span className="item-meta">
-                {!pinSupported() ? t('settings.lockNeedsHttps') : settings.pinHash ? t('settings.lockOn') : t('settings.lockOff')}
-              </span>
-            </div>
-            {pinSupported() && (
-              <button type="button" className="btn btn--sm" onClick={() => setPinSheet(true)}>
-                {settings.pinHash ? t('settings.changePin') : t('settings.setPin')}
-              </button>
-            )}
-          </div>
-          {settings.pinHash && (
-            <>
-              <Field label={t('settings.lockAfter')}>
-                {(id) => (
-                  <select
-                    id={id}
-                    value={settings.lockAfterMinutes}
-                    onChange={(e) => updateSettings({ lockAfterMinutes: Number(e.target.value) })}
-                  >
-                    <option value={0}>{t('settings.immediately')}</option>
-                    <option value={1}>{t('settings.minutes', { count: 1 })}</option>
-                    <option value={5}>{t('settings.minutes', { count: 5 })}</option>
-                    <option value={15}>{t('settings.minutes', { count: 15 })}</option>
-                    <option value={60}>{t('settings.oneHour')}</option>
-                  </select>
-                )}
-              </Field>
-              <button type="button" className="list-row plain-btn text-warn" onClick={onRemovePin}>
-                {t('settings.turnOffLock')}
-              </button>
-            </>
-          )}
-        </div>
-        <p className="small muted" style={{ padding: '0 4px' }}>
-          {t('settings.lockNote')}
-        </p>
-      </Section>
+      <SecuritySection settings={settings} />
 
       <Section title={t('settings.backup')} id="backup">
         <p className="label" style={{ padding: '0 4px' }}>
@@ -352,7 +318,7 @@ export function Settings({ data }: { data?: FinanceData }) {
           {t('settings.backupNote')}
         </p>
         <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
-          <button type="button" className="btn btn--solid" onClick={onBackup}>
+          <button type="button" className="btn btn--solid" onClick={() => setBackupSheet(true)}>
             <Icon name="download" size={18} />
             {t('settings.downloadBackup')}
           </button>
@@ -388,28 +354,46 @@ export function Settings({ data }: { data?: FinanceData }) {
         </div>
       </Section>
 
-      <Sheet open={pinSheet} onClose={() => setPinSheet(false)} title={settings.pinHash ? t('settings.changePin') : t('settings.setAPin')}>
-        {pinSheet && <PinForm onDone={() => setPinSheet(false)} />}
+      <Sheet open={backupSheet} onClose={() => setBackupSheet(false)} title={t('settings.downloadBackup')}>
+        {backupSheet && <BackupForm onDone={() => setBackupSheet(false)} />}
+      </Sheet>
+      <Sheet open={!!lockedFile} onClose={() => setLockedFile(undefined)} title={t('security.openBackup')}>
+        {lockedFile && (
+          <PasswordForm
+            intro={t('security.openBackupIntro', { file: lockedFile.name })}
+            submitLabel={t('settings.restore')}
+            onCancel={() => setLockedFile(undefined)}
+            onSubmit={async (password) => {
+              const text = await decryptBackup(lockedFile.text, password);
+              if (await restore(text)) setLockedFile(undefined);
+            }}
+          />
+        )}
       </Sheet>
     </main>
   );
 }
 
-function PinForm({ onDone }: { onDone: () => void }) {
+function PinForm({ change, onDone }: { change: boolean; onDone: () => void }) {
   const toast = useToast();
   const [pin, setPinText] = useState('');
   const [again, setAgain] = useState('');
+  const [saving, setSaving] = useState(false);
   const valid = isValidPin(pin) && pin === again;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!valid) return;
+    setSaving(true);
     try {
-      await setPin(pin);
-      toast({ message: t('settings.lockIsOn') });
+      if (change) await changePin(pin);
+      else await enableEncryption(pin);
+      toast({ message: change ? t('security.pinChanged') : t('settings.lockIsOn') });
       onDone();
     } catch (err) {
-      toast({ message: err instanceof ValidationError ? err.message : t('settings.pinFailed') });
+      toast({ message: err instanceof SecurityError ? err.message : t('settings.pinFailed') });
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -451,8 +435,249 @@ function PinForm({ onDone }: { onDone: () => void }) {
         <button type="button" className="btn" onClick={onDone}>
           {t('common.cancel')}
         </button>
-        <button type="submit" className="btn btn--solid" disabled={!valid}>
+        <button type="submit" className="btn btn--solid" disabled={!valid || saving}>
           {t('settings.savePin')}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+const LOCK_TIMES = [0, 1, 5, 15, 60];
+
+function SecuritySection({ settings }: { settings: AppSettings }) {
+  const confirm = useConfirm();
+  const toast = useToast();
+  const keyring = useLiveQuery(() => db.keyring.toArray(), [], []);
+  const [pinSheet, setPinSheet] = useState(false);
+  const [passkeys, setPasskeys] = useState(false);
+  useEffect(() => {
+    void passkeysSupported().then(setPasskeys);
+  }, []);
+  const lockOn = keyring.some((k) => k.kind === 'pin');
+  const keys = keyring.filter((k) => k.kind === 'passkey');
+
+  async function onTurnOff() {
+    const ok = await confirm({ title: t('settings.lockOffTitle'), message: t('security.offBody'), confirmLabel: t('settings.turnOff') });
+    if (!ok) return;
+    await disableEncryption();
+    toast({ message: t('settings.lockOffDone') });
+  }
+
+  async function onAddPasskey() {
+    try {
+      await addPasskey();
+      toast({ message: t('security.passkeyAdded') });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'NotAllowedError') return; // cancelled
+      toast({ message: err instanceof SecurityError ? err.message : t('security.passkeyFailed') });
+    }
+  }
+
+  async function onRemovePasskey(id: string) {
+    const ok = await confirm({ title: t('security.removePasskeyTitle'), confirmLabel: t('security.remove'), danger: true });
+    if (ok) await removePasskey(id);
+  }
+
+  return (
+    <Section title={t('settings.security')}>
+      <div className="list">
+        <div className="list-row">
+          <div className="tile" aria-hidden="true">
+            <Icon name="lock" size={20} />
+          </div>
+          <div className="grow stack" style={{ gap: 2 }}>
+            <span className="item-title">{t('settings.appLock')}</span>
+            <span className="item-meta">
+              {!pinSupported() ? t('settings.lockNeedsHttps') : lockOn ? t('settings.lockOn') : t('settings.lockOff')}
+            </span>
+          </div>
+          {pinSupported() && (
+            <button type="button" className="btn btn--sm" onClick={() => setPinSheet(true)}>
+              {lockOn ? t('settings.changePin') : t('settings.setPin')}
+            </button>
+          )}
+        </div>
+        {lockOn && (
+          <>
+            <Field label={t('settings.lockAfter')}>
+              {(id) => (
+                <select
+                  id={id}
+                  value={settings.lockAfterMinutes}
+                  onChange={(e) => updateSettings({ lockAfterMinutes: Number(e.target.value) })}
+                >
+                  {LOCK_TIMES.map((m) => (
+                    <option key={m} value={m}>
+                      {m === 0 ? t('settings.immediately') : m === 60 ? t('settings.oneHour') : t('settings.minutes', { count: m })}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            {passkeys &&
+              keys.map((k) => (
+                <div className="list-row" key={k.id}>
+                  <div className="grow stack" style={{ gap: 2 }}>
+                    <span className="item-title">{t('security.passkey')}</span>
+                    <span className="item-meta">{t('security.passkeyAddedOn', { date: formatDate(toISO(new Date(k.createdAt))) })}</span>
+                  </div>
+                  <button type="button" className="btn btn--sm" onClick={() => onRemovePasskey(k.id)}>
+                    {t('security.remove')}
+                  </button>
+                </div>
+              ))}
+            {passkeys && (
+              <button type="button" className="list-row plain-btn" onClick={onAddPasskey}>
+                {t('security.addPasskey')}
+              </button>
+            )}
+            <button type="button" className="list-row plain-btn" onClick={lockNow}>
+              {t('security.lockNow')}
+            </button>
+            <button type="button" className="list-row plain-btn text-warn" onClick={onTurnOff}>
+              {t('settings.turnOffLock')}
+            </button>
+          </>
+        )}
+      </div>
+      <p className="small muted" style={{ padding: '0 4px' }}>
+        {lockOn ? t('security.encryptedNote') : t('settings.lockNote')}
+      </p>
+      <label className="check-row">
+        <input type="checkbox" checked={!!settings.hideAmounts} onChange={(e) => updateSettings({ hideAmounts: e.target.checked })} />
+        <span>
+          {t('security.hideAmounts')}
+          <span className="small muted" style={{ display: 'block' }}>
+            {t('security.hideAmountsHint')}
+          </span>
+        </span>
+      </label>
+      <Sheet open={pinSheet} onClose={() => setPinSheet(false)} title={lockOn ? t('settings.changePin') : t('settings.setAPin')}>
+        {pinSheet && <PinForm change={lockOn} onDone={() => setPinSheet(false)} />}
+      </Sheet>
+    </Section>
+  );
+}
+
+function BackupForm({ onDone }: { onDone: () => void }) {
+  const toast = useToast();
+  const [password, setPassword] = useState('');
+  const [again, setAgain] = useState('');
+  const [busy, setBusy] = useState(false);
+  const short = password.length > 0 && password.length < MIN_BACKUP_PASSWORD;
+  const mismatch = !!again && password !== again;
+  const valid = !short && password === again;
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!valid) return;
+    setBusy(true);
+    try {
+      const json = JSON.stringify(await createBackup(), null, 2);
+      const file = password ? await encryptBackup(json, password) : json;
+      downloadFile(backupFileName(), file, 'application/json');
+      await markBackedUp();
+      toast({ message: t('settings.backupDone') });
+      onDone();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
+      <p className="small muted">{t('security.backupPasswordIntro')}</p>
+      <div className="list">
+        <Field label={t('security.password')}>
+          {(id) => (
+            <input id={id} type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          )}
+        </Field>
+        <Field label={t('settings.repeat')}>
+          {(id) => <input id={id} type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} />}
+        </Field>
+      </div>
+      <p className="small muted" role={short || mismatch ? 'alert' : undefined}>
+        {short
+          ? t('security.passwordShort', { count: MIN_BACKUP_PASSWORD })
+          : mismatch
+            ? t('security.passwordMismatch')
+            : password
+              ? t('security.passwordWarning')
+              : t('security.noPasswordNote')}
+      </p>
+      <div className="grid-2">
+        <button type="button" className="btn" onClick={onDone}>
+          {t('common.cancel')}
+        </button>
+        <button type="submit" className="btn btn--solid" disabled={!valid || busy}>
+          {password ? t('security.downloadEncrypted') : t('settings.downloadBackup')}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function PasswordForm({
+  intro,
+  submitLabel,
+  onSubmit,
+  onCancel,
+}: {
+  intro: string;
+  submitLabel: string;
+  onSubmit: (password: string) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await onSubmit(password);
+    } catch (err) {
+      setError(err instanceof SecurityError ? err.message : t('settings.restoreFailed'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
+      <p className="small muted">{intro}</p>
+      <div className="list">
+        <Field label={t('security.password')}>
+          {(id) => (
+            <input
+              id={id}
+              type="password"
+              autoComplete="current-password"
+              autoFocus
+              value={password}
+              aria-invalid={!!error}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError('');
+              }}
+            />
+          )}
+        </Field>
+      </div>
+      {error && (
+        <p className="text-warn small" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="grid-2">
+        <button type="button" className="btn" onClick={onCancel}>
+          {t('common.cancel')}
+        </button>
+        <button type="submit" className="btn btn--solid" disabled={!password || busy}>
+          {submitLabel}
         </button>
       </div>
     </form>

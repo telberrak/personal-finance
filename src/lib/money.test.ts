@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { formatMoney, parseMoney } from './money';
+import { configureFormatting } from './format';
+import { formatMoney, formatWhole, moneyParts, parseMoney } from './money';
 
 describe('parseMoney', () => {
   it.each([
@@ -20,5 +21,20 @@ describe('formatMoney', () => {
     expect(formatMoney(-2340)).toBe('−£23.40');
     expect(formatMoney(4200, { sign: true })).toBe('+£42.00');
     expect(formatMoney(0, { sign: true })).toBe('£0.00');
+  });
+});
+
+describe('hide amounts', () => {
+  it('masks every amount, keeping the currency in the locale position', () => {
+    configureFormatting({ hideAmounts: true });
+    try {
+      expect(formatMoney(123450)).toBe('£•••');
+      expect(formatWhole(-75000)).toBe('£•••');
+      expect(moneyParts(98191)).toEqual({ main: '£•••', fraction: '' });
+      configureFormatting({ locale: 'fr-FR', currency: 'EUR' });
+      expect(formatMoney(123450)).toMatch(/^•••\s€$/);
+    } finally {
+      configureFormatting({ hideAmounts: false, locale: 'en-GB', currency: 'GBP' });
+    }
   });
 });
