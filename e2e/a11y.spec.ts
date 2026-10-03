@@ -23,6 +23,8 @@ const SCREENS = [
   '/calendar',
   '/tax',
   '/reports/year/2026',
+  '/friends',
+  '/settings/household',
 ];
 
 for (const path of SCREENS) {

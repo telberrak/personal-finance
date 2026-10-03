@@ -181,6 +181,8 @@ See [SERVER.md](SERVER.md).
 
 ## P11 — Shared finances — L (after P3)
 
+**Status (3 October 2026): done.** Households with shared accounts, transactions and bills (end-to-end encrypted, per-household key, one-use invites), and splitting with friends. Shared budgets and custom categories across a household are not shared yet: budgets stay personal, and others' custom categories show as uncategorised.
+
 - **Household space:** shared accounts, bills and budgets with a partner; each person keeps private accounts.
 - **Splitting with friends:** who owes whom, settle-up records and payment links.
 

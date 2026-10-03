@@ -17,20 +17,35 @@ let sql: Sql;
 const codes = new Map<string, string>();
 
 async function load(): Promise<FinanceData> {
-  const [accounts, categories, transactions, recurring, budgets, rules, aliases, importBatches, goals, bankConnections, settings] =
-    await Promise.all([
-      db.accounts.toArray(),
-      db.categories.toArray(),
-      db.transactions.orderBy('date').reverse().toArray(),
-      db.recurring.toArray(),
-      db.budgets.toArray(),
-      db.rules.toArray(),
-      db.payeeAliases.toArray(),
-      db.importBatches.toArray(),
-      db.goals.toArray(),
-      db.bankConnections.toArray(),
-      db.settings.get('app'),
-    ]);
+  const [
+    accounts,
+    categories,
+    transactions,
+    recurring,
+    budgets,
+    rules,
+    aliases,
+    importBatches,
+    goals,
+    bankConnections,
+    people,
+    ious,
+    settings,
+  ] = await Promise.all([
+    db.accounts.toArray(),
+    db.categories.toArray(),
+    db.transactions.orderBy('date').reverse().toArray(),
+    db.recurring.toArray(),
+    db.budgets.toArray(),
+    db.rules.toArray(),
+    db.payeeAliases.toArray(),
+    db.importBatches.toArray(),
+    db.goals.toArray(),
+    db.bankConnections.toArray(),
+    db.people.toArray(),
+    db.ious.toArray(),
+    db.settings.get('app'),
+  ]);
   return {
     accounts,
     categories,
@@ -42,6 +57,8 @@ async function load(): Promise<FinanceData> {
     importBatches,
     goals,
     bankConnections,
+    people,
+    ious,
     settings: { ...DEFAULT_SETTINGS, ...settings },
   };
 }

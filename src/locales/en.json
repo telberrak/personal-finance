@@ -55,7 +55,9 @@
     "trialDate": "Enter the date the free trial ends.",
     "tagRequired": "Enter a tag.",
     "attachmentType": "Attach a photo (JPEG, PNG, WebP) or a PDF.",
-    "attachmentSize": "That file is too large. Attach files of up to 2 MB."
+    "attachmentSize": "That file is too large. Attach files of up to 2 MB.",
+    "notYourAccount": "Only the person who shared this account can stop sharing it.",
+    "payLink": "Payment links start with https://"
   },
   "transactions": {
     "transferTo": "Transfer to {{name}}",
@@ -161,7 +163,8 @@
     "dataSynced": "Synced, end-to-end encrypted.",
     "networth": "Net worth",
     "search": "Search",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "friends": "Friends"
   },
   "app": {
     "name": "Ledger"
@@ -646,7 +649,9 @@
     "notifications": "Notifications",
     "notificationsDetail": "Reminders, alerts and quiet hours",
     "banks": "Bank connections",
-    "banksDetail": "Bring transactions in automatically"
+    "banksDetail": "Bring transactions in automatically",
+    "household": "Household",
+    "householdDetail": "Share accounts with a partner"
   },
   "colors": {
     "groceries": "Blue",
@@ -1202,5 +1207,74 @@
     "nothingFound": "No amount or date found on that receipt.",
     "filled": "Filled in from the receipt. Check the details.",
     "note": "Photos are compressed and stored encrypted on your device. Reading a receipt happens on your device too."
+  },
+  "friends": {
+    "title": "Friends",
+    "subtitle": "Split costs and keep track of who owes whom",
+    "add": "Add a friend",
+    "edit": "Edit friend",
+    "owedToYou": "Owed to you",
+    "youOwe": "You owe",
+    "empty": "No friends added yet. Add someone you share costs with.",
+    "owesYou": "Owes you {{amount}}",
+    "youOweThem": "You owe {{amount}}",
+    "settled": "All settled",
+    "howTo": "Split an expense from its screen (Split with friends), or add an entry here. This stays on your device and your own synced devices.",
+    "payLink": "Payment link",
+    "payLinkHint": "Optional: their Monzo.me, PayPal.me or Revolut link, to ask them to pay you back.",
+    "saveFailed": "Could not save.",
+    "amountHint": "Enter an amount, for example 12.50.",
+    "settleTitle": "Settle up with {{name}}?",
+    "settleTheyPaid": "Record that they paid you {{amount}}.",
+    "settleYouPaid": "Record that you paid them {{amount}}.",
+    "settle": "Settle up",
+    "settledDone": "Settled up",
+    "request": "Request {{amount}}",
+    "copyReminder": "Copy a reminder",
+    "reminderText": "Hi {{name}}, just a reminder that you owe me {{amount}}. Thanks!",
+    "copied": "Reminder copied",
+    "direction": "Who owes",
+    "theyOwe": "{{name}} owes me",
+    "iOwe": "I owe {{name}}",
+    "addEntry": "Add",
+    "settlement": "Settled up",
+    "entry": "Shared cost",
+    "deleteEntry": "Delete entry",
+    "splitTitle": "Split with friends",
+    "splitNoFriends": "Share this cost with someone?",
+    "addFirst": "Add friends",
+    "splitEach_one": "{{count}} friend owes you {{amount}}.",
+    "splitEach_other": "{{count}} friends each owe you {{amount}}.",
+    "splitExisting": "Already split with {{names}}.",
+    "payLinkPlaceholder": "https://monzo.me/…"
+  },
+  "household": {
+    "title": "Household",
+    "subtitle": "Share accounts with a partner",
+    "intro": "Share chosen accounts, with their transactions and bills, with people you live with. Everything else stays private. Shared data is end-to-end encrypted with a key only household members have.",
+    "needsSync": "Households need sync, so you can share with someone else.",
+    "defaultName": "Home",
+    "create": "Create a household",
+    "you": "You",
+    "creator": "Created it",
+    "invite": "Invite someone",
+    "linkIntro": "Send this link to the person you want to invite. It works once, for a week, and contains the household key: share it privately.",
+    "copied": "Invitation link copied",
+    "share": "Share",
+    "shareTitle": "Join my household on Ledger",
+    "accounts": "Shared accounts",
+    "sharedByOther": "Shared by someone else",
+    "accountsNote": "Shared accounts appear for everyone in the household, with their transactions and bills. Custom categories show as uncategorised for others.",
+    "leaveTitle": "Leave this household?",
+    "leaveBody": "Your shared accounts become private again. Accounts others shared are removed from your devices.",
+    "leave": "Leave household",
+    "failed": "Something went wrong. Try again.",
+    "inviteExpired": "This invitation has expired or was already used. Ask for a new one.",
+    "badLink": "This invitation link is incomplete. Ask for a new one.",
+    "joinTitle": "Join {{name}}",
+    "joinIntro": "You have been invited to a household. You will see the accounts it shares, and can share your own.",
+    "join": "Join household",
+    "joinNeedsSync": "To join, first turn on sync (it only takes an email address).",
+    "joined": "You joined {{name}}"
   }
 }

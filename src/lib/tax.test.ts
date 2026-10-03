@@ -85,6 +85,8 @@ describe('calendar', () => {
       importBatches: [],
       goals: [],
       bankConnections: [],
+      people: [],
+      ious: [],
       settings: {
         id: 'app' as const,
         onboarded: true,

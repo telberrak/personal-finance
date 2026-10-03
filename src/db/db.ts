@@ -13,6 +13,9 @@ import {
   type FinanceData,
   type Goal,
   type Attachment,
+  type Iou,
+  type Person,
+  type SpaceKey,
   type BankConnection,
   type ImportBatch,
   type KeyEntry,
@@ -53,6 +56,9 @@ export class FinanceDB extends Dexie {
   notices!: EntityTable<Notice, 'id'>;
   bankConnections!: EntityTable<BankConnection, 'id'>;
   attachments!: EntityTable<Attachment, 'id'>;
+  spaceKeys!: EntityTable<SpaceKey, 'id'>;
+  people!: EntityTable<Person, 'id'>;
+  ious!: EntityTable<Iou, 'id'>;
 
   constructor(name = 'ledger') {
     super(name);
@@ -112,6 +118,8 @@ export class FinanceDB extends Dexie {
     this.version(6).stores({ bankConnections: 'id' });
     // v7: receipts and documents attached to transactions (P9).
     this.version(7).stores({ attachments: 'id, transactionId' });
+    // v8: households (keys synced through your own vault), and splitting with friends (P11).
+    this.version(8).stores({ spaceKeys: 'id', people: 'id', ious: 'id, personId' });
 
     this.use(encryptionMiddleware);
     this.use(outboxMiddleware);
@@ -127,20 +135,35 @@ export const db = new FinanceDB();
  */
 export function useFinanceData(): FinanceData | undefined {
   return useLiveQuery(async () => {
-    const [accounts, categories, transactions, recurring, budgets, rules, aliases, importBatches, goals, bankConnections, settings] =
-      await Promise.all([
-        db.accounts.toArray(),
-        db.categories.orderBy('order').toArray(),
-        db.transactions.orderBy('date').reverse().toArray(),
-        db.recurring.toArray(),
-        db.budgets.toArray(),
-        db.rules.orderBy('priority').toArray(),
-        db.payeeAliases.toArray(),
-        db.importBatches.orderBy('importedAt').reverse().toArray(),
-        db.goals.toArray(),
-        db.bankConnections.toArray(),
-        db.settings.get('app'),
-      ]);
+    const [
+      accounts,
+      categories,
+      transactions,
+      recurring,
+      budgets,
+      rules,
+      aliases,
+      importBatches,
+      goals,
+      bankConnections,
+      people,
+      ious,
+      settings,
+    ] = await Promise.all([
+      db.accounts.toArray(),
+      db.categories.orderBy('order').toArray(),
+      db.transactions.orderBy('date').reverse().toArray(),
+      db.recurring.toArray(),
+      db.budgets.toArray(),
+      db.rules.orderBy('priority').toArray(),
+      db.payeeAliases.toArray(),
+      db.importBatches.orderBy('importedAt').reverse().toArray(),
+      db.goals.toArray(),
+      db.bankConnections.toArray(),
+      db.people.toArray(),
+      db.ious.toArray(),
+      db.settings.get('app'),
+    ]);
     return {
       // Everyday accounts first, so they are the default wherever an account is picked.
       accounts: accounts.sort(
@@ -155,6 +178,8 @@ export function useFinanceData(): FinanceData | undefined {
       importBatches,
       goals,
       bankConnections,
+      people: people.sort((a, b) => a.name.localeCompare(b.name)),
+      ious: ious.sort((a, b) => (a.date < b.date ? 1 : -1)),
       settings: { ...DEFAULT_SETTINGS, ...settings },
     };
   });

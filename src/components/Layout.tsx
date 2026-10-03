@@ -25,6 +25,7 @@ const MORE: { to: string; label: string; icon: IconName }[] = [
   { to: '/goals', label: 'nav.goals', icon: 'target' },
   { to: '/networth', label: 'nav.networth', icon: 'wallet' },
   { to: '/calendar', label: 'nav.calendar', icon: 'calendar' },
+  { to: '/friends', label: 'nav.friends', icon: 'rules' },
 ];
 
 function Tab({ to, label, icon }: (typeof TABS)[number]) {

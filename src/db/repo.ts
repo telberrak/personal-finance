@@ -24,6 +24,8 @@ import {
   type Settings,
   type Transaction,
   type Attachment,
+  type Person,
+  type Iou,
 } from './types';
 
 export class ValidationError extends Error {
@@ -132,8 +134,15 @@ function validateTransaction(t: NewTransaction): void {
   for (const d of [t.returnBy, t.warrantyUntil]) check(!d || ISO_DATE.test(d), 'errors.invalidDateValue', { date: d });
 }
 
+/** The household an account is shared with, which its transactions and bills follow. */
+async function spaceOf(accountId: string): Promise<string | undefined> {
+  return (await db.accounts.get(accountId))?.spaceId;
+}
+
 export async function addTransaction(input: NewTransaction): Promise<string> {
+  const spaceId = await spaceOf(input.accountId);
   const t = {
+    spaceId,
     ...input,
     payee: input.payee.trim(),
     note: input.note?.trim() || undefined,
@@ -155,6 +164,7 @@ export async function updateTransaction(id: string, patch: Partial<NewTransactio
     check(current, 'errors.transactionNotFound');
     check(!current.splitId || patch.amount === undefined || patch.amount === current.amount, 'errors.splitAmountLocked');
     const next = { ...current, ...patch, updatedAt: Date.now() };
+    if (patch.accountId !== undefined && patch.accountId !== current.accountId) next.spaceId = await spaceOf(patch.accountId);
     if (patch.payee !== undefined) next.payee = patch.payee.trim();
     if (patch.note !== undefined) next.note = patch.note.trim() || undefined;
     if (patch.tags !== undefined) next.tags = cleanTags(patch.tags);
@@ -198,6 +208,94 @@ export async function cleanOrphanAttachments(): Promise<number> {
     await db.attachments.bulkDelete(orphans);
     return orphans.length;
   });
+}
+
+// ---------------------------------------------------------------- households (P11)
+
+/**
+ * Shares an account (with its transactions and bills) with a household, or stops sharing it
+ * (spaceId undefined). Only the person who shared it can stop sharing it.
+ */
+export async function shareAccount(accountId: string, spaceId: string | undefined, userId: string): Promise<void> {
+  await db.transaction('rw', db.accounts, db.transactions, db.recurring, async () => {
+    const account = await db.accounts.get(accountId);
+    check(account, 'errors.accountRequired');
+    check(!account.spaceId || !account.ownerId || account.ownerId === userId, 'errors.notYourAccount');
+    await db.accounts.put({ ...account, spaceId, ownerId: spaceId ? userId : undefined });
+    await db.transactions.where('accountId').equals(accountId).modify({ spaceId });
+    await db.recurring.filter((r) => r.accountId === accountId).modify({ spaceId });
+  });
+}
+
+/** After leaving a household: your shared accounts become private again; the others' are removed. */
+export async function forgetSpace(spaceId: string, userId: string): Promise<void> {
+  await db.transaction('rw', [db.accounts, db.transactions, db.recurring, db.spaceKeys], async () => {
+    for (const account of await db.accounts.filter((a) => a.spaceId === spaceId).toArray()) {
+      if (account.ownerId === userId) {
+        await db.accounts.put({ ...account, spaceId: undefined, ownerId: undefined });
+        await db.transactions.where('accountId').equals(account.id).modify({ spaceId: undefined });
+        await db.recurring.filter((r) => r.accountId === account.id).modify({ spaceId: undefined });
+      } else {
+        await db.transactions.where('accountId').equals(account.id).delete();
+        await db.recurring.filter((r) => r.accountId === account.id).delete();
+        await db.accounts.delete(account.id);
+      }
+    }
+    await db.spaceKeys.delete(spaceId);
+  });
+}
+
+// ---------------------------------------------------------------- splitting with friends (P11)
+
+export async function savePerson(input: Omit<Person, 'id'> & { id?: string }): Promise<string> {
+  check(input.name.trim(), 'errors.nameRequired');
+  const payLink = input.payLink?.trim() || undefined;
+  check(!payLink || /^https:\/\//.test(payLink), 'errors.payLink');
+  const id = input.id ?? newId();
+  await db.people.put({ ...input, id, name: input.name.trim(), payLink });
+  return id;
+}
+
+export async function addIou(input: Omit<Iou, 'id'>): Promise<string> {
+  check(isPence(input.amount) && input.amount !== 0, 'errors.amountNonZero');
+  check(ISO_DATE.test(input.date), 'errors.invalidDateValue', { date: input.date });
+  const id = newId();
+  await db.ious.add({ ...input, note: input.note?.trim() || undefined, id });
+  return id;
+}
+
+export async function deleteIou(id: string): Promise<void> {
+  await db.ious.delete(id);
+}
+
+/** Splits an expense you paid: each person owes their share. Replaces any earlier split of it. */
+export async function splitWithPeople(transactionId: string, shares: { personId: string; amount: Pence }[], note?: string): Promise<void> {
+  const tx = await db.transactions.get(transactionId);
+  check(tx, 'errors.transactionNotFound');
+  await db.transaction('rw', db.ious, async () => {
+    await db.ious
+      .where('personId')
+      .anyOf(shares.map((x) => x.personId))
+      .filter((i) => i.transactionId === transactionId)
+      .delete();
+    for (const share of shares) {
+      if (share.amount <= 0) continue;
+      await db.ious.add({
+        id: newId(),
+        personId: share.personId,
+        date: tx.date,
+        amount: share.amount,
+        note: note ?? tx.payee,
+        transactionId,
+      });
+    }
+  });
+}
+
+/** Records a payment that clears what is owed between you and a person. */
+export async function settleUp(personId: string, balance: Pence, date: ISODate): Promise<void> {
+  if (balance === 0) return;
+  await addIou({ personId, date, amount: -balance, settlement: true });
 }
 
 // ---------------------------------------------------------------- bulk edit
@@ -357,11 +455,19 @@ async function transferPair(input: TransferInput, transferId: string, ids?: [str
   check(from && to, 'errors.accountNotFound');
   const base = { date: input.date, categoryId: TRANSFER_CATEGORY_ID, transferId, note: input.note?.trim() || undefined };
   return [
-    { ...base, id: ids?.[0] ?? newId(), accountId: from.id, amount: -input.amount, payee: t('transactions.transferTo', { name: to.name }) },
+    {
+      ...base,
+      id: ids?.[0] ?? newId(),
+      accountId: from.id,
+      spaceId: from.spaceId,
+      amount: -input.amount,
+      payee: t('transactions.transferTo', { name: to.name }),
+    },
     {
       ...base,
       id: ids?.[1] ?? newId(),
       accountId: to.id,
+      spaceId: to.spaceId,
       amount: input.amount,
       payee: t('transactions.transferFrom', { name: from.name }),
     },
@@ -467,7 +573,7 @@ export async function saveRecurring(input: RecurringInput): Promise<string> {
   check(!input.trialEndsOn || ISO_DATE.test(input.trialEndsOn), 'errors.trialDate');
   check(input.accountId && input.categoryId, 'errors.accountAndCategory');
   const id = input.id ?? newId();
-  await db.transaction('rw', db.recurring, async () => {
+  await db.transaction('rw', db.recurring, db.accounts, async () => {
     const existing = input.id ? await db.recurring.get(input.id) : undefined;
     const priceChange =
       existing && existing.amount !== input.amount
@@ -477,7 +583,7 @@ export async function saveRecurring(input: RecurringInput): Promise<string> {
             amountChangedOn: existing?.amountChangedOn,
             priceAlertDismissed: existing?.priceAlertDismissed,
           };
-    await db.recurring.put({ ...input, ...priceChange, id, name: input.name.trim() });
+    await db.recurring.put({ ...input, ...priceChange, id, name: input.name.trim(), spaceId: await spaceOf(input.accountId) });
   });
   return id;
 }
@@ -606,9 +712,11 @@ export async function importTransactions(accountId: string, fileName: string, ro
   // Older installs may not have the fallback categories yet.
   const fallbacks = defaultCategories().filter((c) => c.id === OTHER_EXPENSE_ID || c.id === OTHER_INCOME_ID);
   const now = Date.now();
+  const spaceId = await spaceOf(accountId);
   const transactions: Transaction[] = rows.map((r) => ({
     id: newId(),
     accountId,
+    spaceId,
     date: r.date,
     amount: r.amount,
     payee: r.payee.trim() || r.rawPayee,

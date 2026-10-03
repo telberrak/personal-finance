@@ -9,6 +9,7 @@ import { useToast } from '../components/ui/Toast';
 import {
   addAttachment,
   addTransaction,
+  splitWithPeople,
   addTransfer,
   deleteTransaction,
   saveRule,
@@ -17,6 +18,8 @@ import {
   ValidationError,
 } from '../db/repo';
 import { Receipts } from '../components/Receipts';
+import { SplitWithFriends } from '../components/SplitWithFriends';
+import { equalShare } from '../lib/friends';
 import { takeSharedFiles, type PreparedFile } from '../lib/files';
 import type { FinanceData, Transaction } from '../db/types';
 import { today } from '../lib/dates';
@@ -86,6 +89,8 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
   const [returnBy, setReturnBy] = useState(existing?.returnBy ?? '');
   const [warrantyUntil, setWarrantyUntil] = useState(existing?.warrantyUntil ?? '');
   const [pending, setPending] = useState<PreparedFile[]>([]);
+  const [splitWith, setSplitWith] = useState<string[]>([]);
+  const linkedIous = existing ? data.ious.filter((i) => i.transactionId === existing.id) : [];
   // Receipts shared from another app (Web Share Target): staged as attachments of this new expense.
   useEffect(() => {
     if (!params.get('shared') || existing) return;
@@ -159,6 +164,11 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
       };
       if (existing) {
         await updateTransaction(existing.id, fields);
+        if (kind === 'expense' && splitWith.length)
+          await splitWithPeople(
+            existing.id,
+            splitWith.map((personId) => ({ personId, amount: equalShare(amount, splitWith.length) })),
+          );
         const recategorised = existing.categoryId !== fields.categoryId;
         toast({
           message: t('txForm.changesSaved'),
@@ -175,6 +185,11 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
       } else {
         const id = await addTransaction({ ...fields, time: date === today() ? nowTime() : undefined });
         for (const file of pending) await addAttachment({ ...file, transactionId: id });
+        if (kind === 'expense' && splitWith.length)
+          await splitWithPeople(
+            id,
+            splitWith.map((personId) => ({ personId, amount: equalShare(amount, splitWith.length) })),
+          );
         toast({
           message: t(`txForm.saved.${kind}`),
           action: {
@@ -415,6 +430,16 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
                 if (guess.merchant && !payee.trim()) onPayeeChange(guess.merchant);
                 toast({ message: t('receipts.filled') });
               }}
+            />
+          )}
+
+          {kind === 'expense' && (
+            <SplitWithFriends
+              people={data.people}
+              selected={splitWith}
+              onChange={setSplitWith}
+              amount={amount ?? 0}
+              existing={linkedIous}
             />
           )}
 

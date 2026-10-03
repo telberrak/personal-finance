@@ -36,6 +36,8 @@ function data(over: Partial<FinanceData> = {}): FinanceData {
     importBatches: [],
     goals: [],
     bankConnections: [],
+    people: [],
+    ious: [],
     settings: { ...DEFAULT_SETTINGS, onboarded: true, payday: 28, lowBalanceThreshold: 0 },
     ...over,
   };

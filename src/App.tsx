@@ -39,6 +39,9 @@ const Search = page(() => import('./pages/Search'), 'Search');
 const Calendar = page(() => import('./pages/Calendar'), 'Calendar');
 const YearReview = page(() => import('./pages/YearReview'), 'YearReview');
 const Tax = page(() => import('./pages/Tax'), 'Tax');
+const Friends = page(() => import('./pages/Friends'), 'Friends');
+const Household = page(() => import('./pages/Household'), 'Household');
+const JoinHousehold = lazy(() => import('./pages/Household').then((m) => ({ default: m.JoinHousehold })));
 
 export function App() {
   // While locked nothing can be decrypted, so the screens (and their data queries) are not mounted.
@@ -86,6 +89,9 @@ function Unlocked() {
               <Route path="calendar" element={<Calendar data={data} />} />
               <Route path="reports/year/:year" element={<YearReview data={data} />} />
               <Route path="tax" element={<Tax data={data} />} />
+              <Route path="friends" element={<Friends data={data} />} />
+              <Route path="settings/household" element={<Household data={data} />} />
+              <Route path="join" element={<JoinHousehold />} />
               <Route path="import" element={<Import data={data} />} />
               <Route path="add" element={<TransactionForm data={data} />} />
               <Route path="transactions/:id" element={<TransactionForm data={data} />} />

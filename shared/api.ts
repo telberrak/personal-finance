@@ -126,3 +126,12 @@ export interface BankTransaction {
   description: string;
   currency: string;
 }
+
+// ------------------------------------------------------------------ Households (P11)
+
+export interface Space {
+  id: string;
+  /** True when you created it. */
+  owner: boolean;
+  members: { email: string; you: boolean; owner: boolean }[];
+}

@@ -21,6 +21,7 @@ import type { Sql } from './db.ts';
 import type { Mailer } from './mailer.ts';
 import { bankRoutes, type BankProvider } from './banks.ts';
 import { pushRoutes, type PushSender } from './push.ts';
+import { spaceRoutes } from './spaces.ts';
 import { RateLimiter } from './rate-limit.ts';
 
 export interface Config {
@@ -400,6 +401,7 @@ export function createApp({
 
   pushRoutes(authed, sql, push);
   bankRoutes(authed, sql, banks, config.origins);
+  spaceRoutes(authed, sql);
 
   app.route('/', authed);
   app.notFound((c) => c.json({ error: 'Not found.' }, 404));

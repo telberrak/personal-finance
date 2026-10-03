@@ -39,6 +39,10 @@ export interface Account {
   monthlyPayment?: Pence;
   /** Investments, pensions and property: the value on a date. The latest sets the balance. */
   valuations?: { date: ISODate; value: Pence }[];
+  /** Shared with a household (P11): its transactions and bills are shared too. */
+  spaceId?: string;
+  /** Sync user id of whoever shared it; only they can stop sharing it. */
+  ownerId?: string;
 }
 
 /** Keys into the category palette in tokens.css (--cat-<color>). */
@@ -94,6 +98,8 @@ export interface Transaction {
   /** Purchases: last day to return it, and when the warranty ends (reminders before both). */
   returnBy?: ISODate;
   warrantyUntil?: ISODate;
+  /** Household the transaction is shared with (set from its account). */
+  spaceId?: string;
   createdAt?: number;
   updatedAt?: number;
 }
@@ -120,6 +126,8 @@ export interface Recurring {
   active: boolean;
   /** Free trial: the first payment is taken on this date unless cancelled. */
   trialEndsOn?: ISODate;
+  /** Household the bill is shared with (set from its account). */
+  spaceId?: string;
 }
 
 export interface Budget {
@@ -230,6 +238,8 @@ export interface FinanceData {
   importBatches: ImportBatch[];
   goals: Goal[];
   bankConnections: BankConnection[];
+  people: Person[];
+  ious: Iou[];
   settings: Settings;
 }
 
@@ -274,6 +284,8 @@ export interface SyncState {
   recoveryKey?: string;
   /** Highest server sequence number applied here. */
   cursor: number;
+  /** The same, for each household stream. */
+  spaceCursors?: Record<string, number>;
   lastSyncAt?: number;
 }
 
@@ -327,4 +339,36 @@ export interface Attachment {
   /** base64 (no data: prefix). */
   data: string;
   createdAt: number;
+}
+
+/** A household you belong to, with its encryption key. Synced (end-to-end encrypted) to your devices. */
+export interface SpaceKey {
+  /** The server's space id. */
+  id: string;
+  name: string;
+  /** base64 household key. */
+  key: string;
+  joinedAt: number;
+}
+
+/** Someone you split costs with. */
+export interface Person {
+  id: string;
+  name: string;
+  /** Payment link, e.g. https://monzo.me/alex or https://paypal.me/alex. */
+  payLink?: string;
+  archived?: boolean;
+}
+
+/** Money between you and a person: positive, they owe you; negative, you owe them. */
+export interface Iou {
+  id: string;
+  personId: string;
+  date: ISODate;
+  amount: Pence;
+  note?: string;
+  /** The expense it came from, if any. */
+  transactionId?: string;
+  /** A payment that settles up (rather than a new debt). */
+  settlement?: boolean;
 }

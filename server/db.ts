@@ -108,6 +108,35 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX bank_links_user ON bank_links(user_id);
   `,
+  // 4: households (P11). Shared records are ciphertext under the household's own key.
+  `
+  CREATE TABLE spaces (
+    id uuid PRIMARY KEY,
+    owner_id uuid REFERENCES users(id) ON DELETE SET NULL,
+    seq bigint NOT NULL DEFAULT 0,
+    created_at timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE TABLE space_members (
+    space_id uuid NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    joined_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (space_id, user_id)
+  );
+  CREATE INDEX space_members_user ON space_members(user_id);
+  CREATE TABLE space_invites (
+    token_hash text PRIMARY KEY,
+    space_id uuid NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
+    expires_at timestamptz NOT NULL
+  );
+  CREATE TABLE space_records (
+    space_id uuid NOT NULL REFERENCES spaces(id) ON DELETE CASCADE,
+    rkey text NOT NULL,
+    seq bigint NOT NULL,
+    blob text,
+    PRIMARY KEY (space_id, rkey)
+  );
+  CREATE INDEX space_records_seq ON space_records(space_id, seq);
+  `,
 ];
 
 export async function migrate(sql: Sql): Promise<void> {

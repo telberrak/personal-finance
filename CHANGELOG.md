@@ -2,6 +2,12 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.12.0 — P11: shared finances
+
+- Households: share chosen accounts (with their transactions and bills) with a partner through a one-use invite link; everything else stays private. End-to-end encrypted with a household key that travels only in the link's #fragment.
+- Splitting with friends: friends with payment links, split an expense equally, balances, request money (Monzo.me, PayPal.me), copy a reminder, settle up.
+- Sync engine: one stream per household alongside your own; a household can only change its own shared records.
+
 ## 0.11.0 — P10: native apps
 
 - iOS and Android projects (Capacitor) around the same app; `npm run native:sync`.

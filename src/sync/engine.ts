@@ -10,10 +10,11 @@
  */
 import { useSyncExternalStore } from 'react';
 import { liveQuery } from 'dexie';
-import { LIMITS, type PullResponse, type PushResponse } from '../../shared/api.ts';
+import { LIMITS, type Change, type PullResponse, type PushResponse } from '../../shared/api.ts';
 import { securityMode } from '../db/crypto';
 import { db } from '../db/db';
 import { isSynced, outboxId } from '../db/outbox';
+import { forgetSpace } from '../db/repo';
 import type { OutboxEntry, SyncState } from '../db/types';
 import { api, SyncApiError } from './client';
 import { syncKeys, type SyncedRecord, type SyncKeys } from './keys';
@@ -44,12 +45,47 @@ export const useSyncStatus = () =>
 
 const syncedTables = () => db.tables.filter((t) => isSynced(t.name));
 
-let cachedKeys: { b64: string; keys: SyncKeys } | undefined;
-async function keysFor(state: SyncState): Promise<SyncKeys> {
-  if (cachedKeys && cachedKeys.b64 === state.syncKey) return cachedKeys.keys;
-  const keys = await syncKeys(state.syncKey!);
-  cachedKeys = { b64: state.syncKey!, keys };
+const keyCache = new Map<string, SyncKeys>();
+async function keysOf(b64: string): Promise<SyncKeys> {
+  let keys = keyCache.get(b64);
+  if (!keys) keyCache.set(b64, (keys = await syncKeys(b64)));
   return keys;
+}
+
+/**
+ * Where records sync: your own stream (everything), and one stream per household you belong to
+ * (only shared accounts, their transactions and bills), each under its own key.
+ */
+interface Stream {
+  /** undefined: your own stream; otherwise the household's id. */
+  spaceId?: string;
+  keys: SyncKeys;
+  base: string;
+  cursor: number;
+}
+
+/** Tables a household may write to on this device. */
+const SHARED_TABLES = new Set(['accounts', 'transactions', 'recurring']);
+
+async function streamsFor(state: SyncState): Promise<Stream[]> {
+  const spaces = await db.spaceKeys.toArray();
+  return [
+    { keys: await keysOf(state.syncKey!), base: '/sync', cursor: state.cursor },
+    ...(await Promise.all(
+      spaces.map(async (s) => ({
+        spaceId: s.id,
+        keys: await keysOf(s.key),
+        base: `/spaces/${s.id}`,
+        cursor: state.spaceCursors?.[s.id] ?? 0,
+      })),
+    )),
+  ];
+}
+
+async function saveCursor(stream: Stream, cursor: number) {
+  if (!stream.spaceId) return db.syncState.update('sync', { cursor });
+  const state = await db.syncState.get('sync');
+  return db.syncState.update('sync', { spaceCursors: { ...state?.spaceCursors, [stream.spaceId]: cursor } });
 }
 
 function withoutDeviceSettings(value: Record<string, unknown>): Record<string, unknown> {
@@ -58,19 +94,19 @@ function withoutDeviceSettings(value: Record<string, unknown>): Record<string, u
   return copy;
 }
 
-async function pull(state: SyncState, keys: SyncKeys): Promise<void> {
-  let cursor = state.cursor;
+async function pull(stream: Stream, token: string): Promise<void> {
+  let cursor = stream.cursor;
   for (;;) {
-    const res = await api<PullResponse>(`/sync/pull?since=${cursor}`, { token: state.token });
-    const records = res.changes.flatMap((c) => (c.blob ? [keys.open(c.blob)] : []));
+    const res = await api<PullResponse>(`${stream.base}/pull?since=${cursor}`, { token });
+    const records = res.changes.flatMap((c) => (c.blob ? [stream.keys.open(c.blob)] : []));
     cursor = res.seq;
-    await apply(records, cursor);
+    await apply(records, stream, cursor);
     if (!res.more) return;
   }
 }
 
 /** Writes pulled records, skipping any with changes here still waiting to be pushed. */
-async function apply(records: SyncedRecord[], cursor: number): Promise<void> {
+async function apply(records: SyncedRecord[], stream: Stream, cursor: number): Promise<void> {
   const known = new Set(syncedTables().map((t) => t.name));
   await db.transaction('rw', [...syncedTables(), db.outbox, db.syncState], async () => {
     const pending = new Set((await db.outbox.toArray()).map((e) => e.id));
@@ -79,6 +115,14 @@ async function apply(records: SyncedRecord[], cursor: number): Promise<void> {
       // A table this version does not know (written by a newer app) is left for later.
       if (!known.has(r.t) || pending.has(outboxId(r.t, r.k))) continue;
       const table = db.table(r.t);
+      if (stream.spaceId) {
+        // A household can only touch its own shared records, never your private ones.
+        if (!SHARED_TABLES.has(r.t)) continue;
+        if (r.v && r.v.spaceId !== stream.spaceId) continue;
+        const local = (await table.get(r.k)) as { spaceId?: string } | undefined;
+        if (local && local.spaceId !== stream.spaceId) continue;
+        if (!r.v && !local) continue;
+      }
       if (r.v === null) await table.delete(r.k);
       else if (r.t === 'settings') {
         const local = ((await table.get(r.k)) ?? {}) as Record<string, unknown>;
@@ -89,38 +133,60 @@ async function apply(records: SyncedRecord[], cursor: number): Promise<void> {
     }
     // Writing pulled records queued them for pushing; they came from the server, so unqueue them.
     await db.outbox.bulkDelete(applied);
-    await db.syncState.update('sync', { cursor });
+    await saveCursor(stream, cursor);
   });
 }
 
-async function push(state: SyncState, keys: SyncKeys): Promise<void> {
+async function push(token: string): Promise<void> {
   for (;;) {
     const batch: OutboxEntry[] = await db.outbox.limit(LIMITS.changesPerPush).toArray();
     if (!batch.length) return;
+    // Streams are read after the batch: a household's key is saved before anything is shared
+    // with it, so every shared record in this batch finds its household.
+    const [own, ...spaces] = await streamsFor((await db.syncState.get('sync'))!);
+    // Every record goes to your own stream; shared ones also to their household; deletions to all.
     const sealed = await Promise.all(
       batch.map(async (e) => {
         const value = ((await db.table(e.table).get(e.key)) ?? null) as Record<string, unknown> | null;
         const v = value && e.table === 'settings' ? withoutDeviceSettings(value) : value;
-        return { rkey: await keys.rkey(e.table, e.key), blob: keys.seal({ t: e.table, k: e.key, v }) };
+        const targets = [own, ...spaces.filter((s) => (v ? SHARED_TABLES.has(e.table) && v.spaceId === s.spaceId : true))];
+        return Promise.all(
+          targets.map(async (s) => ({
+            stream: s,
+            change: { rkey: await s.keys.rkey(e.table, e.key), blob: s.keys.seal({ t: e.table, k: e.key, v }) },
+          })),
+        );
       }),
     );
     // Large records (attachments) are sent a few at a time, under the server's request limit.
     let size = 0;
     let count = 0;
-    for (const c of sealed) {
-      if (count > 0 && size + c.blob.length > LIMITS.pushChars) break;
-      size += c.blob.length;
+    for (const parts of sealed) {
+      const bytes = parts.reduce((sum, p) => sum + p.change.blob.length, 0);
+      if (count > 0 && size + bytes > LIMITS.pushChars) break;
+      size += bytes;
       count += 1;
     }
     const entries = batch.slice(0, count);
-    const changes = sealed.slice(0, count);
-    const res = await api<PushResponse>('/sync/push', { body: { changes }, token: state.token });
+    const byStream = new Map<Stream, Change[]>();
+    for (const parts of sealed.slice(0, count))
+      for (const p of parts) byStream.set(p.stream, [...(byStream.get(p.stream) ?? []), p.change]);
+    const results = await Promise.all(
+      [...byStream].map(async ([stream, changes]) => ({
+        stream,
+        changes,
+        res: await api<PushResponse>(`${stream.base}/push`, { body: { changes }, token }),
+      })),
+    );
     await db.transaction('rw', db.outbox, db.syncState, async () => {
       // Entries that changed again during the push stay queued.
       for (const e of entries) if ((await db.outbox.get(e.id))?.at === e.at) await db.outbox.delete(e.id);
       // If nobody else pushed meanwhile, there is nothing new to pull back.
       const current = await db.syncState.get('sync');
-      if (current && current.cursor === res.seq - changes.length) await db.syncState.update('sync', { cursor: res.seq });
+      for (const { stream, changes, res } of results) {
+        const cursor = stream.spaceId ? (current?.spaceCursors?.[stream.spaceId] ?? 0) : current?.cursor;
+        if (cursor === res.seq - changes.length) await saveCursor(stream, res.seq);
+      }
     });
   }
 }
@@ -132,9 +198,16 @@ async function syncOnce(): Promise<void> {
   if (!state.syncKey) return setStatus({ phase: 'needsKey' });
   setStatus({ phase: 'syncing', lastSyncAt: state.lastSyncAt });
   try {
-    const keys = await keysFor(state);
-    await pull(state, keys);
-    await push((await db.syncState.get('sync'))!, keys);
+    for (const stream of await streamsFor(state)) {
+      try {
+        await pull(stream, state.token);
+      } catch (err) {
+        // Removed from a household (or it was deleted): keep your own accounts, drop the others'.
+        if (stream.spaceId && err instanceof SyncApiError && err.status === 404) await forgetSpace(stream.spaceId, state.userId);
+        else throw err;
+      }
+    }
+    await push(state.token);
     const lastSyncAt = Date.now();
     await db.syncState.update('sync', { lastSyncAt });
     setStatus({ phase: 'idle', lastSyncAt });
@@ -215,6 +288,6 @@ export function startSync(): () => void {
 
 /** For tests. */
 export const resetSyncEngine = () => {
-  cachedKeys = undefined;
+  keyCache.clear();
   setStatus({ phase: 'off' });
 };

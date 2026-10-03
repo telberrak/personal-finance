@@ -19,6 +19,7 @@ beforeEach(async () => {
   sent.length = 0;
   await sql.query('TRUNCATE users, email_codes, challenges, server_settings CASCADE');
   await sql.query('DELETE FROM bank_links');
+  await sql.query('DELETE FROM spaces');
   app = createApp({ sql, mailer, config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] } });
 });
 
@@ -297,4 +298,29 @@ it('allows the native apps through CORS, and nobody else', async () => {
   expect(ok.headers.get('access-control-allow-origin')).toBe('capacitor://localhost');
   const other = await app.request('/api/health', { headers: { origin: 'https://evil.example' } });
   expect(other.headers.get('access-control-allow-origin')).toBeNull();
+});
+
+describe('households', () => {
+  it('invites a partner once, shares ciphertext, and deletes everything when the last member leaves', async () => {
+    const a = await signIn('a@e.co');
+    const b = await signIn('b@e.co');
+    const outsider = await signIn('c@e.co');
+    const { id }: { id: string } = await (await call('POST', '/spaces', {}, a.token)).json();
+    const { token }: { token: string } = await (await call('POST', `/spaces/${id}/invites`, {}, a.token)).json();
+    expect((await call('POST', `/spaces/${id}/invites`, {}, b.token)).status).toBe(404); // not a member yet
+    expect((await call('POST', '/spaces/join', { token }, b.token)).status).toBe(200);
+    expect((await call('POST', '/spaces/join', { token }, outsider.token)).status).toBe(404); // one use
+
+    await call('POST', `/spaces/${id}/push`, { changes: [{ rkey: 's'.repeat(43), blob: 'shared-cipher' }] }, a.token);
+    const pulled: PullResponse = await (await call('GET', `/spaces/${id}/pull?since=0`, undefined, b.token)).json();
+    expect(pulled.changes).toEqual([{ rkey: 's'.repeat(43), blob: 'shared-cipher', seq: 1 }]);
+    expect((await call('GET', `/spaces/${id}/pull?since=0`, undefined, outsider.token)).status).toBe(404);
+
+    const spaces: { members: { email: string }[] }[] = await (await call('GET', '/spaces', undefined, b.token)).json();
+    expect(spaces[0].members.map((m) => m.email)).toEqual(['a@e.co', 'b@e.co']);
+
+    await call('DELETE', `/spaces/${id}/membership`, undefined, a.token);
+    await call('DELETE', `/spaces/${id}/membership`, undefined, b.token);
+    expect(await sql.query('SELECT 1 FROM space_records')).toHaveLength(0);
+  });
 });

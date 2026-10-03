@@ -62,6 +62,8 @@ Sync is end-to-end encrypted. The account has a random 256-bit **sync key**, sep
 
 What the server can see: your email address, when each device last synced, how many records you have and how often they change, and record sizes. Lost recovery key: sign in on a device that still syncs and show it in Settings → Sync and devices. If no device has it, synced data cannot be recovered, by design.
 
+**Households** (P11) have their own random 256-bit key. It is created on the device and given to others only inside the invite link's `#fragment`, which browsers never send to servers; the server keeps member lists and ciphertext only. Each person's devices keep household keys in their own synced vault. A household stream can only write accounts, transactions and bills marked as belonging to that household, never private records. Anyone holding a valid, unused invite link can join, so share it privately; links work once and expire after a week.
+
 **Push reminders** (P4): a device that turns on notifications uploads its upcoming reminders as a time and a generic sentence such as "A bill is due tomorrow", never names, amounts or balances. Details are only shown by the app itself.
 
 **Bank connections** (P5) are the one exception to end-to-end encryption: transactions from a connected bank pass through the server (in memory, never stored) and the provider on their way to the device. See [OPEN_BANKING.md](OPEN_BANKING.md).

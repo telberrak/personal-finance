@@ -35,7 +35,8 @@ export default defineConfig({
       command: `node server/main.ts --dev`,
       url: `http://localhost:${API_PORT}/api/health`,
       env: { PORT: String(API_PORT), LEDGER_DATA_DIR: 'memory', APP_ORIGINS: `http://localhost:${PORT}` },
-      reuseExistingServer: !isCI,
+      // Always fresh: it starts in a second, and a leftover one would run old server code.
+      reuseExistingServer: false,
       timeout: 60_000,
     },
     {
