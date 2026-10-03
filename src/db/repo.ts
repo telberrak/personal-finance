@@ -76,7 +76,13 @@ export async function completeOnboarding(input: {
       includeInSafeToSpend: true,
     });
     await db.categories.bulkPut([...defaultCategories(), transferCategory()]);
-    await db.settings.put({ ...DEFAULT_SETTINGS, payday: input.payday, monthlySavings: input.monthlySavings, onboarded: true });
+    await db.settings.put({
+      ...DEFAULT_SETTINGS,
+      payday: input.payday,
+      monthlySavings: input.monthlySavings,
+      onboarded: true,
+      tourDone: false,
+    });
   });
 }
 

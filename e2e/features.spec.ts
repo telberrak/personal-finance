@@ -16,6 +16,7 @@ plain('first run: setting up your own account', async ({ page }, info) => {
   await page.getByLabel('Current balance', { exact: true }).fill('1000');
   await page.getByLabel('Name').fill('Monzo');
   await page.getByRole('button', { name: 'Start' }).click();
+  await page.getByRole('dialog', { name: 'Safe to spend' }).getByRole('button', { name: 'Skip' }).click(); // first-run tour
   await expect(page.getByLabel('Safe to spend')).toContainText('£1,000');
   await expect(page.getByText('Nothing due in the next month.')).toBeVisible();
 });

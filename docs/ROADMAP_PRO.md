@@ -206,6 +206,8 @@ See [SERVER.md](SERVER.md).
 
 ## P13 — Launch readiness — M
 
+**Status (3 October 2026): done in code.** Help, privacy policy and terms (three languages), About with status, changelog and feedback, opt-in cookie-free usage counts, first-run tour, marketing site. Left for you: the final name (the "Ledger" trademark is held by Ledger SAS), legal review, support mailbox, beta and stores. See [LAUNCH.md](LAUNCH.md).
+
 - Final name, logo and a marketing site.
 - Privacy policy, terms, cookie-free analytics (opt-in), and UK GDPR / EU GDPR notices in all three languages.
 - First-run tour, empty states, in-app help and feedback, and a status page.

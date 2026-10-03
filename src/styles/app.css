@@ -1998,3 +1998,28 @@ dialog::backdrop {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Help, privacy and terms. */
+.prose {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 72ch;
+  line-height: 1.6;
+}
+.prose h1 {
+  font-size: 26px;
+  margin: 0 0 4px;
+}
+.prose h2 {
+  font-size: 17px;
+  margin: 14px 0 0;
+}
+.prose ul {
+  margin: 0;
+  padding-inline-start: 22px;
+}
+.prose p,
+.prose li {
+  margin: 0;
+}

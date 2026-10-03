@@ -658,7 +658,11 @@
     "digitsLatin": "Latins (0123)",
     "digitsArabic": "Arabes orientaux (٠١٢٣)",
     "weekStart": "La semaine commence le",
-    "weekStartAuto": "Selon la langue"
+    "weekStartAuto": "Selon la langue",
+    "help": "Aide",
+    "helpDetail": "Réponses aux questions fréquentes",
+    "about": "À propos",
+    "aboutDetail": "Version, confidentialité, retours"
   },
   "colors": {
     "groceries": "Bleu",
@@ -1299,5 +1303,53 @@
     "update": "Mettre à jour les taux",
     "updated": "Taux mis à jour",
     "unavailable": "Les taux ne sont pas disponibles pour le moment. Saisissez-les vous-même."
+  },
+  "about": {
+    "title": "À propos de {{name}}",
+    "version": "Version {{version}}",
+    "back": "‹ À propos",
+    "help": "Aide",
+    "privacy": "Politique de confidentialité",
+    "terms": "Conditions d’utilisation",
+    "contact": "Nous écrire : {{email}}",
+    "status": {
+      "checking": "Vérification du service de synchronisation…",
+      "ok": "Service de synchronisation : opérationnel.",
+      "down": "Service de synchronisation : en difficulté. Vos données sur cet appareil ne sont pas concernées.",
+      "none": "Service de synchronisation : injoignable d’ici (l’application fonctionne sans)."
+    },
+    "feedback": "Envoyer un retour",
+    "message": "Message",
+    "replyTo": "Votre e-mail",
+    "feedbackNote": "Indiquez votre e-mail si vous souhaitez une réponse. N’écrivez ni numéro de carte ni mot de passe.",
+    "sendFeedback": "Envoyer",
+    "feedbackSent": "Merci, votre message a été envoyé.",
+    "feedbackFailed": "Envoi impossible. Écrivez-nous plutôt à {{email}}.",
+    "privacyChoices": "Choix de confidentialité",
+    "shareUsage": "Partager des statistiques d’usage anonymes",
+    "shareUsageHint": "Des totaux comme « application ouverte » ou « transaction ajoutée », sans identifiant, adresse IP ni contenu. Cela nous aide à voir ce qui sert.",
+    "whatsNew": "Nouveautés"
+  },
+  "tour": {
+    "safe": {
+      "title": "Disponible",
+      "body": "L’accueil montre ce que vous pouvez dépenser jusqu’à la paie, factures et épargne déduites. Il se met à jour à chaque transaction."
+    },
+    "add": {
+      "title": "Ajoutez au fil de l’eau",
+      "body": "Touchez + pour ajouter une dépense ou un revenu. Ledger propose la catégorie, et vous pouvez aussi importer un relevé bancaire."
+    },
+    "bills": {
+      "title": "Plus de facture oubliée",
+      "body": "Ajoutez vos prélèvements et abonnements dans Factures. Un rappel arrive la veille de chacun."
+    },
+    "more": {
+      "title": "Vos données, votre appareil",
+      "body": "Définissez un code et téléchargez des sauvegardes dans les réglages. La synchronisation entre appareils est facultative et chiffrée de bout en bout."
+    },
+    "step": "Étape {{n}} sur {{total}}",
+    "skip": "Passer",
+    "next": "Suivant",
+    "done": "Commencer"
   }
 }

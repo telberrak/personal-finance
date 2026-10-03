@@ -23,6 +23,7 @@ import { bankRoutes, type BankProvider } from './banks.ts';
 import { pushRoutes, type PushSender } from './push.ts';
 import { spaceRoutes } from './spaces.ts';
 import { rateRoutes } from './rates.ts';
+import { feedbackRoutes } from './feedback.ts';
 import { RateLimiter } from './rate-limit.ts';
 
 export interface Config {
@@ -122,6 +123,7 @@ export function createApp({
   app.use(bodyLimit({ maxSize: 8 * 1024 * 1024, onError: (c) => c.json({ error: 'Too much data in one request.' }, 413) }));
 
   rateRoutes(app as unknown as Hono, fetchRates);
+  feedbackRoutes(app as unknown as Hono, sql);
 
   app.get('/health', async (c) => {
     await sql.query('SELECT 1');

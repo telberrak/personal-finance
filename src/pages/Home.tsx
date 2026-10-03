@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon';
 import { NotificationBell } from './Notifications';
+import { Tour } from '../components/Tour';
 import { Loading } from '../components/Layout';
 import { BillRow, catVar, methodLabel, TransactionRow } from '../components/rows';
 import { useIsDesktop } from '../components/useMediaQuery';
@@ -70,6 +71,7 @@ export function Home({ data }: { data?: FinanceData }) {
 
   return (
     <main className="screen">
+      {data.settings.tourDone === false && <Tour show />}
       <header className="screen-header">
         <div className="stack" style={{ gap: 2 }}>
           <span className="label">{formatLong(ref)}</span>

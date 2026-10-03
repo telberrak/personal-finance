@@ -10,6 +10,7 @@ import { formatDate, formatShort, toISO } from '../lib/dates';
 import { parseCsv } from '../lib/csv';
 import { detectPreset, guessMapping, mapRows, type ColumnMapping, type DateFormat } from '../lib/importer';
 import { prepareRows } from '../lib/importPrep';
+import { track } from '../lib/usage';
 import { formatMoney } from '../lib/money';
 import { t } from '../i18n';
 
@@ -85,6 +86,7 @@ export function Import({ data }: { data?: FinanceData }) {
     setBusy(true);
     try {
       const batch = await importTransactions(account, fileName, toImport);
+      track('import_done');
       toast({
         message: t('import.imported', { count: batch.rowCount }),
         action: {

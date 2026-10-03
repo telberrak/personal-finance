@@ -658,7 +658,11 @@
     "digitsLatin": "Latin (0123)",
     "digitsArabic": "Arabic-Indic (٠١٢٣)",
     "weekStart": "Week starts on",
-    "weekStartAuto": "As usual for the language"
+    "weekStartAuto": "As usual for the language",
+    "help": "Help",
+    "helpDetail": "Answers to common questions",
+    "about": "About",
+    "aboutDetail": "Version, privacy, feedback"
   },
   "colors": {
     "groceries": "Blue",
@@ -1299,5 +1303,53 @@
     "update": "Update rates",
     "updated": "Rates updated",
     "unavailable": "Rates are not available right now. Type them in instead."
+  },
+  "about": {
+    "title": "About {{name}}",
+    "version": "Version {{version}}",
+    "back": "‹ About",
+    "help": "Help",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "contact": "Email us: {{email}}",
+    "status": {
+      "checking": "Checking the sync service…",
+      "ok": "Sync service: working.",
+      "down": "Sync service: having problems. Your data on this device is not affected.",
+      "none": "Sync service: not reachable from here (the app works without it)."
+    },
+    "feedback": "Send feedback",
+    "message": "Message",
+    "replyTo": "Your email",
+    "feedbackNote": "Add your email if you would like a reply. Do not include card numbers or passwords.",
+    "sendFeedback": "Send",
+    "feedbackSent": "Thank you, your message was sent.",
+    "feedbackFailed": "Could not send. Email us at {{email}} instead.",
+    "privacyChoices": "Privacy choices",
+    "shareUsage": "Share anonymous usage counts",
+    "shareUsageHint": "Counts such as “app opened” or “transaction added”, with no identifier, IP address or content. Helps us see what is used.",
+    "whatsNew": "What’s new"
+  },
+  "tour": {
+    "safe": {
+      "title": "Safe to spend",
+      "body": "Home shows what you can spend until payday, after bills and savings. It updates as you add transactions."
+    },
+    "add": {
+      "title": "Add as you go",
+      "body": "Tap + to add spending or income. Ledger suggests the category, and you can import a bank statement instead."
+    },
+    "bills": {
+      "title": "Never miss a bill",
+      "body": "Add your direct debits and subscriptions under Bills. You are reminded the day before each one."
+    },
+    "more": {
+      "title": "Your data, your device",
+      "body": "Set a PIN and download backups in Settings. Sync between devices is optional and end-to-end encrypted."
+    },
+    "step": "Step {{n}} of {{total}}",
+    "skip": "Skip",
+    "next": "Next",
+    "done": "Start"
   }
 }

@@ -340,6 +340,8 @@ export function Settings({ data }: { data?: FinanceData }) {
           <LinkRow to="/import" icon="upload" title={t('settings.importStatement')} detail={t('settings.importDetail')} />
           <SyncRow />
           <LinkRow to="/settings/household" icon="wallet" title={t('settings.household')} detail={t('settings.householdDetail')} />
+          <LinkRow to="/help" icon="search" title={t('settings.help')} detail={t('settings.helpDetail')} />
+          <LinkRow to="/settings/about" icon="more" title={t('settings.about')} detail={t('settings.aboutDetail')} />
           <LinkRow to="/settings/banks" icon="wallet" title={t('settings.banks')} detail={t('settings.banksDetail')} />
           <LinkRow to="/notifications" icon="bell" title={t('settings.notifications')} detail={t('settings.notificationsDetail')} />
         </div>

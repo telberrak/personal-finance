@@ -25,6 +25,7 @@ import type { FinanceData, Transaction } from '../db/types';
 import { today } from '../lib/dates';
 import { currencyName, parseMoney } from '../lib/money';
 import { CURRENCIES } from '../i18n';
+import { track } from '../lib/usage';
 import { allTags } from '../lib/search';
 import { taxSystem } from '../lib/tax';
 import { formatMoney } from '../lib/money';
@@ -198,6 +199,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
         });
       } else {
         const id = await addTransaction({ ...fields, time: date === today() ? nowTime() : undefined });
+        track('transaction_added');
         for (const file of pending) await addAttachment({ ...file, transactionId: id });
         if (kind === 'expense' && splitWith.length)
           await splitWithPeople(

@@ -2,6 +2,13 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.14.0 — P13: launch readiness
+
+- Help, privacy policy and terms in English, French and Arabic (legal texts are drafts for review).
+- About page: version, sync service status, what's new, feedback form, and opt-in, cookie-free anonymous usage counts.
+- A short first-run tour after setting up your own account.
+- Static marketing site (`site/`) in three languages; launch guide (docs/LAUNCH.md), including the name and trademark question.
+
 ## 0.13.0 — P12: French, Arabic and multi-currency
 
 - French and Arabic translations of every screen (first drafts for native-speaker review), with all Arabic plural forms; right-to-left layout; Latin or Arabic-Indic digits; first day of the week per language or chosen.

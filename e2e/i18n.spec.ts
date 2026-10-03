@@ -26,6 +26,9 @@ const SCREENS = [
   '/reports/year/2026',
   '/friends',
   '/settings/household',
+  '/help',
+  '/privacy',
+  '/settings/about',
 ];
 
 // Elements whose text is the user's data (payees, category and account names) or formatted values.
@@ -50,6 +53,8 @@ const DATA = [
   '.rank',
   '.brand',
   '[translate="no"]',
+  // Help, privacy and terms are documents translated as a whole (checked in French and Arabic below).
+  '.prose',
 ].join(', ');
 
 for (const path of SCREENS) {

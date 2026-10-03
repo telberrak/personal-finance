@@ -137,6 +137,23 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX space_records_seq ON space_records(space_id, seq);
   `,
+  // 5: feedback, and opt-in anonymous daily usage counts (P13).
+  `
+  CREATE TABLE feedback (
+    id uuid PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    message text NOT NULL,
+    email text,
+    version text NOT NULL,
+    language text NOT NULL
+  );
+  CREATE TABLE event_counts (
+    day date NOT NULL,
+    name text NOT NULL,
+    count integer NOT NULL,
+    PRIMARY KEY (day, name)
+  );
+  `,
 ];
 
 export async function migrate(sql: Sql): Promise<void> {

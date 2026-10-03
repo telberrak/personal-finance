@@ -222,6 +222,10 @@ export interface Settings {
   weekStart?: number;
   /** Exchange rates to the home currency, by currency code (P12). */
   fxRates?: FxRates;
+  /** Opt-in anonymous usage counts (P13). */
+  shareUsage?: boolean;
+  /** false: show the first-run tour (set up your own account); true or missing: do not. */
+  tourDone?: boolean;
   /** Lock again after this many minutes in the background. */
   lockAfterMinutes: number;
   /** Payees whose "add as bill?" suggestion was dismissed (payee keys). */

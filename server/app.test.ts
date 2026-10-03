@@ -20,6 +20,8 @@ beforeEach(async () => {
   await sql.query('TRUNCATE users, email_codes, challenges, server_settings CASCADE');
   await sql.query('DELETE FROM bank_links');
   await sql.query('DELETE FROM spaces');
+  await sql.query('DELETE FROM feedback');
+  await sql.query('DELETE FROM event_counts');
   app = createApp({ sql, mailer, config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] } });
 });
 
@@ -334,4 +336,19 @@ it('serves ECB exchange rates, cached', async () => {
   expect(body).toEqual({ date: '2026-10-02', rates: { USD: 1.08, GBP: 0.86 } });
   await call('GET', '/rates');
   expect(calls).toBe(1);
+});
+
+it('takes feedback and counts allowed usage events only', async () => {
+  expect(
+    (await call('POST', '/feedback', { message: '  Love it  ', email: 'me@example.com', version: '0.14.0', language: 'fr' })).status,
+  ).toBe(200);
+  expect((await call('POST', '/feedback', { message: '' })).status).toBe(400);
+  const [row] = await sql.query<{ message: string; email: string }>('SELECT message, email FROM feedback');
+  expect(row).toMatchObject({ message: 'Love it', email: 'me@example.com' });
+  await call('POST', '/events', { events: ['app_open', 'app_open', 'steal_data', 'transaction_added'] });
+  const counts = await sql.query<{ name: string; count: number }>('SELECT name, count FROM event_counts ORDER BY name');
+  expect(counts).toEqual([
+    { name: 'app_open', count: 2 },
+    { name: 'transaction_added', count: 1 },
+  ]);
 });

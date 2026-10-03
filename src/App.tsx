@@ -12,6 +12,7 @@ import { cleanOrphanAttachments } from './db/repo';
 import { useNotifier } from './notify/notifier';
 import { useBankAutoSync } from './banks/banks';
 import { useDailyRates } from './components/ExchangeRates';
+import { setUsageSharing, track } from './lib/usage';
 import { Notifications } from './pages/Notifications';
 import { applyLocale } from './i18n';
 import type { FinanceData } from './db/types';
@@ -43,6 +44,8 @@ const Tax = page(() => import('./pages/Tax'), 'Tax');
 const Friends = page(() => import('./pages/Friends'), 'Friends');
 const Household = page(() => import('./pages/Household'), 'Household');
 const JoinHousehold = lazy(() => import('./pages/Household').then((m) => ({ default: m.JoinHousehold })));
+const About = page(() => import('./pages/Info'), 'About');
+const ContentPage = lazy(() => import('./pages/Info').then((m) => ({ default: m.ContentPage })));
 
 export function App() {
   // While locked nothing can be decrypted, so the screens (and their data queries) are not mounted.
@@ -63,6 +66,11 @@ function Unlocked() {
   useNotifier(data);
   useBankAutoSync(data);
   useDailyRates(data);
+  const shareUsage = !!data?.settings.shareUsage;
+  useEffect(() => {
+    setUsageSharing(shareUsage);
+    if (shareUsage) track('app_open');
+  }, [shareUsage]);
   // Sync runs while unlocked (it needs to read and write the data).
   useEffect(() => startSync(), []);
   // Receipts of transactions deleted in an earlier session (after the chance to undo).
@@ -94,6 +102,10 @@ function Unlocked() {
               <Route path="friends" element={<Friends data={data} />} />
               <Route path="settings/household" element={<Household data={data} />} />
               <Route path="join" element={<JoinHousehold />} />
+              <Route path="help" element={<ContentPage data={data} kind="help" />} />
+              <Route path="privacy" element={<ContentPage data={data} kind="privacy" />} />
+              <Route path="terms" element={<ContentPage data={data} kind="terms" />} />
+              <Route path="settings/about" element={<About data={data} />} />
               <Route path="import" element={<Import data={data} />} />
               <Route path="add" element={<TransactionForm data={data} />} />
               <Route path="transactions/:id" element={<TransactionForm data={data} />} />

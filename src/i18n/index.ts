@@ -55,6 +55,9 @@ export const t: typeof i18next.t = ((...args: Parameters<typeof i18next.t>) => i
 
 export const languageOf = (code: string): Language => LANGUAGES.find((l) => l.code === code) ?? LANGUAGES[0];
 
+/** The language being shown now (the setting, or a ?locale= override). */
+export const currentLanguage = (): string => i18next.language || 'en';
+
 /** A test language chosen with ?locale=en-XA stays for the browser session without being saved. */
 function sessionOverride(): string | undefined {
   try {
