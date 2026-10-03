@@ -6,4 +6,5 @@ dev-dist
 coverage
 playwright-report
 test-results
-.ledger-server-data/
+# Local sync API database (npm run server)
+.ledger-*data*/

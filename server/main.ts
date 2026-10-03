@@ -3,7 +3,7 @@
  *
  * - PORT (default 8787)
  * - DATABASE_URL: Postgres. Without it, data is kept in PGlite under LEDGER_DATA_DIR
- *   (default .ledger-server-data), or in memory with LEDGER_DATA_DIR=memory.
+ *   (default .ledger-api-data), or in memory with LEDGER_DATA_DIR=memory.
  * - RP_ID and APP_ORIGINS (comma-separated): where the app is served, for passkeys.
  * - RESEND_API_KEY and MAIL_FROM: sends sign-in codes by email (otherwise they are logged).
  * - LEDGER_DEV=1: development helpers (never in production).
@@ -18,7 +18,7 @@ import { consoleMailer, resendMailer } from './mailer.ts';
 const env = process.env;
 const port = Number(env.PORT ?? 8787);
 const dev = env.LEDGER_DEV === '1' || process.argv.includes('--dev');
-const dataDir = env.LEDGER_DATA_DIR ?? '.ledger-server-data';
+const dataDir = env.LEDGER_DATA_DIR ?? '.ledger-api-data';
 
 const sql = env.DATABASE_URL ? await openPostgres(env.DATABASE_URL) : await openPglite(dataDir === 'memory' ? undefined : dataDir);
 const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, env.MAIL_FROM ?? 'Ledger <login@example.com>') : consoleMailer;

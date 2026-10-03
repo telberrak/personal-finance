@@ -33,7 +33,11 @@ export default defineConfig({
   ],
   // The production preview (and so the e2e tests) runs under the same headers as the hosted app.
   // The sync API (npm run server) is reached at /api on the app's own origin.
-  server: { proxy: { '/api': process.env.LEDGER_API ?? 'http://localhost:8787' } },
+  server: {
+    proxy: { '/api': process.env.LEDGER_API ?? 'http://localhost:8787' },
+    // The local sync API's database changes constantly and is not app code.
+    watch: { ignored: ['**/.ledger-*data*/**'] },
+  },
   preview: { headers: SECURITY_HEADERS, proxy: { '/api': process.env.LEDGER_API ?? 'http://localhost:8787' } },
   test: {
     environment: 'jsdom',
