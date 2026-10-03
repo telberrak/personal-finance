@@ -9,7 +9,7 @@ npm run server:dev
 ```
 
 - Listens on http://localhost:8787. The app (`npm run dev` or `npm run serve`) reaches it at `/api` through Vite's proxy.
-- Data is kept in PGlite (Postgres compiled to WebAssembly) in `.ledger-api-data/`. Stop the server with Ctrl+C: PGlite cannot recover a folder after the process is killed. If that happens, delete the folder.
+- Data is kept in PGlite (Postgres compiled to WebAssembly) in `.ledger-api-data/`. Stop the server with Ctrl+C: PGlite cannot reopen a folder after the process is killed. If that happens, the server moves the folder aside (`.ledger-api-data.broken-…`) and starts with a fresh one; delete old folders when you no longer need them. Production uses Postgres, which recovers normally.
 - Without an email provider, sign-in codes are printed in the server log. `--dev` also serves the last code at `/api/dev/last-code?email=…` (used by the e2e tests). Never use `--dev` in production.
 
 ## Configuration

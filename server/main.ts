@@ -10,10 +10,10 @@
  *
  * Run with `npm run server` (Node 24 runs TypeScript directly).
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, renameSync } from 'node:fs';
 import { serve } from '@hono/node-server';
 import { createApp } from './app.ts';
-import { openPglite, openPostgres } from './db.ts';
+import { openPglite, openPostgres, type Sql } from './db.ts';
 import { consoleMailer, resendMailer } from './mailer.ts';
 import { sendDueReminders, webPushSender } from './push.ts';
 import { goCardlessProvider, sandboxProvider } from './banks.ts';
@@ -23,7 +23,25 @@ const port = Number(env.PORT ?? 8787);
 const dev = env.LEDGER_DEV === '1' || process.argv.includes('--dev');
 const dataDir = env.LEDGER_DATA_DIR ?? '.ledger-api-data';
 
-const sql = env.DATABASE_URL ? await openPostgres(env.DATABASE_URL) : await openPglite(dataDir === 'memory' ? undefined : dataDir);
+/**
+ * Local development only: PGlite cannot reopen its folder after the process is killed (not
+ * stopped). Rather than fail, keep the broken folder aside and start a fresh one.
+ */
+async function openLocal(): Promise<Sql> {
+  if (dataDir === 'memory') return openPglite();
+  try {
+    return await openPglite(dataDir);
+  } catch (err) {
+    const aside = `${dataDir}.broken-${Date.now()}`;
+    renameSync(dataDir, aside);
+    console.warn(
+      `[db] ${dataDir} could not be opened (${err instanceof Error ? err.message : err}); moved to ${aside} and starting fresh.`,
+    );
+    return openPglite(dataDir);
+  }
+}
+
+const sql = env.DATABASE_URL ? await openPostgres(env.DATABASE_URL) : await openLocal();
 const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, env.MAIL_FROM ?? 'Ledger <login@example.com>') : consoleMailer;
 if (!env.RESEND_API_KEY && !dev) console.warn('RESEND_API_KEY is not set: sign-in codes are only printed to this log.');
 
