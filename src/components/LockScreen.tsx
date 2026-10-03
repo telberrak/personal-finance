@@ -5,6 +5,7 @@ import { lockNow, unlockWithPasskey, unlockWithPin, useSecurityMode } from '../d
 import { DEFAULT_SETTINGS } from '../db/types';
 import { applyLocale, t } from '../i18n';
 import { Icon } from './Icon';
+import { isNative, unlockWithNativeBiometric } from '../native/native';
 import { useTheme } from './useTheme';
 
 const ACTIVITY_EVENTS = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const;
@@ -45,6 +46,7 @@ export function LockScreen() {
   // Only the settings the lock screen needs (theme, language) are readable while locked.
   const stored = useLiveQuery(async () => (await db.settings.get('app')) ?? null);
   const hasPasskey = useLiveQuery(async () => (await db.keyring.toArray()).some((k) => k.kind === 'passkey'), [], false);
+  const hasNative = useLiveQuery(async () => isNative() && (await db.keyring.toArray()).some((k) => k.kind === 'native'), [], false);
   const settings = { ...DEFAULT_SETTINGS, ...stored };
   if (stored !== undefined) applyLocale(settings.language, settings.currency);
   useTheme(settings.theme);
@@ -110,7 +112,22 @@ export function LockScreen() {
         <button type="submit" className="btn btn--primary" disabled={pin.length < 4 || checking}>
           {t('lock.unlock')}
         </button>
-        {hasPasskey && (
+        {hasNative && (
+          <button
+            type="button"
+            className="btn"
+            onClick={() =>
+              void unlockWithNativeBiometric(t('lock.biometricReason')).then(
+                (ok) => !ok && setError(t('lock.biometricFailed')),
+                () => undefined,
+              )
+            }
+          >
+            <Icon name="lock" size={18} />
+            {t('lock.useBiometric')}
+          </button>
+        )}
+        {hasPasskey && !isNative() && (
           <button type="button" className="btn" onClick={passkey}>
             <Icon name="lock" size={18} />
             {t('lock.usePasskey')}

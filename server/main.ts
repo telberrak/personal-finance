@@ -44,7 +44,12 @@ const app = createApp({
   config: {
     rpID: env.RP_ID ?? 'localhost',
     rpName: 'Ledger',
-    origins: (env.APP_ORIGINS ?? 'http://localhost:5173,http://localhost:4173,http://localhost:4174').split(',').map((s) => s.trim()),
+    // Native apps: add capacitor://localhost (iOS) and https://localhost (Android) in production.
+    origins: (
+      env.APP_ORIGINS ?? 'http://localhost:5173,http://localhost:4173,http://localhost:4174,capacitor://localhost,https://localhost'
+    )
+      .split(',')
+      .map((s) => s.trim()),
     dev,
     version: (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8')) as { version: string }).version,
     environment: env.LEDGER_ENV ?? (dev ? 'development' : 'production'),

@@ -286,3 +286,15 @@ describe('bank connections', () => {
     ]);
   });
 });
+
+it('allows the native apps through CORS, and nobody else', async () => {
+  app = createApp({
+    sql,
+    mailer,
+    config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173', 'capacitor://localhost'] },
+  });
+  const ok = await app.request('/api/health', { headers: { origin: 'capacitor://localhost' } });
+  expect(ok.headers.get('access-control-allow-origin')).toBe('capacitor://localhost');
+  const other = await app.request('/api/health', { headers: { origin: 'https://evil.example' } });
+  expect(other.headers.get('access-control-allow-origin')).toBeNull();
+});

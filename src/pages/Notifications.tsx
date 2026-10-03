@@ -9,6 +9,7 @@ import type { FinanceData, NotificationSettings } from '../db/types';
 import { t } from '../i18n';
 import { ALERT_TYPES, type AlertType } from '../lib/alerts';
 import { formatShort, toISO } from '../lib/dates';
+import { isNative, requestNativeNotifications } from '../native/native';
 import { dateFormat } from '../lib/format';
 import {
   disablePush,
@@ -86,17 +87,25 @@ export function Notifications({ data }: { data?: FinanceData }) {
 export function NotificationPreferences({ data }: { data: FinanceData }) {
   const toast = useToast();
   const prefs = notificationSettings(data);
-  const [permission, setPermission] = useState(() => (notificationsSupported() ? Notification.permission : 'denied'));
+  const [permission, setPermission] = useState<NotificationPermission>(() =>
+    isNative() ? 'granted' : notificationsSupported() ? Notification.permission : 'denied',
+  );
   const save = (patch: Partial<NotificationSettings>) => updateSettings({ notifications: { ...prefs, ...patch } });
 
   async function toggle(on: boolean) {
     if (on) {
-      const result = notificationsSupported() ? await Notification.requestPermission() : 'denied';
+      const result: NotificationPermission = isNative()
+        ? (await requestNativeNotifications())
+          ? 'granted'
+          : 'denied'
+        : notificationsSupported()
+          ? await Notification.requestPermission()
+          : 'denied';
       setPermission(result);
       if (result !== 'granted') return toast({ message: t('notifications.blocked') });
       await save({ enabled: true });
       // Push (while the app is closed) needs sync; local notifications work regardless.
-      await enablePush().catch(() => false);
+      if (!isNative()) await enablePush().catch(() => false);
     } else {
       await save({ enabled: false });
       await disablePush().catch(() => undefined);

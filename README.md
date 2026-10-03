@@ -104,7 +104,7 @@ See [docs/TRANSLATING.md](docs/TRANSLATING.md).
   - security: a PIN that also encrypts your data on the device, passkey unlock (fingerprint, face, security key), auto-lock and "hide amounts";
   - backup (optionally password-encrypted), restore and CSV export.
 
-How the data is protected, and the limits: [docs/SECURITY.md](docs/SECURITY.md).
+How the data is protected, and the limits: [docs/SECURITY.md](docs/SECURITY.md). iOS and Android apps: [docs/NATIVE.md](docs/NATIVE.md).
 
 ## Roadmap
 

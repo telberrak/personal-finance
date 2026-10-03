@@ -6,6 +6,7 @@
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 import { Hono, type Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
+import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import {
   generateAuthenticationOptions,
@@ -105,6 +106,14 @@ export function createApp({
     return c.json({ error: 'Something went wrong.' }, 500);
   });
 
+  // Only the native apps call from another origin (capacitor://localhost, https://localhost).
+  app.use(
+    cors({
+      origin: (origin) => (config.origins.includes(origin) ? origin : null),
+      allowHeaders: ['authorization', 'content-type'],
+      maxAge: 600,
+    }),
+  );
   app.use(bodyLimit({ maxSize: 8 * 1024 * 1024, onError: (c) => c.json({ error: 'Too much data in one request.' }, 413) }));
 
   app.get('/health', async (c) => {

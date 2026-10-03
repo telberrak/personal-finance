@@ -173,6 +173,8 @@ See [SERVER.md](SERVER.md).
 
 ## P10 — Native apps — L (after P3)
 
+**Status (3 October 2026): done in code.** Capacitor projects, biometric unlock via the keychain, local-notification reminders, notification deep links, PWA share target. Store submission needs your Apple and Google developer accounts and a Mac for iOS builds; widgets and a native share extension need native code. See [NATIVE.md](NATIVE.md).
+
 - Capacitor shell around the same code.
 - Native push, biometrics, a secure keychain for keys, home-screen widgets ("safe to spend"), and share-to-app for receipts.
 - App Store and Google Play listings, privacy labels and review process.

@@ -240,7 +240,7 @@ export interface FinanceData {
 export interface KeyEntry {
   /** 'pin', or 'passkey:<credential id>'. */
   id: string;
-  kind: 'pin' | 'passkey';
+  kind: 'pin' | 'passkey' | 'native';
   /** base64: PBKDF2 salt for a PIN, PRF input for a passkey. */
   salt: string;
   iterations?: number;

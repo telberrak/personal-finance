@@ -341,7 +341,10 @@
     "pin": "PIN",
     "unlock": "Unlock",
     "forgot": "Forgot your PIN? Clear this site’s data in your browser settings to start again (restore a backup afterwards).",
-    "usePasskey": "Unlock with a passkey"
+    "usePasskey": "Unlock with a passkey",
+    "useBiometric": "Unlock with Face ID or fingerprint",
+    "biometricReason": "Unlock Ledger",
+    "biometricFailed": "Could not unlock with biometrics. Use your PIN."
   },
   "error": {
     "title": "Something went wrong",
@@ -831,7 +834,8 @@
     "downloadEncrypted": "Download encrypted backup",
     "openBackup": "Encrypted backup",
     "openBackupIntro": "{{file}} is protected. Enter the password it was saved with.",
-    "wrongPassword": "That password is not right, or the file is damaged."
+    "wrongPassword": "That password is not right, or the file is damaged.",
+    "nativeBiometric": "Unlock with Face ID or fingerprint"
   },
   "sync": {
     "title": "Sync and devices",

@@ -21,6 +21,7 @@ import {
   ValidationError,
 } from '../db/repo';
 import { db } from '../db/db';
+import { disableNativeBiometric, enableNativeBiometric, isNative, nativeBiometricAvailable } from '../native/native';
 import {
   addPasskey,
   changePin,
@@ -454,10 +455,23 @@ function SecuritySection({ settings }: { settings: AppSettings }) {
   const keyring = useLiveQuery(() => db.keyring.toArray(), [], []);
   const [pinSheet, setPinSheet] = useState(false);
   const [passkeys, setPasskeys] = useState(false);
+  const [biometric, setBiometric] = useState(false);
   useEffect(() => {
-    void passkeysSupported().then(setPasskeys);
+    // The native app uses Face ID / fingerprint through the system keychain instead of passkeys.
+    if (isNative()) void nativeBiometricAvailable().then(setBiometric);
+    else void passkeysSupported().then(setPasskeys);
   }, []);
   const lockOn = keyring.some((k) => k.kind === 'pin');
+  const nativeOn = keyring.some((k) => k.kind === 'native');
+
+  async function toggleBiometric(on: boolean) {
+    try {
+      if (on) await enableNativeBiometric(t('lock.biometricReason'));
+      else await disableNativeBiometric();
+    } catch {
+      toast({ message: t('lock.biometricFailed') });
+    }
+  }
   const keys = keyring.filter((k) => k.kind === 'passkey');
 
   async function onTurnOff() {
@@ -534,6 +548,12 @@ function SecuritySection({ settings }: { settings: AppSettings }) {
               <button type="button" className="list-row plain-btn" onClick={onAddPasskey}>
                 {t('security.addPasskey')}
               </button>
+            )}
+            {biometric && (
+              <label className="check-row" style={{ padding: '10px 16px' }}>
+                <input type="checkbox" checked={nativeOn} onChange={(e) => void toggleBiometric(e.target.checked)} />
+                <span>{t('security.nativeBiometric')}</span>
+              </label>
             )}
             <button type="button" className="list-row plain-btn" onClick={lockNow}>
               {t('security.lockNow')}

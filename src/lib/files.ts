@@ -53,3 +53,19 @@ export function openAttachment(type: string, data: string, name: string): void {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
+
+/** Files shared into the app by the service worker's share target, removed once taken. */
+export async function takeSharedFiles(maxBytes = 600 * 1024): Promise<PreparedFile[]> {
+  if (typeof caches === 'undefined') return [];
+  const cache = await caches.open('ledger-shared');
+  const out: PreparedFile[] = [];
+  for (const request of await cache.keys()) {
+    const res = await cache.match(request);
+    await cache.delete(request);
+    if (!res) continue;
+    const blob = await res.blob();
+    const name = decodeURIComponent(res.headers.get('x-file-name') ?? 'receipt');
+    out.push(await prepareFile(new File([blob], name, { type: blob.type }), maxBytes));
+  }
+  return out;
+}

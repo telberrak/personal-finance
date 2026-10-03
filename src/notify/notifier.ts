@@ -11,9 +11,10 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
 import type { FinanceData, NotificationSettings } from '../db/types';
 import { computeAlerts, DEFAULT_NOTIFICATIONS, deliverable, genericText, SCHEDULED_TYPES, type Alert } from '../lib/alerts';
+import { isNative, scheduleNative, showNativeNow } from '../native/native';
 import { api } from '../sync/client';
 
-export const notificationsSupported = () => typeof window !== 'undefined' && 'Notification' in window;
+export const notificationsSupported = () => isNative() || (typeof window !== 'undefined' && 'Notification' in window);
 export const pushSupported = () => notificationsSupported() && 'serviceWorker' in navigator && 'PushManager' in window;
 
 export const notificationSettings = (data: FinanceData): NotificationSettings => ({
@@ -51,6 +52,7 @@ export async function markSeen(ids: string[]): Promise<void> {
 }
 
 export async function showNotification(title: string, options: NotificationOptions & { data?: { url: string } }): Promise<void> {
+  if (isNative()) return showNativeNow(title, options.body ?? '', options.tag ?? title, options.data?.url);
   if (!notificationsSupported() || Notification.permission !== 'granted') return;
   const options2 = { icon: '/icon-192.png', badge: '/icon-192.png', ...options };
   const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
@@ -77,6 +79,16 @@ let lastSchedule = '';
 
 /** Uploads this device's upcoming reminders (generic text) when they change. */
 async function uploadSchedule(alerts: Alert[], settings: NotificationSettings) {
+  // In the native app reminders are scheduled on the device itself, with their full text.
+  if (isNative()) {
+    const schedule = settings.enabled ? alerts.filter((a) => SCHEDULED_TYPES.has(a.type)) : [];
+    const signature = JSON.stringify(schedule.map((a) => [a.id, a.at, a.title]));
+    if (signature !== lastSchedule) {
+      await scheduleNative(schedule);
+      lastSchedule = signature;
+    }
+    return;
+  }
   const sync = await db.syncState.get('sync');
   if (!sync?.token || !settings.enabled || !pushSupported() || Notification.permission !== 'granted') return;
   const reg = await navigator.serviceWorker.getRegistration();

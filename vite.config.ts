@@ -14,8 +14,8 @@ export default defineConfig({
       workbox: {
         // Works offline with the Latin font; the Arabic font is cached by the browser once used.
         globPatterns: ['**/*.{js,css,html,svg,png}', 'assets/geist-*.woff2'],
-        // Shows Web Push reminders and opens the app when one is tapped.
-        importScripts: ['push-sw.js'],
+        // Web Push reminders, and receipts shared to the installed app (sw-extra.js).
+        importScripts: ['sw-extra.js'],
         // Receipt reading (12 MB) is not pre-cached: it is cached the first time it is used.
         globIgnores: ['ocr/**'],
         runtimeCaching: [{ urlPattern: /\/ocr\//, handler: 'CacheFirst', options: { cacheName: 'ocr' } }],
@@ -29,6 +29,13 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
+        // "Share" a photo or PDF from another app straight into a new expense.
+        share_target: {
+          action: '/share-receipt',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: { files: [{ name: 'receipt', accept: ['image/*', 'application/pdf'] }] },
+        },
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

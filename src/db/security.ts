@@ -148,6 +148,9 @@ export async function disableEncryption(): Promise<void> {
     () => setUnlocked(copy),
     (keyring) => keyring.clear(),
   );
+  // The native app also keeps the key in the system keychain: remove it there too.
+  const native = await import('../native/native');
+  if (native.isNative()) await native.disableNativeBiometric();
 }
 
 // ---------------------------------------------------------------- passkeys

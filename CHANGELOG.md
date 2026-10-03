@@ -2,6 +2,14 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.11.0 — P10: native apps
+
+- iOS and Android projects (Capacitor) around the same app; `npm run native:sync`.
+- Face ID / fingerprint unlock with the data key in the system keychain (this device only).
+- Reminders scheduled as local notifications on the device; notification taps open the right screen; Android back button.
+- Share photos and PDFs from other apps into a new expense (installed web app).
+- Sync API: CORS for the native apps' origins; `VITE_API_ORIGIN` for native builds. Guide: docs/NATIVE.md.
+
 ## 0.10.0 — P9: receipts and attachments
 
 - Attach photos and PDFs to transactions; photos are resized and compressed on the device, stored encrypted and synced end-to-end encrypted.

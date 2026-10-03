@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router';
 import { AppShell, Loading } from './components/Layout';
 import { LockScreen, useAutoLock } from './components/LockScreen';
 import { ConfirmProvider } from './components/ui/Dialog';
@@ -69,6 +69,7 @@ function Unlocked() {
   else
     content = (
       <BrowserRouter>
+        <NativeIntegration />
         <Suspense fallback={<Loading />}>
           <Routes>
             <Route element={<AppShell />}>
@@ -103,4 +104,29 @@ function Unlocked() {
     );
 
   return content;
+}
+
+/** In the iOS/Android app: notification taps open their screen; Android's back button goes back. */
+function NativeIntegration() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    let stop = () => {};
+    let cancelled = false;
+    void (async () => {
+      const native = await import('./native/native');
+      if (!native.isNative() || cancelled) return;
+      const offTap = await native.onNativeNotificationTap((url) => navigate(url));
+      const { App: CapApp } = await import('@capacitor/app');
+      const back = await CapApp.addListener('backButton', ({ canGoBack }) => (canGoBack ? window.history.back() : void CapApp.exitApp()));
+      stop = () => {
+        offTap();
+        void back.remove();
+      };
+    })();
+    return () => {
+      cancelled = true;
+      stop();
+    };
+  }, [navigate]);
+  return null;
 }

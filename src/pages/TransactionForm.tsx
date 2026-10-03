@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Icon } from '../components/Icon';
 import { Loading } from '../components/Layout';
@@ -17,7 +17,7 @@ import {
   ValidationError,
 } from '../db/repo';
 import { Receipts } from '../components/Receipts';
-import type { PreparedFile } from '../lib/files';
+import { takeSharedFiles, type PreparedFile } from '../lib/files';
 import type { FinanceData, Transaction } from '../db/types';
 import { today } from '../lib/dates';
 import { parseMoney } from '../lib/money';
@@ -86,6 +86,11 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
   const [returnBy, setReturnBy] = useState(existing?.returnBy ?? '');
   const [warrantyUntil, setWarrantyUntil] = useState(existing?.warrantyUntil ?? '');
   const [pending, setPending] = useState<PreparedFile[]>([]);
+  // Receipts shared from another app (Web Share Target): staged as attachments of this new expense.
+  useEffect(() => {
+    if (!params.get('shared') || existing) return;
+    void takeSharedFiles().then((files) => files.length && setPending((p) => [...p, ...files]));
+  }, [params, existing]);
   const transactions = data?.transactions;
   const knownTags = useMemo(() => allTags(transactions ?? []), [transactions]);
   const [saving, setSaving] = useState(false);
