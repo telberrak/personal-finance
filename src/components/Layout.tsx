@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useSyncStatus } from '../sync/engine';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { shiftMonth, startOfMonth, formatMonthYear, type ISODate } from '../lib/dates';
 import { Icon, type IconName } from './Icon';
@@ -80,7 +81,7 @@ function Sidebar() {
           {t('nav.settings')}
         </NavLink>
         <p className="small muted" style={{ padding: '8px 12px 0' }}>
-          {t('nav.dataLocal')}
+          <DataLocation />
         </p>
       </div>
     </aside>
@@ -147,4 +148,11 @@ export function Loading() {
       <p className="empty">{t('common.loading')}</p>
     </main>
   );
+}
+
+/** Where the data lives: only here, or synced (end-to-end encrypted). */
+function DataLocation() {
+  const { phase } = useSyncStatus();
+  const synced = phase === 'idle' || phase === 'syncing' || phase === 'offline' || phase === 'error';
+  return <>{synced ? t('nav.dataSynced') : t('nav.dataLocal')}</>;
 }

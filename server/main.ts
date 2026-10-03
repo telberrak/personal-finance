@@ -10,6 +10,7 @@
  *
  * Run with `npm run server` (Node 24 runs TypeScript directly).
  */
+import { readFileSync } from 'node:fs';
 import { serve } from '@hono/node-server';
 import { createApp } from './app.ts';
 import { openPglite, openPostgres } from './db.ts';
@@ -32,6 +33,8 @@ const app = createApp({
     rpName: 'Ledger',
     origins: (env.APP_ORIGINS ?? 'http://localhost:5173,http://localhost:4173,http://localhost:4174').split(',').map((s) => s.trim()),
     dev,
+    version: (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8')) as { version: string }).version,
+    environment: env.LEDGER_ENV ?? (dev ? 'development' : 'production'),
   },
 });
 

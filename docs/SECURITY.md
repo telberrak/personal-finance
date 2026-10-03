@@ -1,6 +1,6 @@
 # Security and threat model
 
-Ledger keeps all data on your device, in the browser's IndexedDB. There is no server and no account, so nothing is sent anywhere. This document says what is protected, against whom, and where the limits are.
+Ledger keeps all data on your device, in the browser's IndexedDB. Sync between devices is optional; when it is on, the server stores only ciphertext (see [Sync](#sync)). This document says what is protected, against whom, and where the limits are.
 
 ## What is protected
 
@@ -50,6 +50,19 @@ Someone with the raw database can therefore see **how many** transactions there 
 | Malware running in your unlocked browser session, or a malicious browser extension                  | **No**                 | While unlocked the key is in memory and the page can read everything. Use a device you trust                                                                                               |
 | A compromised build or dependency (supply chain)                                                    | Partly                 | Lockfile, `npm audit` in CI, few runtime dependencies. A malicious update served by the host would run with full access                                                                    |
 | Forgotten PIN                                                                                       | By design, no recovery | Without the PIN or a passkey the data cannot be decrypted. Clear the site's data and restore a backup                                                                                      |
+
+## Sync
+
+Sync is end-to-end encrypted. The account has a random 256-bit **sync key**, separate from each device's data key:
+
+- **On the server** it exists only in the vault envelope, encrypted (AES-256-GCM) with a key derived (HKDF) from the **recovery key**: 160 random bits shown once when sync is set up and kept on your devices.
+- **Records** are encrypted with a key derived from the sync key, with fresh IVs. The server stores each one under an HMAC-SHA-256 of its table and id, so it cannot tell which table a record belongs to, link it to an id, or read any field.
+- **New devices** need both a sign-in (emailed code or passkey) and the recovery key. A sign-in alone gives access to ciphertext only.
+- **Sessions** are random 256-bit tokens, stored on the server as SHA-256 hashes, and can be revoked from any device. Sign-in codes are hashed, expire after 10 minutes and allow 5 tries; sign-ins are rate-limited.
+
+What the server can see: your email address, when each device last synced, how many records you have and how often they change, and record sizes. Lost recovery key: sign in on a device that still syncs and show it in Settings → Sync and devices. If no device has it, synced data cannot be recovered, by design.
+
+Details and deployment: [SERVER.md](SERVER.md).
 
 ## Hosting headers
 

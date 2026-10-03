@@ -6,6 +6,14 @@
 [build.environment]
   NODE_VERSION = "24"
 
+# Sync API (optional): forward /api to your API host so the app's CSP can stay 'self'.
+# Uncomment and set the host (docs/SERVER.md). It must come before the single-page rule.
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://ledger-api.fly.dev/api/:splat"
+#   status = 200
+#   force = true
+
 # Single-page app: serve index.html for client-side routes like /bills.
 [[redirects]]
   from = "/*"

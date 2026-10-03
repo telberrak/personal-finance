@@ -28,6 +28,10 @@ export interface Config {
   origins: string[];
   /** Development only: exposes the last emailed code at /api/dev/last-code. */
   dev?: boolean;
+  /** Reported by /api/health, e.g. '0.4.0'. */
+  version?: string;
+  /** 'production', 'staging' or 'development'. */
+  environment?: string;
 }
 
 const CODE_TTL_MS = 10 * 60_000;
@@ -91,7 +95,7 @@ export function createApp({ sql, mailer, config }: { sql: Sql; mailer: Mailer; c
 
   app.get('/health', async (c) => {
     await sql.query('SELECT 1');
-    return c.json({ ok: true });
+    return c.json({ ok: true, version: config.version ?? 'dev', environment: config.environment ?? 'development' });
   });
 
   // ------------------------------------------------------------ email sign-in

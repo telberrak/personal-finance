@@ -2,6 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 // Not 4173: that is the port `npm run serve` uses, and a stale build there must never be tested.
 const PORT = 4174;
+/** The sync API for e2e: in memory, with development helpers (the last emailed code). */
+const API_PORT = 8788;
 const isCI = !!process.env.CI;
 
 /** Locally the tests reuse the installed Edge, so no browser download is needed. */
@@ -28,10 +30,20 @@ export default defineConfig({
     { name: 'desktop-light', use: { ...desktop, colorScheme: 'light' } },
     { name: 'desktop-dark', use: { ...desktop, colorScheme: 'dark' } },
   ],
-  webServer: {
-    command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
-    url: `http://localhost:${PORT}`,
-    reuseExistingServer: !isCI,
-    timeout: 120_000,
-  },
+  webServer: [
+    {
+      command: `node server/main.ts --dev`,
+      url: `http://localhost:${API_PORT}/api/health`,
+      env: { PORT: String(API_PORT), LEDGER_DATA_DIR: 'memory', APP_ORIGINS: `http://localhost:${PORT}` },
+      reuseExistingServer: !isCI,
+      timeout: 60_000,
+    },
+    {
+      command: `npm run build && npx vite preview --port ${PORT} --strictPort`,
+      url: `http://localhost:${PORT}`,
+      env: { LEDGER_API: `http://localhost:${API_PORT}` },
+      reuseExistingServer: !isCI,
+      timeout: 120_000,
+    },
+  ],
 });

@@ -87,6 +87,15 @@ Goal: the app looks exactly the same in English, but nothing in the code assumes
 
 ## P3 — Backend foundation — XL (decision needed: hosting, cost, data location)
 
+**Status (3 October 2026): done.** Decision: our own TypeScript API (Hono, Postgres; PGlite locally), deployed to Fly.io in London. It covers:
+
+- sign-in with an emailed code or a passkey, sessions per device;
+- end-to-end encrypted sync (sync key in a vault opened by the recovery key, HMAC record keys, outbox-based change tracking, per-record last-writer-wins that never overwrites unpushed local changes);
+- device list with remote sign-out, account deletion, recovery key;
+- Dockerfile, staging and production Fly configs, health checks, privacy-safe logging, CHANGELOG and versions. Error reporting (Sentry) is documented but not enabled: it needs an account.
+
+See [SERVER.md](SERVER.md).
+
 | #   | Task                                                                                                                                                                                             | Size |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
 | 3.1 | Choose the stack. Options: Supabase (Postgres, auth, edge functions), a small Node/TypeScript API on Fly.io or Render, or Dexie Cloud. UK/EU data location for GDPR                              | M    |

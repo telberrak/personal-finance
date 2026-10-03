@@ -137,7 +137,8 @@
     "addTransaction": "Add transaction",
     "import": "Import",
     "settings": "Settings",
-    "dataLocal": "Your data stays on this device."
+    "dataLocal": "Your data stays on this device.",
+    "dataSynced": "Synced, end-to-end encrypted."
   },
   "app": {
     "name": "Ledger"

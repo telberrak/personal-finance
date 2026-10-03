@@ -170,5 +170,5 @@ describe('vault and sync', () => {
 });
 
 it('reports health', async () => {
-  expect(await (await call('GET', '/health')).json()).toEqual({ ok: true });
+  expect(await (await call('GET', '/health')).json()).toMatchObject({ ok: true });
 });

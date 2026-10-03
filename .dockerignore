@@ -1,0 +1,11 @@
+node_modules
+dist
+dev-dist
+.ledger-*data*
+test-results
+playwright-report
+.git
+src
+e2e
+public
+docs

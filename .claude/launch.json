@@ -4,32 +4,19 @@
     {
       "name": "ledger-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "dev",
-        "--",
-        "--port",
-        "5173",
-        "--strictPort"
-      ],
+      "runtimeArgs": ["run", "dev", "--", "--port", "5173", "--strictPort"],
       "port": 5173
     },
     {
       "name": "ledger-prod",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "serve"
-      ],
+      "runtimeArgs": ["run", "serve"],
       "port": 4173
     },
     {
       "name": "ledger-api",
       "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "run",
-        "server"
-      ],
+      "runtimeArgs": ["run", "server"],
       "port": 8787
     }
   ]

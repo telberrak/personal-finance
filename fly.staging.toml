@@ -1,0 +1,25 @@
+# Fly.io, staging. Deploy: fly deploy -c fly.staging.toml (see docs/SERVER.md)
+app = "ledger-api-staging"
+primary_region = "lhr" # London: data stays in the UK
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8787"
+  LEDGER_ENV = "staging"
+  # Set per deployment: RP_ID (the app's host name) and APP_ORIGINS (https://... of the app).
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/api/health"
+    timeout = "5s"

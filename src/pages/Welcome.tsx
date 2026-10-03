@@ -2,13 +2,14 @@ import { useState, type FormEvent } from 'react';
 import { Field, MoneyInput } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
 import { completeOnboarding, startWithDemoData, ValidationError } from '../db/repo';
+import { SyncPanel } from './Sync';
 import { parseMoney } from '../lib/money';
 import { t } from '../i18n';
 
 /** First-run setup: start fresh with your own balance, or explore with demo data. */
 export function Welcome() {
   const toast = useToast();
-  const [step, setStep] = useState<'choose' | 'fresh'>('choose');
+  const [step, setStep] = useState<'choose' | 'fresh' | 'sync'>('choose');
   const [accountName, setAccountName] = useState(() => t('accounts.defaultName'));
   const [balanceText, setBalanceText] = useState('');
   const [payday, setPayday] = useState(25);
@@ -51,7 +52,18 @@ export function Welcome() {
             <button type="button" className="btn" style={{ height: 54, borderRadius: 16 }} onClick={explore} disabled={busy}>
               {t('welcome.demo')}
             </button>
+            <button type="button" className="link-btn" onClick={() => setStep('sync')}>
+              {t('welcome.haveAccount')}
+            </button>
           </>
+        ) : step === 'sync' ? (
+          <div className="stack" style={{ gap: 16 }}>
+            <h1 className="screen-title">{t('sync.title')}</h1>
+            <SyncPanel />
+            <button type="button" className="btn" onClick={() => setStep('choose')}>
+              {t('welcome.back')}
+            </button>
+          </div>
         ) : (
           <form className="stack" style={{ gap: 16 }} onSubmit={startFresh}>
             <div className="stack" style={{ gap: 6 }}>
