@@ -19,7 +19,7 @@ import { api, SyncApiError } from './client';
 import { syncKeys, type SyncedRecord, type SyncKeys } from './keys';
 
 /** Settings that belong to one device and are never synced. */
-export const DEVICE_SETTINGS = ['theme', 'lockAfterMinutes', 'hideAmounts', 'lastBackupAt', 'pinHash', 'pinSalt'] as const;
+export const DEVICE_SETTINGS = ['theme', 'lockAfterMinutes', 'hideAmounts', 'notifications', 'lastBackupAt', 'pinHash', 'pinSalt'] as const;
 
 export type SyncPhase = 'off' | 'needsKey' | 'idle' | 'syncing' | 'offline' | 'signedOut' | 'error';
 export interface SyncStatus {

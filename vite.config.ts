@@ -12,6 +12,8 @@ export default defineConfig({
       workbox: {
         // Works offline with the Latin font; the Arabic font is cached by the browser once used.
         globPatterns: ['**/*.{js,css,html,svg,png}', 'assets/geist-*.woff2'],
+        // Shows Web Push reminders and opens the app when one is tapped.
+        importScripts: ['push-sw.js'],
       },
       manifest: {
         name: 'Ledger',

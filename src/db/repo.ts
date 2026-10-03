@@ -368,6 +368,7 @@ export async function saveRecurring(input: RecurringInput): Promise<string> {
   check(isPence(input.amount) && input.amount > 0, 'errors.amountPositive');
   check(ISO_DATE.test(input.startDate), 'errors.startDateRequired');
   check(!input.endDate || input.endDate >= input.startDate, 'errors.endBeforeStart');
+  check(!input.trialEndsOn || ISO_DATE.test(input.trialEndsOn), 'errors.trialDate');
   check(input.accountId && input.categoryId, 'errors.accountAndCategory');
   const id = input.id ?? newId();
   await db.transaction('rw', db.recurring, async () => {

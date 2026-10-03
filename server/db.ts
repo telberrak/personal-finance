@@ -71,6 +71,28 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX records_user_seq ON records(user_id, seq);
   `,
+  // 2: Web Push (P4). Reminders hold a time and generic text only.
+  `
+  CREATE TABLE server_settings (
+    key text PRIMARY KEY,
+    value text NOT NULL
+  );
+  CREATE TABLE push_subscriptions (
+    session_id uuid PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,
+    endpoint text NOT NULL,
+    p256dh text NOT NULL,
+    auth text NOT NULL
+  );
+  CREATE TABLE reminders (
+    id bigserial PRIMARY KEY,
+    session_id uuid NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    send_at timestamptz NOT NULL,
+    title text NOT NULL,
+    body text NOT NULL,
+    tag text NOT NULL
+  );
+  CREATE INDEX reminders_due ON reminders(send_at);
+  `,
 ];
 
 export async function migrate(sql: Sql): Promise<void> {

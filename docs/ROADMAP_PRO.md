@@ -106,6 +106,10 @@ See [SERVER.md](SERVER.md).
 
 ## P4 — Notifications and reminders — L (after P3)
 
+**Status (3 October 2026): done.** Alerts are computed on the device (`src/lib/alerts.ts`). The centre and local notifications work without an account; Web Push needs sync, and the server only stores each reminder's time and a generic sentence. Native push comes with P10.
+
+**Status (3 October 2026): done.** Alerts are computed on the device (`src/lib/alerts.ts`). The centre and local notifications work without an account; Web Push needs sync, and the server only stores each reminder's time and a generic sentence. Native push comes with P10.
+
 - Web Push (and native push after P10).
 - **Alerts:**
   - bill due tomorrow;

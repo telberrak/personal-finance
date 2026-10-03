@@ -13,6 +13,7 @@ import {
   type Goal,
   type ImportBatch,
   type KeyEntry,
+  type Notice,
   type OutboxEntry,
   type SyncState,
   type PayeeAlias,
@@ -46,6 +47,7 @@ export class FinanceDB extends Dexie {
   keyring!: EntityTable<KeyEntry, 'id'>;
   outbox!: EntityTable<OutboxEntry, 'id'>;
   syncState!: EntityTable<SyncState, 'id'>;
+  notices!: EntityTable<Notice, 'id'>;
 
   constructor(name = 'ledger') {
     super(name);
@@ -99,6 +101,8 @@ export class FinanceDB extends Dexie {
     // v4: sync. The outbox lists records changed since the last push; syncState holds the
     // session and sync key (encrypted at rest like everything else).
     this.version(4).stores({ outbox: 'id', syncState: 'id' });
+    // v5: notifications already shown or read on this device.
+    this.version(5).stores({ notices: 'id' });
 
     this.use(encryptionMiddleware);
     this.use(outboxMiddleware);

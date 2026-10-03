@@ -32,7 +32,7 @@ describe('schema migration', () => {
 
     const db = new FinanceDB(NAME);
     await db.open();
-    expect(db.verno).toBe(4);
+    expect(db.verno).toBe(5);
     expect(await db.transactions.get('t1')).toMatchObject({ payee: 'Tesco', amount: -250 });
     expect(await db.accounts.get('current')).toMatchObject({ includeInSafeToSpend: true });
     expect(await db.accounts.get('card')).toMatchObject({ includeInSafeToSpend: false });
@@ -64,7 +64,7 @@ describe('schema migration', () => {
 
     const db = new FinanceDB(NAME);
     await db.open();
-    expect(db.verno).toBe(4);
+    expect(db.verno).toBe(5);
     expect(await db.transactions.get('t1')).toMatchObject({ payee: 'Tesco', fingerprint: 'f' });
     expect(await db.payeeAliases.get('p1')).toMatchObject({ from: 'tesco stores' });
     expect(db.transactions.schema.indexes.map((i) => i.name)).not.toContain('fingerprint');

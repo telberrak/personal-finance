@@ -62,6 +62,8 @@ Sync is end-to-end encrypted. The account has a random 256-bit **sync key**, sep
 
 What the server can see: your email address, when each device last synced, how many records you have and how often they change, and record sizes. Lost recovery key: sign in on a device that still syncs and show it in Settings → Sync and devices. If no device has it, synced data cannot be recovered, by design.
 
+**Push reminders** (P4): a device that turns on notifications uploads its upcoming reminders as a time and a generic sentence such as "A bill is due tomorrow", never names, amounts or balances. Details are only shown by the app itself.
+
 Details and deployment: [SERVER.md](SERVER.md).
 
 ## Hosting headers

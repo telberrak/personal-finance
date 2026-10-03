@@ -8,6 +8,8 @@ import { useTheme } from './components/useTheme';
 import { useFinanceData } from './db/db';
 import { useSecurityMode } from './db/security';
 import { startSync } from './sync/engine';
+import { useNotifier } from './notify/notifier';
+import { Notifications } from './pages/Notifications';
 import { applyLocale } from './i18n';
 import type { FinanceData } from './db/types';
 import { Activity } from './pages/Activity';
@@ -46,6 +48,7 @@ function Unlocked() {
   if (data) applyLocale(data.settings.language, data.settings.currency, data.settings.hideAmounts);
   useTheme(data?.settings.theme);
   useAutoLock(data?.settings.lockAfterMinutes);
+  useNotifier(data);
   // Sync runs while unlocked (it needs to read and write the data).
   useEffect(() => startSync(), []);
 
@@ -69,6 +72,7 @@ function Unlocked() {
               <Route path="import" element={<Import data={data} />} />
               <Route path="add" element={<TransactionForm data={data} />} />
               <Route path="transactions/:id" element={<TransactionForm data={data} />} />
+              <Route path="notifications" element={<Notifications data={data} />} />
               <Route path="settings" element={<Settings data={data} />} />
               <Route path="settings/accounts" element={<Accounts data={data} />} />
               <Route path="settings/categories" element={<Categories data={data} />} />

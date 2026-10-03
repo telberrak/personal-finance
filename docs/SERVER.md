@@ -14,15 +14,16 @@ npm run server:dev
 
 ## Configuration
 
-| Variable                      | Meaning                                                                            |
-| ----------------------------- | ---------------------------------------------------------------------------------- |
-| `PORT`                        | Default 8787                                                                       |
-| `DATABASE_URL`                | Postgres connection string. Without it, PGlite in `LEDGER_DATA_DIR`                |
-| `LEDGER_DATA_DIR`             | PGlite folder (default `.ledger-api-data`), or `memory`                            |
-| `RP_ID`                       | The app's host name, for passkeys, e.g. `ledger.example.com`                       |
-| `APP_ORIGINS`                 | Comma-separated origins the app is served from, e.g. `https://ledger.example.com`  |
-| `RESEND_API_KEY`, `MAIL_FROM` | Send sign-in codes with [Resend](https://resend.com). `MAIL_FROM` must be verified |
-| `LEDGER_ENV`                  | `production` or `staging`; reported by `/api/health`                               |
+| Variable                                                 | Meaning                                                                                                            |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `PORT`                                                   | Default 8787                                                                                                       |
+| `DATABASE_URL`                                           | Postgres connection string. Without it, PGlite in `LEDGER_DATA_DIR`                                                |
+| `LEDGER_DATA_DIR`                                        | PGlite folder (default `.ledger-api-data`), or `memory`                                                            |
+| `RP_ID`                                                  | The app's host name, for passkeys, e.g. `ledger.example.com`                                                       |
+| `APP_ORIGINS`                                            | Comma-separated origins the app is served from, e.g. `https://ledger.example.com`                                  |
+| `RESEND_API_KEY`, `MAIL_FROM`                            | Send sign-in codes with [Resend](https://resend.com). `MAIL_FROM` must be verified                                 |
+| `LEDGER_ENV`                                             | `production` or `staging`; reported by `/api/health`                                                               |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Web Push keys (`npx web-push generate-vapid-keys`). Without them, keys are generated once and kept in the database |
 
 Migrations run automatically at start-up ([`server/db.ts`](../server/db.ts)). Never edit a released migration: add a new one.
 
@@ -55,15 +56,17 @@ Two environments are configured: [`fly.production.toml`](../fly.production.toml)
 
 ## API
 
-| Method and path                                     | Purpose                                                     |
-| --------------------------------------------------- | ----------------------------------------------------------- |
-| `POST /api/auth/email/start`, `/verify`             | Sign in with a 6-digit emailed code (10 minutes, 5 tries)   |
-| `POST /api/auth/passkey/options`, `/verify`         | Sign in with a passkey                                      |
-| `POST /api/passkeys/options`, `POST /api/passkeys`  | Add a sign-in passkey (signed in)                           |
-| `GET /api/me`                                       | Account, devices, passkeys, whether a vault exists          |
-| `DELETE /api/devices/:id`, `POST /api/auth/logout`  | Sign a device out                                           |
-| `GET/PUT /api/vault`                                | The sync key, encrypted with the recovery key               |
-| `POST /api/sync/push`, `GET /api/sync/pull?since=N` | Encrypted records, ordered by a per-account sequence number |
-| `DELETE /api/account`                               | Delete everything                                           |
+| Method and path                                          | Purpose                                                          |
+| -------------------------------------------------------- | ---------------------------------------------------------------- |
+| `POST /api/auth/email/start`, `/verify`                  | Sign in with a 6-digit emailed code (10 minutes, 5 tries)        |
+| `POST /api/auth/passkey/options`, `/verify`              | Sign in with a passkey                                           |
+| `POST /api/passkeys/options`, `POST /api/passkeys`       | Add a sign-in passkey (signed in)                                |
+| `GET /api/me`                                            | Account, devices, passkeys, whether a vault exists               |
+| `DELETE /api/devices/:id`, `POST /api/auth/logout`       | Sign a device out                                                |
+| `GET/PUT /api/vault`                                     | The sync key, encrypted with the recovery key                    |
+| `POST /api/sync/push`, `GET /api/sync/pull?since=N`      | Encrypted records, ordered by a per-account sequence number      |
+| `DELETE /api/account`                                    | Delete everything                                                |
+| `GET /api/push/key`, `PUT/DELETE /api/push/subscription` | Web Push for this device                                         |
+| `PUT /api/push/reminders`                                | Replace this device's upcoming reminders (time and generic text) |
 
 Types are shared with the app in [`shared/api.ts`](../shared/api.ts).

@@ -15,6 +15,7 @@ import { serve } from '@hono/node-server';
 import { createApp } from './app.ts';
 import { openPglite, openPostgres } from './db.ts';
 import { consoleMailer, resendMailer } from './mailer.ts';
+import { sendDueReminders, webPushSender } from './push.ts';
 
 const env = process.env;
 const port = Number(env.PORT ?? 8787);
@@ -25,9 +26,11 @@ const sql = env.DATABASE_URL ? await openPostgres(env.DATABASE_URL) : await open
 const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, env.MAIL_FROM ?? 'Ledger <login@example.com>') : consoleMailer;
 if (!env.RESEND_API_KEY && !dev) console.warn('RESEND_API_KEY is not set: sign-in codes are only printed to this log.');
 
+const push = await webPushSender(sql, env);
 const app = createApp({
   sql,
   mailer,
+  push,
   config: {
     rpID: env.RP_ID ?? 'localhost',
     rpName: 'Ledger',
@@ -42,8 +45,12 @@ const server = serve({ fetch: app.fetch, port }, () =>
   console.log(`Ledger API on http://localhost:${port}/api (${env.DATABASE_URL ? 'Postgres' : 'PGlite'})`),
 );
 
+// Push reminders when they are due.
+const pushTimer = setInterval(() => void sendDueReminders(sql, push).catch((err) => console.error('[push]', err.message)), 60_000);
+
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, () => {
+    clearInterval(pushTimer);
     server.close();
     void sql.close().finally(() => process.exit(0));
   });

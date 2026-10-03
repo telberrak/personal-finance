@@ -45,6 +45,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
   const [frequency, setFrequency] = useState<Frequency>(existing?.frequency ?? (params.get('frequency') as Frequency) ?? 'monthly');
   const [startDate, setStartDate] = useState(existing?.startDate ?? params.get('date') ?? today());
   const [endDate, setEndDate] = useState(existing?.endDate ?? '');
+  const [trialEndsOn, setTrialEndsOn] = useState(existing?.trialEndsOn ?? '');
   const [method, setMethod] = useState<PaymentMethod>(existing?.method ?? 'direct-debit');
   const [accountId, setAccountId] = useState(existing?.accountId ?? params.get('account') ?? accounts[0]?.id);
   const [categoryId, setCategoryId] = useState(
@@ -66,6 +67,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
         frequency,
         startDate,
         endDate: endDate || undefined,
+        trialEndsOn: trialEndsOn || undefined,
         method,
         accountId: accountId!,
         categoryId: categoryId!,
@@ -146,6 +148,9 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
           </Field>
           <Field label={t('billForm.ends')}>
             {(id) => <input id={id} type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} />}
+          </Field>
+          <Field label={t('billForm.trialEnds')}>
+            {(id) => <input id={id} type="date" value={trialEndsOn} onChange={(e) => setTrialEndsOn(e.target.value)} />}
           </Field>
           <Field label={t('fields.account')}>
             {(id) => (

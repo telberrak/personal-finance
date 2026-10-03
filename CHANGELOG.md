@@ -2,6 +2,12 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.5.0 — P4: notifications and reminders
+
+- Alerts for bills due tomorrow, payday, budgets at 80% and 100%, a low forecast balance, unusual payments, free trials ending and yearly renewals.
+- Notification centre (bell on Home), system notifications while open, and Web Push while closed for people who sync. Pushed reminders carry a time and generic text only.
+- Per-type switches and quiet hours, per device. Bills can record when a free trial ends.
+
 ## 0.4.0 — P3: accounts and end-to-end encrypted sync
 
 - Optional sync between devices: sign in with an emailed code or a passkey; data is encrypted on the device with a sync key the server never sees.

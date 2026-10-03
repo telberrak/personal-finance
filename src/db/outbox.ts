@@ -8,7 +8,7 @@
 import type { DBCore, DBCoreMutateRequest, DBCoreTable, Middleware } from 'dexie';
 
 /** Tables that are never synced. */
-export const LOCAL_TABLES = new Set(['keyring', 'outbox', 'syncState']);
+export const LOCAL_TABLES = new Set(['keyring', 'outbox', 'syncState', 'notices']);
 export const isSynced = (table: string) => !LOCAL_TABLES.has(table);
 
 export const outboxId = (table: string, key: string) => `${table}/${key}`;

@@ -1748,3 +1748,34 @@ dialog::backdrop {
   overflow-wrap: anywhere; /* breaks after the dashes, keeping groups whole */
   user-select: all;
 }
+
+/* Notification bell with an unread count. */
+.bell {
+  position: relative;
+}
+.bell-badge {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--warn, #d9480f);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+.list-row.is-unread .item-title {
+  font-weight: 650;
+}
+.list-row.is-unread::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: none;
+}

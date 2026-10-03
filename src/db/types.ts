@@ -82,6 +82,8 @@ export interface Recurring {
   categoryId: string;
   /** False when paused. */
   active: boolean;
+  /** Free trial: the first payment is taken on this date unless cancelled. */
+  trialEndsOn?: ISODate;
 }
 
 export interface Budget {
@@ -153,8 +155,10 @@ export interface Settings {
   /** Legacy (before encryption): PBKDF2 hash of the app-lock PIN. Replaced by the keyring on the next unlock. */
   pinHash?: string;
   pinSalt?: string;
-  /** Blur amounts on screen ("privacy mode"). */
+  /** Privacy mode: amounts show as £•••. */
   hideAmounts?: boolean;
+  /** This device's notification choices. */
+  notifications?: NotificationSettings;
   /** Lock again after this many minutes in the background. */
   lockAfterMinutes: number;
   /** Payees whose "add as bill?" suggestion was dismissed (payee keys). */
@@ -230,4 +234,20 @@ export interface SyncState {
   /** Highest server sequence number applied here. */
   cursor: number;
   lastSyncAt?: number;
+}
+
+export interface NotificationSettings {
+  enabled: boolean;
+  /** Alert types switched off (see ALERT_TYPES in lib/alerts). */
+  off: string[];
+  /** Quiet hours, "HH:MM" local time; notifications wait until the end. Equal times: no quiet hours. */
+  quietStart: string;
+  quietEnd: string;
+}
+
+/** What this device has done with an alert. Device-local, never synced. */
+export interface Notice {
+  id: string;
+  seenAt?: number;
+  notifiedAt?: number;
 }

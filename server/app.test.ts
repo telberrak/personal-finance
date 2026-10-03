@@ -17,7 +17,7 @@ beforeAll(async () => {
 afterAll(() => sql?.close());
 beforeEach(async () => {
   sent.length = 0;
-  await sql.query('TRUNCATE users, email_codes, challenges CASCADE');
+  await sql.query('TRUNCATE users, email_codes, challenges, server_settings CASCADE');
   app = createApp({ sql, mailer, config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] } });
 });
 
@@ -171,4 +171,45 @@ describe('vault and sync', () => {
 
 it('reports health', async () => {
   expect(await (await call('GET', '/health')).json()).toMatchObject({ ok: true });
+});
+
+describe('push reminders', () => {
+  it('stores generic reminders per device and sends them when due', async () => {
+    const { sendDueReminders } = await import('./push.ts');
+    const sent: string[] = [];
+    const push = { publicKey: 'pk', send: async (_s: unknown, payload: string) => (sent.push(payload), 'ok' as const) };
+    app = createApp({ sql, mailer, push, config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] } });
+    const s = await signIn();
+    expect(await (await call('GET', '/push/key', undefined, s.token)).json()).toEqual({ publicKey: 'pk' });
+    const sub = { endpoint: 'https://push.example/abc', keys: { p256dh: 'p', auth: 'a' } };
+    expect((await call('PUT', '/push/subscription', sub, s.token)).status).toBe(200);
+    const soon = Date.now() + 60_000;
+    const reminders = [
+      { at: soon, title: 'A bill is due tomorrow', body: 'Open Ledger', tag: 't1' },
+      { at: soon + 86_400_000, title: 'Later', body: 'x', tag: 't2' },
+    ];
+    expect((await call('PUT', '/push/reminders', { reminders }, s.token)).status).toBe(200);
+    // Replacing the list keeps only the new one.
+    expect((await call('PUT', '/push/reminders', { reminders }, s.token)).status).toBe(200);
+    expect(await sendDueReminders(sql, push, new Date(soon + 1000))).toBe(1);
+    expect(JSON.parse(sent[0])).toEqual({ title: 'A bill is due tomorrow', body: 'Open Ledger', tag: 't1' });
+    expect(await sendDueReminders(sql, push, new Date(soon + 2000))).toBe(0);
+  });
+
+  it('drops a subscription the browser has removed, and validates input', async () => {
+    const { sendDueReminders } = await import('./push.ts');
+    const push = { publicKey: 'pk', send: async () => 'gone' as const };
+    app = createApp({ sql, mailer, push, config: { rpID: 'localhost', rpName: 'Ledger', origins: ['http://localhost:5173'] } });
+    const s = await signIn();
+    expect(
+      (await call('PUT', '/push/subscription', { endpoint: 'http://insecure', keys: { p256dh: 'p', auth: 'a' } }, s.token)).status,
+    ).toBe(400);
+    await call('PUT', '/push/subscription', { endpoint: 'https://push.example/x', keys: { p256dh: 'p', auth: 'a' } }, s.token);
+    expect(
+      (await call('PUT', '/push/reminders', { reminders: [{ at: Date.now() + 1e12, title: 'x', body: 'y', tag: 'z' }] }, s.token)).status,
+    ).toBe(400);
+    await call('PUT', '/push/reminders', { reminders: [{ at: Date.now(), title: 'x', body: 'y', tag: 'z' }] }, s.token);
+    await sendDueReminders(sql, push, new Date(Date.now() + 1000));
+    expect(await sql.query('SELECT 1 FROM push_subscriptions')).toHaveLength(0);
+  });
 });

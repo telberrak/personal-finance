@@ -18,6 +18,7 @@ import {
 import { LIMITS, type Change, type Me, type PullResponse, type PushResponse, type Session } from '../shared/api.ts';
 import type { Sql } from './db.ts';
 import type { Mailer } from './mailer.ts';
+import { pushRoutes, type PushSender } from './push.ts';
 import { RateLimiter } from './rate-limit.ts';
 
 export interface Config {
@@ -48,7 +49,7 @@ const fail = (status: 400 | 401 | 403 | 404 | 409 | 413 | 429, error: string): n
 
 type Env = { Variables: { userId: string; sessionId: string } };
 
-export function createApp({ sql, mailer, config }: { sql: Sql; mailer: Mailer; config: Config }) {
+export function createApp({ sql, mailer, config, push }: { sql: Sql; mailer: Mailer; config: Config; push?: PushSender }) {
   const app = new Hono<Env>().basePath('/api');
   const limiter = new RateLimiter();
   const lastCodes = new Map<string, string>();
@@ -374,6 +375,8 @@ export function createApp({ sql, mailer, config }: { sql: Sql; mailer: Mailer; c
     const res: PullResponse = { changes, seq: changes.at(-1)?.seq ?? since, more };
     return c.json(res);
   });
+
+  pushRoutes(authed, sql, push);
 
   app.route('/', authed);
   app.notFound((c) => c.json({ error: 'Not found.' }, 404));

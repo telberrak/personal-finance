@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon';
+import { NotificationBell } from './Notifications';
 import { Loading } from '../components/Layout';
 import { BillRow, catVar, methodLabel, TransactionRow } from '../components/rows';
 import { useIsDesktop } from '../components/useMediaQuery';
@@ -74,11 +75,14 @@ export function Home({ data }: { data?: FinanceData }) {
           <span className="label">{formatLong(ref)}</span>
           <h1 className="home-title">{greeting(new Date().getHours())}</h1>
         </div>
-        {!isDesktop && (
-          <Link to="/settings" className="icon-btn" aria-label={t('nav.settings')}>
-            <Icon name="settings" size={20} />
-          </Link>
-        )}
+        <div className="row" style={{ gap: 8 }}>
+          <NotificationBell data={data} />
+          {!isDesktop && (
+            <Link to="/settings" className="icon-btn" aria-label={t('nav.settings')}>
+              <Icon name="settings" size={20} />
+            </Link>
+          )}
+        </div>
       </header>
 
       {(overdue.length > 0 || lowSoon || needsBackup) && (

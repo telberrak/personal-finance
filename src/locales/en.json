@@ -51,7 +51,8 @@
     "pickSpendingCategories": "Pick spending categories.",
     "pickIncomeCategories": "Pick income categories.",
     "splitAmountLocked": "Change the amounts of a split with Edit split.",
-    "splitPartAmount": "Every part needs an amount."
+    "splitPartAmount": "Every part needs an amount.",
+    "trialDate": "Enter the date the free trial ends."
   },
   "transactions": {
     "transferTo": "Transfer to {{name}}",
@@ -408,7 +409,8 @@
     "pausedHint": "Hidden from upcoming bills and “safe to spend”",
     "wasUntil": "Was {{amount}} until {{date}}.",
     "recently": "recently",
-    "recentPayments": "Recent payments"
+    "recentPayments": "Recent payments",
+    "trialEnds": "Free trial ends"
   },
   "fields": {
     "name": "Name",
@@ -595,7 +597,9 @@
     "savePin": "Save PIN",
     "sync": "Sync and devices",
     "syncOff": "Off — only on this device",
-    "syncOn": "On — {{email}}"
+    "syncOn": "On — {{email}}",
+    "notifications": "Notifications",
+    "notificationsDetail": "Reminders, alerts and quiet hours"
   },
   "colors": {
     "groceries": "Blue",
@@ -850,5 +854,81 @@
     "deleteBody": "Your account and all synced data will be deleted from the server. Data on your devices stays.",
     "delete": "Delete",
     "deleted": "Sync account deleted"
+  },
+  "alerts": {
+    "billDue": {
+      "title": "{{name}} is due tomorrow",
+      "body": "{{amount}} will be taken."
+    },
+    "payday": {
+      "title": "It’s payday",
+      "body": "Check that your pay arrived and see what is safe to spend."
+    },
+    "trialEnding": {
+      "title": "{{name}} free trial ends soon",
+      "body": "Cancel before then if you don’t want to pay {{amount}}."
+    },
+    "renewal": {
+      "title": "{{name}} renews in a week",
+      "body": "{{amount}} for another year."
+    },
+    "budget": {
+      "near": "{{name}}: 80% of the budget used",
+      "over": "{{name}}: budget used up",
+      "body": "{{spent}} of {{limit}} spent this period."
+    },
+    "lowBalance": {
+      "title": "Your balance may run low",
+      "body_one": "Forecast to drop to {{amount}} in {{days}} day.",
+      "body_other": "Forecast to drop to {{amount}} in {{days}} days."
+    },
+    "unusual": {
+      "title": "Unusual payment to {{name}}",
+      "body": "{{amount}}, when it is usually about {{usual}}."
+    },
+    "bankConsent": {
+      "title": "Reconnect your bank",
+      "body": "Your bank connection expires soon. Reconnect to keep transactions coming in."
+    },
+    "generic": {
+      "billDue": "A bill is due tomorrow",
+      "payday": "It’s payday",
+      "trialEnding": "A free trial ends soon",
+      "renewal": "A yearly payment renews next week",
+      "bankConsent": "A bank connection needs renewing",
+      "budget": "Budget update",
+      "lowBalance": "Balance warning",
+      "unusual": "Unusual payment",
+      "body": "Open Ledger to see the details."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "unread_one": "Notifications, {{count}} unread",
+    "unread_other": "Notifications, {{count}} unread",
+    "backHome": "‹ Home",
+    "empty": "Nothing new. Bills, budgets and your balance are being watched.",
+    "settings": "Notification settings",
+    "unsupported": "This browser cannot show notifications. Alerts still appear here.",
+    "enable": "Notifications on this device",
+    "enableHint": "Shown while Ledger is open, and when it is closed if you use sync. Pushed reminders contain no names or amounts.",
+    "enableHintNoPush": "Shown while Ledger is open.",
+    "blocked": "Notifications are blocked for this site. Allow them in your browser settings.",
+    "type": {
+      "billDue": "Bill due tomorrow",
+      "payday": "Payday",
+      "budget": "Budget at 80% and 100%",
+      "lowBalance": "Balance may run low",
+      "unusual": "Unusual payment",
+      "trialEnding": "Free trial ending",
+      "renewal": "Yearly payment renewing",
+      "bankConsent": "Bank connection expiring"
+    },
+    "quietFrom": "Quiet from",
+    "quietTo": "Quiet until",
+    "quietNote": "Notifications during quiet hours wait until they end.",
+    "test": "Send a test notification",
+    "testTitle": "Notifications are working",
+    "testBody": "This is how Ledger will remind you."
   }
 }
