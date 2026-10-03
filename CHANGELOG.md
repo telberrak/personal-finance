@@ -5,6 +5,7 @@ All notable changes. Versions follow [semantic versioning](https://semver.org); 
 ## 0.14.1 — Renamed to Mizan
 
 - The app is now called **Mizan** (ميزان, "balance") in every language, on the website, in emails and in the native apps (new app id `app.mizan.money`).
+- Full name for stores, the install prompt and the website: "Mizan: Safe to Spend" ("Mizan : reste à vivre", "Mizan: المتاح للإنفاق"), to stand apart from other apps called Mizan.
 - Existing data, backups and synced vaults keep working: internal identifiers are unchanged.
 
 ## 0.14.0 — P13: launch readiness
