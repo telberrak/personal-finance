@@ -20,6 +20,9 @@ const SCREENS = [
   '/settings/banks',
   '/networth',
   '/search',
+  '/calendar',
+  '/tax',
+  '/reports/year/2026',
 ];
 
 for (const path of SCREENS) {

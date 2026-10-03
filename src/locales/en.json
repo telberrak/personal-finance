@@ -158,7 +158,8 @@
     "dataLocal": "Your data stays on this device.",
     "dataSynced": "Synced, end-to-end encrypted.",
     "networth": "Net worth",
-    "search": "Search"
+    "search": "Search",
+    "calendar": "Calendar"
   },
   "app": {
     "name": "Ledger"
@@ -294,7 +295,8 @@
       "this": "This month",
       "last": "Last month",
       "3m": "3 months",
-      "6m": "6 months"
+      "6m": "6 months",
+      "custom": "Custom"
     },
     "title": "Reports",
     "period": "Period",
@@ -316,7 +318,19 @@
     "dashedPrefix": "The dashed line is your ",
     "lowBalanceWarning": "low balance warning",
     "dashedSuffix": ".",
-    "transfersExcluded": "Transfers between your accounts are not counted."
+    "transfersExcluded": "Transfers between your accounts are not counted.",
+    "more": "More reports",
+    "yearInReview": "Year in review",
+    "taxHelper": "Tax helper",
+    "compareTitle": "Compared with before",
+    "compareWith": "Compare with {{from}} – {{to}}",
+    "thisPeriod": "This period",
+    "previousPeriod": "Before",
+    "change": "Change",
+    "trendsTitle": "Category trends",
+    "twelveMonths": "Last 12 months",
+    "monthlyAverage": "Monthly average",
+    "trendLabel": "{{name}} spending over the last 12 months"
   },
   "lock": {
     "wrongPin": "That PIN is not right. Try again.",
@@ -441,7 +455,9 @@
     "note": "Note",
     "optional": "Optional",
     "tags": "Tags",
-    "tagsPlaceholder": "Holiday 2027, Work expense"
+    "tagsPlaceholder": "Holiday 2027, Work expense",
+    "tax": "Tax",
+    "taxNone": "Not for tax"
   },
   "goals": {
     "title": "Goals",
@@ -1082,5 +1098,75 @@
     "more_one": "{{count}} more not shown. Narrow the search to see them.",
     "more_other": "{{count}} more not shown. Narrow the search to see them.",
     "backToActivity": "‹ Activity"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "subtitle": "Bills, paydays and your balance, day by day",
+    "gridLabel": "Month calendar",
+    "payday": "Payday",
+    "billsCount_one": "{{count}} bill",
+    "billsCount_other": "{{count}} bills",
+    "balance": "Balance {{amount}}",
+    "forecastBalance": "Forecast balance {{amount}}",
+    "details": "Day details",
+    "paid": "Paid",
+    "due": "Due",
+    "inOut": "In {{in}}, out {{out}}.",
+    "seeActivity": "See activity",
+    "nothingDue": "Nothing due.",
+    "quietDay": "Nothing happened this day.",
+    "legend": "Green dot: payday. Orange dot: bill due. Grey dot: bill paid. Balances after today are a forecast (in italics) for your everyday accounts."
+  },
+  "review": {
+    "title": "{{year}} in review",
+    "subtitle": "Your year at a glance",
+    "print": "Print or save as PDF",
+    "years": "Years",
+    "empty": "No transactions this year.",
+    "saved": "Saved",
+    "highlights": "Highlights",
+    "count_one": "{{count}} transaction recorded.",
+    "count_other": "{{count}} transactions recorded.",
+    "bills": "{{amount}} went on bills and subscriptions.",
+    "biggestMonth": "You spent the most in {{month}}: {{amount}}.",
+    "topCategories": "Top categories",
+    "backToReports": "‹ Reports"
+  },
+  "tax": {
+    "title": "Tax helper",
+    "subtitle": "Income and expenses for your tax return",
+    "disclaimer": "This gathers what you marked for tax. It is not tax advice and does not work out tax owed.",
+    "country": "Tax rules",
+    "year": "Tax year",
+    "range": "{{from}} to {{to}}",
+    "totalIncome": "Income marked",
+    "totalExpenses": "Expenses marked",
+    "noneMarked": "Nothing marked yet.",
+    "export": "Export CSV",
+    "howTo": "Mark a transaction with the Tax field when you add or edit it.",
+    "csv": {
+      "heading": "Heading",
+      "date": "Date",
+      "payee": "Payee",
+      "amount": "Amount",
+      "note": "Note"
+    },
+    "gb": {
+      "seIncome": "Self-employment income",
+      "seExpense": "Self-employment allowable expenses",
+      "propertyIncome": "Property income",
+      "propertyExpense": "Property expenses",
+      "interest": "Savings interest",
+      "giftAid": "Gift Aid donations",
+      "pension": "Personal pension contributions"
+    },
+    "fr": {
+      "bncIncome": "Professional income (BNC recettes)",
+      "bncExpense": "Professional expenses (BNC dépenses)",
+      "rentalIncome": "Rental income (revenus fonciers)",
+      "rentalExpense": "Rental expenses (charges foncières)",
+      "donations": "Donations (dons)",
+      "childcare": "Childcare costs (frais de garde)"
+    }
   }
 }

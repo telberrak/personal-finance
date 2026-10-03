@@ -153,6 +153,8 @@ See [SERVER.md](SERVER.md).
 
 ## P8 — Cash-flow calendar and deeper reports — L
 
+**Status (3 October 2026): done.** Calendar, custom ranges and comparisons, trends and averages, Year in review with a print stylesheet (PDF through the browser), tax helper with per-country tax years and headings (UK, France; Morocco and Gulf states to add with P12).
+
 - **Calendar:** a month view with bills, paydays and the forecast balance for each day; tap a day to see its details.
 - **Custom date ranges:**
   - compare periods;

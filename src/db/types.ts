@@ -89,6 +89,8 @@ export interface Transaction {
   externalId?: string;
   /** Your own labels across categories, e.g. "Holiday 2027" or "Work expense". */
   tags?: string[];
+  /** Tax heading id (see lib/tax), for the tax helper. */
+  tax?: string;
   createdAt?: number;
   updatedAt?: number;
 }
@@ -192,6 +194,8 @@ export interface Settings {
   notifications?: NotificationSettings;
   /** Searches saved on the Search page (synced). */
   savedSearches?: SavedSearch[];
+  /** Country whose tax year and headings the tax helper uses (ISO code). Default GB. */
+  taxCountry?: string;
   /** Lock again after this many minutes in the background. */
   lockAfterMinutes: number;
   /** Payees whose "add as bill?" suggestion was dismissed (payee keys). */

@@ -1,26 +1,30 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { BalanceLine, Donut, GroupedBars } from '../components/charts';
+import { BalanceLine, Donut, GroupedBars, Sparkline } from '../components/charts';
+import { Field } from '../components/ui/forms';
 import { Loading, PageHeader } from '../components/Layout';
 import { catVar } from '../components/rows';
 import type { FinanceData } from '../db/types';
-import { endOfMonth, formatMonthShort, shiftMonth, startOfMonth, today } from '../lib/dates';
+import { endOfMonth, formatMonthShort, formatShort, shiftMonth, startOfMonth, today } from '../lib/dates';
 import { forecastBalance } from '../lib/forecast';
 import { formatMoney, formatPercent, formatWhole } from '../lib/money';
-import { monthlyTotals, spendByCategory, topPayees } from '../lib/reports';
+import { categoryTrends, comparePeriods, monthlyTotals, previousPeriod, spendByCategory, topPayees } from '../lib/reports';
 import { moneyInOut } from '../lib/selectors';
 import { t } from '../i18n';
 
-type Range = 'this' | 'last' | '3m' | '6m';
+type Range = 'this' | 'last' | '3m' | '6m' | 'custom';
 const RANGES: { id: Range; label: string }[] = [
   { id: 'this', label: 'reports.range.this' },
   { id: 'last', label: 'reports.range.last' },
   { id: '3m', label: 'reports.range.3m' },
   { id: '6m', label: 'reports.range.6m' },
+  { id: 'custom', label: 'reports.range.custom' },
 ];
 
-function rangeDates(range: Range, ref: string) {
+function rangeDates(range: Range, ref: string, custom: { from: string; to: string }) {
   switch (range) {
+    case 'custom':
+      return custom.from <= custom.to ? custom : { from: custom.to, to: custom.from };
     case 'this':
       return { from: startOfMonth(ref), to: ref };
     case 'last': {
@@ -36,10 +40,15 @@ function rangeDates(range: Range, ref: string) {
 
 export function Reports({ data }: { data?: FinanceData }) {
   const [range, setRange] = useState<Range>('this');
+  const ref = today();
+  const [custom, setCustom] = useState(() => ({ from: startOfMonth(shiftMonth(ref, -2)), to: ref }));
+  const [compare, setCompare] = useState(false);
   if (!data) return <Loading />;
 
-  const ref = today();
-  const { from, to } = rangeDates(range, ref);
+  const { from, to } = rangeDates(range, ref, custom);
+  const before = previousPeriod(from, to);
+  const comparison = compare ? comparePeriods(data.transactions, data.categories, { from, to }, before) : [];
+  const trends = categoryTrends(data.transactions, data.categories, ref, 12);
   const byCategory = spendByCategory(data.transactions, data.categories, from, to);
   const totalSpent = byCategory.reduce((s, r) => s + r.total, 0);
   const { moneyIn, moneyOut } = moneyInOut(data.transactions, from, to);
@@ -63,6 +72,44 @@ export function Reports({ data }: { data?: FinanceData }) {
           </div>
         }
       />
+
+      {range === 'custom' && (
+        <div className="list">
+          <Field label={t('search.from')}>
+            {(id) => (
+              <input
+                id={id}
+                type="date"
+                value={custom.from}
+                max={ref}
+                onChange={(e) => e.target.value && setCustom((c) => ({ ...c, from: e.target.value }))}
+              />
+            )}
+          </Field>
+          <Field label={t('search.to')}>
+            {(id) => (
+              <input
+                id={id}
+                type="date"
+                value={custom.to}
+                max={ref}
+                onChange={(e) => e.target.value && setCustom((c) => ({ ...c, to: e.target.value }))}
+              />
+            )}
+          </Field>
+        </div>
+      )}
+      <nav className="row" style={{ gap: 8, flexWrap: 'wrap' }} aria-label={t('reports.more')}>
+        <Link to="/calendar" className="chip">
+          {t('nav.calendar')}
+        </Link>
+        <Link to={`/reports/year/${ref.slice(0, 4)}`} className="chip">
+          {t('reports.yearInReview')}
+        </Link>
+        <Link to="/tax" className="chip">
+          {t('reports.taxHelper')}
+        </Link>
+      </nav>
 
       <div className="stat-grid">
         <div className="card stack">
@@ -162,6 +209,88 @@ export function Reports({ data }: { data?: FinanceData }) {
           </p>
         </section>
       </div>
+      <section className="card stack" style={{ gap: 12 }} aria-labelledby="compare-title">
+        <div className="section-head">
+          <h2 className="section-title" id="compare-title">
+            {t('reports.compareTitle')}
+          </h2>
+          <label className="row small" style={{ gap: 6 }}>
+            <input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} />
+            {t('reports.compareWith', { from: formatShort(before.from), to: formatShort(before.to) })}
+          </label>
+        </div>
+        {compare &&
+          (comparison.length === 0 ? (
+            <p className="empty">{t('reports.noSpending')}</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th scope="col">{t('fields.category')}</th>
+                  <th scope="col" className="num-col">
+                    {t('reports.thisPeriod')}
+                  </th>
+                  <th scope="col" className="num-col">
+                    {t('reports.previousPeriod')}
+                  </th>
+                  <th scope="col" className="num-col">
+                    {t('reports.change')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparison.map((r) => (
+                  <tr key={r.category.id}>
+                    <th scope="row" translate="no">
+                      {r.category.name}
+                    </th>
+                    <td className="num-col num">{formatMoney(r.current)}</td>
+                    <td className="num-col num">{formatMoney(r.previous)}</td>
+                    <td className={'num-col num' + (r.change > 0 ? ' text-warn' : r.change < 0 ? ' text-pos' : '')}>
+                      {formatMoney(r.change, { sign: true })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ))}
+      </section>
+
+      {trends.length > 0 && (
+        <section className="card stack" style={{ gap: 12 }} aria-labelledby="trends-title">
+          <h2 className="section-title" id="trends-title">
+            {t('reports.trendsTitle')}
+          </h2>
+          <table className="table">
+            <thead>
+              <tr>
+                <th scope="col">{t('fields.category')}</th>
+                <th scope="col">{t('reports.twelveMonths')}</th>
+                <th scope="col" className="num-col">
+                  {t('reports.monthlyAverage')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {trends.map((r) => (
+                <tr key={r.category.id}>
+                  <th scope="row" translate="no">
+                    {r.category.name}
+                  </th>
+                  <td>
+                    <Sparkline
+                      values={r.months}
+                      label={t('reports.trendLabel', { name: r.category.name })}
+                      color={`var(--cat-${r.category.color})`}
+                    />
+                  </td>
+                  <td className="num-col num">{formatMoney(r.average)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
       <p className="small muted">{t('reports.transfersExcluded')}</p>
     </main>
   );

@@ -11,6 +11,7 @@ import type { FinanceData, Transaction } from '../db/types';
 import { today } from '../lib/dates';
 import { parseMoney } from '../lib/money';
 import { allTags } from '../lib/search';
+import { taxSystem } from '../lib/tax';
 import { formatMoney } from '../lib/money';
 import { suggestCategory } from '../lib/rules';
 import { SplitEditor } from './SplitEditor';
@@ -70,6 +71,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
   const [categoryTouched, setCategoryTouched] = useState(!!existing);
   const [note, setNote] = useState(existing?.note ?? '');
   const [tagsText, setTagsText] = useState(existing?.tags?.join(', ') ?? '');
+  const [tax, setTax] = useState(existing?.tax ?? '');
   const transactions = data?.transactions;
   const knownTags = useMemo(() => allTags(transactions ?? []), [transactions]);
   const [saving, setSaving] = useState(false);
@@ -132,6 +134,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
         categoryId: selectedCategory!.id,
         note,
         tags: tagsText.split(','),
+        tax: tax || undefined,
       };
       if (existing) {
         await updateTransaction(existing.id, fields);
@@ -322,6 +325,20 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
                     value={tagsText}
                     onChange={(e) => setTagsText(e.target.value)}
                   />
+                )}
+              </Field>
+              <Field label={t('fields.tax')}>
+                {(id) => (
+                  <select id={id} value={tax} onChange={(e) => setTax(e.target.value)}>
+                    <option value="">{t('fields.taxNone')}</option>
+                    {taxSystem(data.settings.taxCountry)
+                      .headings.filter((h) => (kind === 'income' ? h.kind === 'income' : h.kind === 'expense'))
+                      .map((h) => (
+                        <option key={h.id} value={h.id}>
+                          {t(h.label)}
+                        </option>
+                      ))}
+                  </select>
                 )}
               </Field>
               <datalist id="known-tags">

@@ -35,6 +35,9 @@ const Sync = page(() => import('./pages/Sync'), 'Sync');
 const Banks = page(() => import('./pages/Banks'), 'Banks');
 const NetWorth = page(() => import('./pages/NetWorth'), 'NetWorth');
 const Search = page(() => import('./pages/Search'), 'Search');
+const Calendar = page(() => import('./pages/Calendar'), 'Calendar');
+const YearReview = page(() => import('./pages/YearReview'), 'YearReview');
+const Tax = page(() => import('./pages/Tax'), 'Tax');
 
 export function App() {
   // While locked nothing can be decrypted, so the screens (and their data queries) are not mounted.
@@ -76,6 +79,9 @@ function Unlocked() {
               <Route path="goals" element={<Goals data={data} />} />
               <Route path="networth" element={<NetWorth data={data} />} />
               <Route path="search" element={<Search data={data} />} />
+              <Route path="calendar" element={<Calendar data={data} />} />
+              <Route path="reports/year/:year" element={<YearReview data={data} />} />
+              <Route path="tax" element={<Tax data={data} />} />
               <Route path="import" element={<Import data={data} />} />
               <Route path="add" element={<TransactionForm data={data} />} />
               <Route path="transactions/:id" element={<TransactionForm data={data} />} />

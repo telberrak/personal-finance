@@ -21,6 +21,9 @@ const SCREENS = [
   '/settings/banks',
   '/networth',
   '/search',
+  '/calendar',
+  '/tax',
+  '/reports/year/2026',
 ];
 
 // Elements whose text is the user's data (payees, category and account names) or formatted values.

@@ -2,6 +2,13 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.9.0 — P8: cash-flow calendar and deeper reports
+
+- Calendar: a month grid with bills, paydays and each day's balance (forecast ahead, up to three months), with day details.
+- Reports: custom date ranges, comparison with the previous period, 12-month category trends with monthly averages.
+- Year in review, printable or saved as PDF.
+- Tax helper: mark transactions under UK self-assessment or French headings; totals per tax year (6 April in the UK), CSV export. Organises records; not tax advice.
+
 ## 0.8.0 — P7: smarter categorisation, tags and search
 
 - Merchant directory of 130+ common UK merchants: clean names on import, likely categories, brand-coloured tiles.

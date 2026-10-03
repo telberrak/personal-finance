@@ -187,3 +187,17 @@ export function BalanceLine({
     </figure>
   );
 }
+
+/** A tiny line of monthly values (trends table). */
+export function Sparkline({ values, label, color = 'var(--accent)' }: { values: number[]; label: string; color?: string }) {
+  const W = 120;
+  const H = 28;
+  const max = Math.max(...values, 1);
+  const step = values.length > 1 ? W / (values.length - 1) : W;
+  const path = values.map((v, i) => `${i ? 'L' : 'M'}${(i * step).toFixed(1)},${(H - 2 - (v / max) * (H - 4)).toFixed(1)}`).join(' ');
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={label} className="sparkline">
+      <path d={path} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+    </svg>
+  );
+}

@@ -1825,3 +1825,136 @@ dialog::backdrop {
   height: 22px;
   flex: none;
 }
+
+/* Cash-flow calendar. */
+.calendar-layout {
+  display: grid;
+  gap: 16px;
+}
+@media (min-width: 1024px) {
+  .calendar-layout {
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    align-items: start;
+  }
+}
+.calendar {
+  padding: 8px;
+}
+.calendar-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.calendar-head span {
+  text-align: center;
+  padding: 6px 0;
+}
+.calendar-row + .calendar-row {
+  margin-top: 4px;
+}
+.calendar-day {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 64px;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.calendar-day.is-outside {
+  background: transparent;
+}
+.calendar-day.is-outside .calendar-date {
+  color: var(--muted);
+  font-weight: 400;
+}
+.calendar-day.is-today .calendar-date {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0 6px;
+}
+.calendar-day.is-selected {
+  border-color: var(--accent);
+}
+.calendar-day.is-low .calendar-balance {
+  color: var(--warn);
+}
+.calendar-date {
+  font-weight: 600;
+  font-size: 14px;
+}
+.calendar-marks {
+  display: flex;
+  gap: 3px;
+  min-height: 7px;
+}
+.mark {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.mark--pay {
+  background: var(--pos);
+}
+.mark--bill {
+  background: var(--warn);
+}
+.mark--paid {
+  background: var(--muted);
+}
+.calendar-balance {
+  margin-top: auto;
+  font-size: 11px;
+  color: var(--muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.calendar-balance.is-forecast {
+  font-style: italic;
+}
+@media (max-width: 420px) {
+  .calendar-day {
+    min-height: 54px;
+    padding: 4px;
+  }
+  .calendar-balance {
+    font-size: 10px;
+  }
+}
+
+.sparkline {
+  display: block;
+}
+
+/* Printed reports (Year in review, Tax): only the report, in black on white. */
+@media print {
+  .sidebar,
+  .nav,
+  .no-print,
+  .toast-region {
+    display: none !important;
+  }
+  :root {
+    --bg: #fff;
+    --surface: #fff;
+    --text: #000;
+    --muted: #444;
+  }
+  body {
+    background: #fff;
+  }
+  .card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}
