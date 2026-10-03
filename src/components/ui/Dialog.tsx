@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { t } from '../../i18n';
 
 /**
  * Native <dialog> opened with showModal(): the browser handles the focus trap, Escape to close,
@@ -94,10 +95,10 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             </div>
             <div className="grid-2">
               <button type="button" className="btn" onClick={cancel} autoFocus>
-                {pending.cancelLabel ?? 'Cancel'}
+                {pending.cancelLabel ?? t('common.cancel')}
               </button>
               <button type="button" className={'btn ' + (pending.danger ? 'btn--danger-solid' : 'btn--solid')} onClick={() => finish(true)}>
-                {pending.confirmLabel ?? 'Confirm'}
+                {pending.confirmLabel ?? t('common.confirm')}
               </button>
             </div>
           </div>

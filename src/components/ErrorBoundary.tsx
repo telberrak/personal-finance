@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { t } from '../i18n';
 
 interface State {
   error?: Error;
@@ -21,13 +22,13 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     if (!error) return this.props.children;
     return (
       <main className="screen screen--modal" role="alert">
-        <h1 className="screen-title">Something went wrong</h1>
-        <p className="label">Your data is safe on this device. Reloading usually fixes this.</p>
+        <h1 className="screen-title">{t('error.title')}</h1>
+        <p className="label">{t('error.body')}</p>
         <button type="button" className="btn btn--primary" onClick={() => location.reload()}>
-          Reload Ledger
+          {t('error.reload')}
         </button>
         <details className="small muted">
-          <summary>Technical details</summary>
+          <summary>{t('error.details')}</summary>
           <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{error.stack ?? error.message}</pre>
         </details>
       </main>

@@ -7,7 +7,8 @@ import { useToast } from '../components/ui/Toast';
 import { addToGoal, deleteGoal, saveGoal, updateSettings, ValidationError } from '../db/repo';
 import type { FinanceData, Goal } from '../db/types';
 import { formatDate, fromISO, today } from '../lib/dates';
-import { formatMoney, parseMoney } from '../lib/money';
+import { currencySymbol, formatMoney, parseMoney } from '../lib/money';
+import { t } from '../i18n';
 
 /** Whole months from today until the deadline (at least 1). */
 function monthsUntil(deadline: string): number {
@@ -34,12 +35,12 @@ export function Goals({ data }: { data?: FinanceData }) {
   return (
     <main className="screen">
       <PageHeader
-        title="Goals"
-        subtitle="Saving for something"
+        title={t('goals.title')}
+        subtitle={t('goals.subtitle')}
         actions={
           <button type="button" className="btn btn--solid" onClick={() => setEditing('new')}>
             <Icon name="plus" size={18} strokeWidth={2.2} />
-            New goal
+            {t('goals.new')}
           </button>
         }
       />
@@ -50,9 +51,9 @@ export function Goals({ data }: { data?: FinanceData }) {
             <Icon name="target" size={20} />
           </span>
           <div className="stack grow" style={{ gap: 2 }}>
-            <span style={{ fontWeight: 600 }}>Your goals need {formatMoney(needed)} a month</span>
+            <span style={{ fontWeight: 600 }}>{t('goals.need', { amount: formatMoney(needed) })}</span>
             <span className="label">
-              You set aside {formatMoney(savings)} each pay cycle{needed > savings ? ', which is not enough to hit every deadline.' : '.'}
+              {t(needed > savings ? 'goals.setAsideShort' : 'goals.setAsideOk', { amount: formatMoney(savings) })}
             </span>
           </div>
           {needed > savings && (
@@ -61,10 +62,10 @@ export function Goals({ data }: { data?: FinanceData }) {
               className="btn btn--sm"
               onClick={async () => {
                 await updateSettings({ monthlySavings: needed });
-                toast({ message: `Savings set to ${formatMoney(needed)} a month` });
+                toast({ message: t('goals.savingsSet', { amount: formatMoney(needed) }) });
               }}
             >
-              Use {formatMoney(needed)}
+              {t('goals.use', { amount: formatMoney(needed) })}
             </button>
           )}
         </section>
@@ -73,9 +74,9 @@ export function Goals({ data }: { data?: FinanceData }) {
       <div className="goal-grid">
         {goals.length === 0 && (
           <div className="card empty">
-            No goals yet. A holiday, a new laptop, an emergency fund…{' '}
+            {t('goals.empty')}{' '}
             <button type="button" className="link-btn" onClick={() => setEditing('new')}>
-              Create one
+              {t('goals.createOne')}
             </button>
           </div>
         )}
@@ -87,19 +88,21 @@ export function Goals({ data }: { data?: FinanceData }) {
             <article key={g.id} className="card stack" style={{ gap: 12 }}>
               <div className="row" style={{ alignItems: 'flex-start' }}>
                 <div className="grow stack" style={{ gap: 2 }}>
-                  <h2 className="section-title">{g.name}</h2>
-                  <span className="label">{g.deadline ? `By ${formatDate(g.deadline)}` : 'No deadline'}</span>
+                  <h2 className="section-title" translate="no">
+                    {g.name}
+                  </h2>
+                  <span className="label">{g.deadline ? t('goals.by', { date: formatDate(g.deadline) }) : t('goals.noDeadline')}</span>
                 </div>
-                {done && <span className="pill pill--pos">Reached</span>}
+                {done && <span className="pill pill--pos">{t('goals.reached')}</span>}
               </div>
               <div className="row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <span className="value-lg num">{formatMoney(g.saved)}</span>
-                <span className="label num">of {formatMoney(g.target)}</span>
+                <span className="label num">{t('goals.ofTarget', { amount: formatMoney(g.target) })}</span>
               </div>
               <div
                 className="bar bar--thick"
                 role="progressbar"
-                aria-label={`${g.name} progress`}
+                aria-label={t('goals.progress', { name: g.name })}
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={Math.round(ratio * 100)}
@@ -108,17 +111,17 @@ export function Goals({ data }: { data?: FinanceData }) {
               </div>
               <span className="small muted">
                 {done
-                  ? 'Well done!'
+                  ? t('goals.wellDone')
                   : perMonth
-                    ? `${formatMoney(perMonth)} a month to get there on time`
-                    : `${formatMoney(g.target - g.saved)} to go`}
+                    ? t('goals.perMonth', { amount: formatMoney(perMonth) })
+                    : t('goals.toGo', { amount: formatMoney(g.target - g.saved) })}
               </span>
               <div className="row" style={{ gap: 8 }}>
                 <button type="button" className="btn btn--solid grow" onClick={() => setAdding(g)}>
-                  Add money
+                  {t('goals.addMoney')}
                 </button>
                 <button type="button" className="btn" onClick={() => setEditing(g)}>
-                  Edit
+                  {t('common.edit')}
                 </button>
               </div>
             </article>
@@ -126,7 +129,7 @@ export function Goals({ data }: { data?: FinanceData }) {
         })}
       </div>
 
-      <Sheet open={!!editing} onClose={() => setEditing(undefined)} title={editing === 'new' ? 'New goal' : 'Edit goal'}>
+      <Sheet open={!!editing} onClose={() => setEditing(undefined)} title={editing === 'new' ? t('goals.new') : t('goals.editGoal')}>
         {editing && (
           <GoalEditor
             key={editing === 'new' ? 'new' : editing.id}
@@ -135,7 +138,7 @@ export function Goals({ data }: { data?: FinanceData }) {
           />
         )}
       </Sheet>
-      <Sheet open={!!adding} onClose={() => setAdding(undefined)} title={`Add to ${adding?.name ?? ''}`}>
+      <Sheet open={!!adding} onClose={() => setAdding(undefined)} title={t('goals.addTo', { name: adding?.name ?? '' })}>
         {adding && <AddMoney key={adding.id} goal={adding} onDone={() => setAdding(undefined)} />}
       </Sheet>
     </main>
@@ -154,53 +157,68 @@ function GoalEditor({ goal, onDone }: { goal?: Goal; onDone: () => void }) {
     e.preventDefault();
     const target = parseMoney(targetText);
     const saved = parseMoney(savedText || '0');
-    if (target === null || saved === null) return toast({ message: 'Enter amounts like 1500 or 250.50' });
+    if (target === null || saved === null) return toast({ message: t('goals.amountsHint') });
     try {
       await saveGoal({ id: goal?.id, name, target, saved, deadline: deadline || undefined });
-      toast({ message: goal ? 'Goal updated' : 'Goal created' });
+      toast({ message: goal ? t('goals.updated') : t('goals.created') });
       onDone();
     } catch (err) {
-      toast({ message: err instanceof ValidationError ? err.message : 'Could not save the goal.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('goals.saveFailed') });
     }
   }
 
   async function remove() {
-    if (!goal || !(await confirm({ title: `Delete ${goal.name}?`, confirmLabel: 'Delete', danger: true }))) return;
+    if (!goal || !(await confirm({ title: t('goals.deleteTitle', { name: goal.name }), confirmLabel: t('common.delete'), danger: true })))
+      return;
     await deleteGoal(goal.id);
-    toast({ message: 'Goal deleted' });
+    toast({ message: t('goals.deleted') });
     onDone();
   }
 
   return (
     <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
       <div className="list">
-        <Field label="Name">
+        <Field label={t('fields.name')}>
           {(id) => (
-            <input id={id} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Summer holiday" autoComplete="off" />
+            <input
+              id={id}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('goals.namePlaceholder')}
+              autoComplete="off"
+            />
           )}
         </Field>
-        <Field label="Target">
-          {(id) => <input id={id} inputMode="decimal" value={targetText} onChange={(e) => setTargetText(e.target.value)} placeholder="£" />}
+        <Field label={t('goals.target')}>
+          {(id) => (
+            <input
+              id={id}
+              inputMode="decimal"
+              value={targetText}
+              onChange={(e) => setTargetText(e.target.value)}
+              placeholder={currencySymbol()}
+            />
+          )}
         </Field>
-        <Field label="Saved">
+        <Field label={t('goals.saved')}>
           {(id) => <input id={id} inputMode="decimal" value={savedText} onChange={(e) => setSavedText(e.target.value)} />}
         </Field>
-        <Field label="By">
+        <Field label={t('goals.byLabel')}>
           {(id) => <input id={id} type="date" value={deadline} min={today()} onChange={(e) => setDeadline(e.target.value)} />}
         </Field>
       </div>
       <div className="grid-2">
         {goal ? (
           <button type="button" className="btn btn--danger" onClick={remove}>
-            Delete
+            {t('common.delete')}
           </button>
         ) : (
           <button type="button" className="btn" onClick={onDone}>
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
         <button type="submit" className="btn btn--solid">
-          Save
+          {t('common.save')}
         </button>
       </div>
     </form>
@@ -217,24 +235,24 @@ function AddMoney({ goal, onDone }: { goal: Goal; onDone: () => void }) {
     e.preventDefault();
     if (!amount) return;
     await addToGoal(goal.id, withdraw ? -amount : amount);
-    toast({ message: withdraw ? `Took ${formatMoney(amount)} from ${goal.name}` : `Added ${formatMoney(amount)} to ${goal.name}` });
+    toast({ message: t(withdraw ? 'goals.took' : 'goals.added', { amount: formatMoney(amount), name: goal.name }) });
     onDone();
   }
 
   return (
     <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
-      <div className="segmented" role="radiogroup" aria-label="Direction">
+      <div className="segmented" role="radiogroup" aria-label={t('goals.direction')}>
         <button type="button" role="radio" aria-checked={!withdraw} onClick={() => setWithdraw(false)}>
-          Add
+          {t('goals.add')}
         </button>
         <button type="button" role="radio" aria-checked={withdraw} onClick={() => setWithdraw(true)}>
-          Take out
+          {t('goals.takeOut')}
         </button>
       </div>
       <MoneyInput value={text} onChange={setText} autoFocus />
-      <p className="small muted">This updates the goal only. To move real money, add a transfer between your accounts too.</p>
+      <p className="small muted">{t('goals.onlyGoal')}</p>
       <button type="submit" className="btn btn--primary" disabled={!amount}>
-        {withdraw ? 'Take out' : 'Add'} {amount ? formatMoney(amount) : ''}
+        {withdraw ? t('goals.takeOut') : t('goals.add')} {amount ? formatMoney(amount) : ''}
       </button>
     </form>
   );

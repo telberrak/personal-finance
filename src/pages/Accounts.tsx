@@ -9,8 +9,10 @@ import { saveAccount, setAccountArchived, ValidationError } from '../db/repo';
 import type { Account, AccountType, FinanceData } from '../db/types';
 import { formatMoney, parseMoney } from '../lib/money';
 import { accountBalance, totalBalance } from '../lib/selectors';
+import { t } from '../i18n';
 
-const TYPE_LABEL: Record<AccountType, string> = { current: 'Current account', savings: 'Savings', credit: 'Credit card', cash: 'Cash' };
+const TYPES: AccountType[] = ['current', 'savings', 'credit', 'cash'];
+const typeLabel = (type: AccountType) => t(`accounts.type.${type}`);
 
 /** Signed money input: "-250.00" for a credit card balance owed. */
 function parseSigned(text: string) {
@@ -29,17 +31,17 @@ export function Accounts({ data }: { data?: FinanceData }) {
   return (
     <main className="screen screen--modal">
       <PageHeader
-        title="Accounts"
-        subtitle={`Net worth ${formatMoney(totalBalance(data, 'all'))}`}
+        title={t('accounts.title')}
+        subtitle={t('accounts.netWorth', { amount: formatMoney(totalBalance(data, 'all')) })}
         actions={
           <button type="button" className="btn btn--solid" onClick={() => setEditing('new')}>
             <Icon name="plus" size={18} strokeWidth={2.2} />
-            Add account
+            {t('accounts.add')}
           </button>
         }
       />
       <Link to="/settings" className="link-btn" style={{ alignSelf: 'flex-start', padding: 0 }}>
-        ‹ Settings
+        {t('common.backToSettings')}
       </Link>
 
       <div className="list">
@@ -48,13 +50,13 @@ export function Accounts({ data }: { data?: FinanceData }) {
         ))}
       </div>
       <p className="small muted">
-        “Safe to spend” uses accounts marked as everyday. Move money between accounts with a transfer from{' '}
-        <Link to="/add?kind=transfer">Add transaction</Link>.
+        {t('accounts.everydayNote')}
+        <Link to="/add?kind=transfer">{t('nav.addTransaction')}</Link>.
       </p>
 
       {archived.length > 0 && (
         <section className="section">
-          <h2 className="section-label">Archived</h2>
+          <h2 className="section-label">{t('accounts.archived')}</h2>
           <div className="list">
             {archived.map((a) => (
               <AccountRow key={a.id} account={a} balance={accountBalance(a, data.transactions)} onEdit={() => setEditing(a)} />
@@ -63,7 +65,7 @@ export function Accounts({ data }: { data?: FinanceData }) {
         </section>
       )}
 
-      <Sheet open={!!editing} onClose={() => setEditing(undefined)} title={editing === 'new' ? 'New account' : 'Edit account'}>
+      <Sheet open={!!editing} onClose={() => setEditing(undefined)} title={editing === 'new' ? t('accounts.new') : t('accounts.edit')}>
         {editing && (
           <AccountEditor
             key={editing === 'new' ? 'new' : editing.id}
@@ -82,11 +84,11 @@ function AccountRow({ account, balance, onEdit }: { account: Account; balance: n
       <div className="tile" aria-hidden="true">
         <Icon name="wallet" size={20} />
       </div>
-      <div className="grow stack" style={{ gap: 2, textAlign: 'left' }}>
+      <div className="grow stack" style={{ gap: 2, textAlign: 'start' }}>
         <span className="item-title">{account.name}</span>
         <span className="item-meta">
-          {TYPE_LABEL[account.type]}
-          {account.includeInSafeToSpend && <span className="tag">Everyday</span>}
+          {typeLabel(account.type)}
+          {account.includeInSafeToSpend && <span className="tag">{t('accounts.everyday')}</span>}
         </span>
       </div>
       <span className={'amount' + (balance < 0 ? ' text-warn' : '')}>{formatMoney(balance)}</span>
@@ -104,7 +106,7 @@ function AccountEditor({ account, onDone }: { account?: Account; onDone: () => v
   async function submit(e: FormEvent) {
     e.preventDefault();
     const opening = parseSigned(openingText);
-    if (opening === null) return toast({ message: 'Enter the opening balance as an amount, e.g. 250 or -120.50' });
+    if (opening === null) return toast({ message: t('accounts.openingHint') });
     try {
       await saveAccount({
         id: account?.id,
@@ -114,10 +116,10 @@ function AccountEditor({ account, onDone }: { account?: Account; onDone: () => v
         includeInSafeToSpend: everyday,
         archived: account?.archived,
       });
-      toast({ message: account ? 'Account updated' : 'Account added' });
+      toast({ message: account ? t('accounts.updated') : t('accounts.added') });
       onDone();
     } catch (err) {
-      toast({ message: err instanceof ValidationError ? err.message : 'Could not save the account.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('accounts.saveFailed') });
     }
   }
 
@@ -125,20 +127,20 @@ function AccountEditor({ account, onDone }: { account?: Account; onDone: () => v
     if (!account) return;
     try {
       await setAccountArchived(account.id, !account.archived);
-      toast({ message: account.archived ? 'Account restored' : 'Account archived' });
+      toast({ message: account.archived ? t('accounts.restored') : t('accounts.archivedDone') });
       onDone();
     } catch (err) {
-      toast({ message: err instanceof ValidationError ? err.message : 'Could not archive the account.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('accounts.archiveFailed') });
     }
   }
 
   return (
     <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
       <div className="list">
-        <Field label="Name">
+        <Field label={t('fields.name')}>
           {(id) => <input id={id} value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" required />}
         </Field>
-        <Field label="Type">
+        <Field label={t('fields.type')}>
           {(id) => (
             <select
               id={id}
@@ -149,42 +151,40 @@ function AccountEditor({ account, onDone }: { account?: Account; onDone: () => v
                 if (!account) setEveryday(t === 'current' || t === 'cash');
               }}
             >
-              {Object.entries(TYPE_LABEL).map(([v, l]) => (
+              {TYPES.map((v) => (
                 <option key={v} value={v}>
-                  {l}
+                  {typeLabel(v)}
                 </option>
               ))}
             </select>
           )}
         </Field>
-        <Field label="Opening">
+        <Field label={t('accounts.opening')}>
           {(id) => <input id={id} inputMode="decimal" value={openingText} onChange={(e) => setOpeningText(e.target.value)} />}
         </Field>
       </div>
-      <p className="small muted">
-        Opening balance is what the account held before the first transaction you record here. Use a minus sign for money owed on a card.
-      </p>
+      <p className="small muted">{t('accounts.openingNote')}</p>
       <label className="check-row">
         <input type="checkbox" checked={everyday} onChange={(e) => setEveryday(e.target.checked)} />
         <span>
-          Everyday account
+          {t('accounts.everydayAccount')}
           <span className="small muted" style={{ display: 'block' }}>
-            Counted in “safe to spend”
+            {t('accounts.everydayHint')}
           </span>
         </span>
       </label>
       <div className="grid-2">
         {account ? (
           <button type="button" className="btn" onClick={toggleArchive}>
-            {account.archived ? 'Restore' : 'Archive'}
+            {account.archived ? t('common.restore') : t('common.archive')}
           </button>
         ) : (
           <button type="button" className="btn" onClick={onDone}>
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
         <button type="submit" className="btn btn--solid">
-          Save
+          {t('common.save')}
         </button>
       </div>
     </form>

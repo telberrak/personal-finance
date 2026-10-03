@@ -1,4 +1,5 @@
 import Dexie, { type EntityTable } from 'dexie';
+import { t } from '../i18n';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
   DEFAULT_SETTINGS,
@@ -16,14 +17,15 @@ import {
   type Transaction,
 } from './types';
 
-export const TRANSFER_CATEGORY: Category = {
+/** Built-in category for transfers; its name is created in the current language. */
+export const transferCategory = (): Category => ({
   id: TRANSFER_CATEGORY_ID,
-  name: 'Transfers',
+  name: t('categories.transfer'),
   color: 'fun',
   kind: 'transfer',
   order: 1000,
   system: true,
-};
+});
 
 export class FinanceDB extends Dexie {
   accounts!: EntityTable<Account, 'id'>;
@@ -67,7 +69,7 @@ export class FinanceDB extends Dexie {
           .modify((a: Account) => {
             a.includeInSafeToSpend ??= a.type === 'current' || a.type === 'cash';
           });
-        await tx.table('categories').put(TRANSFER_CATEGORY);
+        await tx.table('categories').put(transferCategory());
         const hadData = (await tx.table('accounts').count()) > 0;
         const old = await tx.table('settings').get('app');
         if (old) {

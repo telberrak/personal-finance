@@ -4,18 +4,19 @@ import { BalanceLine, Donut, GroupedBars } from '../components/charts';
 import { Loading, PageHeader } from '../components/Layout';
 import { catVar } from '../components/rows';
 import type { FinanceData } from '../db/types';
-import { endOfMonth, formatMonth, shiftMonth, startOfMonth, today } from '../lib/dates';
+import { endOfMonth, formatMonthShort, shiftMonth, startOfMonth, today } from '../lib/dates';
 import { forecastBalance } from '../lib/forecast';
-import { formatMoney, formatPounds } from '../lib/money';
+import { formatMoney, formatPercent, formatWhole } from '../lib/money';
 import { monthlyTotals, spendByCategory, topPayees } from '../lib/reports';
 import { moneyInOut } from '../lib/selectors';
+import { t } from '../i18n';
 
 type Range = 'this' | 'last' | '3m' | '6m';
 const RANGES: { id: Range; label: string }[] = [
-  { id: 'this', label: 'This month' },
-  { id: 'last', label: 'Last month' },
-  { id: '3m', label: '3 months' },
-  { id: '6m', label: '6 months' },
+  { id: 'this', label: 'reports.range.this' },
+  { id: 'last', label: 'reports.range.last' },
+  { id: '3m', label: 'reports.range.3m' },
+  { id: '6m', label: 'reports.range.6m' },
 ];
 
 function rangeDates(range: Range, ref: string) {
@@ -51,12 +52,12 @@ export function Reports({ data }: { data?: FinanceData }) {
   return (
     <main className="screen">
       <PageHeader
-        title="Reports"
+        title={t('reports.title')}
         actions={
-          <div className="segmented" role="radiogroup" aria-label="Period">
+          <div className="segmented" role="radiogroup" aria-label={t('reports.period')}>
             {RANGES.map((r) => (
               <button key={r.id} type="button" role="radio" aria-checked={range === r.id} onClick={() => setRange(r.id)}>
-                {r.label}
+                {t(r.label)}
               </button>
             ))}
           </div>
@@ -65,37 +66,37 @@ export function Reports({ data }: { data?: FinanceData }) {
 
       <div className="stat-grid">
         <div className="card stack">
-          <span className="label">Money in</span>
+          <span className="label">{t('activity.moneyIn')}</span>
           <span className="value-md num text-pos">{formatMoney(moneyIn)}</span>
         </div>
         <div className="card stack">
-          <span className="label">Money out</span>
+          <span className="label">{t('activity.moneyOut')}</span>
           <span className="value-md num">{formatMoney(moneyOut)}</span>
         </div>
         <div className="card stack">
-          <span className="label">Net</span>
+          <span className="label">{t('activity.net')}</span>
           <span className="value-md num">{formatMoney(moneyIn - moneyOut, { sign: true })}</span>
         </div>
         <div className="card stack">
-          <span className="label">Savings rate</span>
-          <span className="value-md num">{savingsRate === undefined ? '—' : `${savingsRate}%`}</span>
+          <span className="label">{t('reports.savingsRate')}</span>
+          <span className="value-md num">{savingsRate === undefined ? '—' : formatPercent(savingsRate / 100)}</span>
         </div>
       </div>
 
       <div className="report-grid">
-        <section className="card stack" style={{ gap: 16 }} aria-label="Spending by category">
-          <h2 className="section-title">Where the money went</h2>
+        <section className="card stack" style={{ gap: 16 }} aria-label={t('reports.byCategory')}>
+          <h2 className="section-title">{t('reports.whereWent')}</h2>
           {byCategory.length === 0 ? (
-            <p className="empty">No spending in this period.</p>
+            <p className="empty">{t('reports.noSpending')}</p>
           ) : (
             <div className="donut-layout">
               <Donut
-                label={`Spending by category, total ${formatMoney(totalSpent)}`}
+                label={t('reports.byCategoryTotal', { amount: formatMoney(totalSpent) })}
                 segments={byCategory.map((r) => ({ value: r.total, color: `var(--cat-${r.category.color})` }))}
                 center={
                   <>
-                    <span className="small muted">Spent</span>
-                    <span className="value-md num">{formatPounds(totalSpent)}</span>
+                    <span className="small muted">{t('reports.spent')}</span>
+                    <span className="value-md num">{formatWhole(totalSpent)}</span>
                   </>
                 }
               />
@@ -104,8 +105,8 @@ export function Reports({ data }: { data?: FinanceData }) {
                   <li key={r.category.id} style={catVar(r.category.color)}>
                     <span className="dot" />
                     <span className="grow">{r.category.name}</span>
-                    <span className="num muted small">{Math.round(r.share * 100)}%</span>
-                    <span className="num" style={{ minWidth: 84, textAlign: 'right' }}>
+                    <span className="num muted small">{formatPercent(r.share)}</span>
+                    <span className="num" style={{ minWidth: 84, textAlign: 'end' }}>
                       {formatMoney(r.total)}
                     </span>
                   </li>
@@ -115,27 +116,27 @@ export function Reports({ data }: { data?: FinanceData }) {
           )}
         </section>
 
-        <section className="card stack" style={{ gap: 16 }} aria-label="Income and spending by month">
-          <h2 className="section-title">Last 6 months</h2>
+        <section className="card stack" style={{ gap: 16 }} aria-label={t('reports.byMonth')}>
+          <h2 className="section-title">{t('reports.lastSix')}</h2>
           <GroupedBars
-            caption="Income and spending by month"
-            groups={months.map((m) => ({ label: formatMonth(m.month).slice(0, 3), values: [m.income, m.spending] }))}
+            caption={t('reports.byMonth')}
+            groups={months.map((m) => ({ label: formatMonthShort(m.month), values: [m.income, m.spending] }))}
             series={[
-              { name: 'Money in', color: 'var(--cat-income)' },
-              { name: 'Money out', color: 'var(--accent)' },
+              { name: t('activity.moneyIn'), color: 'var(--cat-income)' },
+              { name: t('activity.moneyOut'), color: 'var(--accent)' },
             ]}
           />
         </section>
 
-        <section className="card stack" style={{ gap: 12 }} aria-label="Top payees">
-          <h2 className="section-title">Top payees</h2>
-          {payees.length === 0 && <p className="empty">No spending in this period.</p>}
+        <section className="card stack" style={{ gap: 12 }} aria-label={t('reports.topPayees')}>
+          <h2 className="section-title">{t('reports.topPayees')}</h2>
+          {payees.length === 0 && <p className="empty">{t('reports.noSpending')}</p>}
           <ol className="rank">
             {payees.map((p) => (
               <li key={p.payee}>
                 <span className="grow item-title">{p.payee}</span>
-                <span className="small muted">{p.count}×</span>
-                <span className="num" style={{ minWidth: 84, textAlign: 'right' }}>
+                <span className="small muted">{t('reports.times', { count: p.count })}</span>
+                <span className="num" style={{ minWidth: 84, textAlign: 'end' }}>
                   {formatMoney(p.total)}
                 </span>
               </li>
@@ -143,24 +144,25 @@ export function Reports({ data }: { data?: FinanceData }) {
           </ol>
         </section>
 
-        <section className="card stack" style={{ gap: 12 }} aria-label="Balance forecast">
+        <section className="card stack" style={{ gap: 12 }} aria-label={t('reports.forecast')}>
           <div className="section-head">
-            <h2 className="section-title">Balance forecast</h2>
-            <span className={'pill ' + (low ? 'pill--warn' : 'pill--pos')}>{low ? 'May run low' : 'On track'}</span>
+            <h2 className="section-title">{t('reports.forecast')}</h2>
+            <span className={'pill ' + (low ? 'pill--warn' : 'pill--pos')}>{low ? t('reports.mayRunLow') : t('reports.onTrack')}</span>
           </div>
           <BalanceLine
             points={forecast.points}
             threshold={data.settings.lowBalanceThreshold}
-            label={`Forecast balance for the next 45 days. Lowest ${formatMoney(forecast.lowest.balance)}.`}
+            label={t('reports.forecastLabel', { amount: formatMoney(forecast.lowest.balance) })}
           />
           <p className="small muted">
-            Everyday accounts, with upcoming bills on their due dates, about {formatMoney(forecast.avgDailySpend)} a day of spending (your
-            last 30 days) and {formatMoney(forecast.expectedIncome)} expected each payday. The dashed line is your{' '}
-            <Link to="/settings">low balance warning</Link>.
+            {t('reports.forecastExplain', { daily: formatMoney(forecast.avgDailySpend), income: formatMoney(forecast.expectedIncome) })}{' '}
+            {t('reports.dashedPrefix')}
+            <Link to="/settings">{t('reports.lowBalanceWarning')}</Link>
+            {t('reports.dashedSuffix')}
           </p>
         </section>
       </div>
-      <p className="small muted">Transfers between your accounts are not counted.</p>
+      <p className="small muted">{t('reports.transfersExcluded')}</p>
     </main>
   );
 }

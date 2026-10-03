@@ -1,5 +1,6 @@
 import { useId, type ReactElement, type ReactNode } from 'react';
-import { parseMoney } from '../../lib/money';
+import { currencySymbol, MONEY_INPUT_CHARS, parseMoney, zeroPlaceholder } from '../../lib/money';
+import { t } from '../../i18n';
 
 /**
  * A row in a .list form: label on the left, control on the right.
@@ -19,7 +20,7 @@ export function Field({ label, children }: { label: string; children: (id: strin
 export function MoneyInput({
   value,
   onChange,
-  label = 'Amount in pounds',
+  label = t('common.amount'),
   autoFocus,
   disabled,
 }: {
@@ -32,14 +33,14 @@ export function MoneyInput({
   const invalid = value !== '' && parseMoney(value) === null;
   return (
     <label className="amount-input">
-      <span aria-hidden="true">£</span>
+      <span aria-hidden="true">{currencySymbol()}</span>
       <input
         aria-label={label}
         inputMode="decimal"
         autoComplete="off"
-        placeholder="0.00"
+        placeholder={zeroPlaceholder()}
         value={value}
-        onChange={(e) => onChange(e.target.value.replace(/[^\d.,]/g, ''))}
+        onChange={(e) => onChange(e.target.value.replace(MONEY_INPUT_CHARS, ''))}
         aria-invalid={invalid}
         autoFocus={autoFocus}
         disabled={disabled}

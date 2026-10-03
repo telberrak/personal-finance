@@ -1,6 +1,7 @@
 import type { ISODate } from '../lib/dates';
 import { formatShort } from '../lib/dates';
-import { formatMoney, formatPounds, type Pence } from '../lib/money';
+import { formatMoney, formatWhole, type Pence } from '../lib/money';
+import { t } from '../i18n';
 
 /** Ring chart. Colours are CSS colour values (usually var(--cat-…)). */
 export function Donut({
@@ -93,7 +94,7 @@ export function GroupedBars({
         <caption>{caption}</caption>
         <thead>
           <tr>
-            <th scope="col">Month</th>
+            <th scope="col">{t('columns.month')}</th>
             {series.map((s) => (
               <th key={s.name} scope="col">
                 {s.name}
@@ -170,7 +171,7 @@ export function BalanceLine({
       <div className="row small muted" style={{ justifyContent: 'space-between' }}>
         <span>{formatShort(points[0].date)}</span>
         <span>
-          Lowest {formatPounds(points[lowestIndex].balance)} on {formatShort(points[lowestIndex].date)}
+          {t('reports.lowestOn', { amount: formatWhole(points[lowestIndex].balance), date: formatShort(points[lowestIndex].date) })}
         </span>
         <span>{formatShort(points[points.length - 1].date)}</span>
       </div>

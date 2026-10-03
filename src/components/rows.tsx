@@ -4,12 +4,13 @@ import type { Category, CategoryColor, Recurring, Transaction } from '../db/type
 import { dayOfMonth, monthAbbr, type ISODate } from '../lib/dates';
 import { formatMoney } from '../lib/money';
 import { Icon } from './Icon';
+import { t } from '../i18n';
 
 /** Inline style that sets the category colour variable used by .tile, .dot, .chip--cat and .bar. */
 export const catVar = (color: CategoryColor | undefined): CSSProperties => ({ '--c': `var(--cat-${color ?? 'fun'})` }) as CSSProperties;
 
 export function TransactionRow({ tx, category, accountName }: { tx: Transaction; category?: Category; accountName?: string }) {
-  const meta = [tx.transferId ? accountName : (category?.name ?? 'Uncategorised'), tx.time].filter(Boolean).join(' · ');
+  const meta = [tx.transferId ? accountName : (category?.name ?? t('common.uncategorised')), tx.time].filter(Boolean).join(' · ');
   return (
     <Link to={`/transactions/${tx.id}`} className="list-row list-row--link">
       <div className="tile" style={catVar(category?.color)} aria-hidden="true">
@@ -20,13 +21,13 @@ export function TransactionRow({ tx, category, accountName }: { tx: Transaction;
         <span className="item-meta">
           {meta}
           {tx.recurringId && (
-            <span className="tag" title="Recurring payment">
-              DD
+            <span className="tag" title={t('tags.recurringTitle')}>
+              {t('tags.recurring')}
             </span>
           )}
           {tx.splitId && (
-            <span className="tag" title="Part of a split payment">
-              Split
+            <span className="tag" title={t('tags.splitTitle')}>
+              {t('tags.split')}
             </span>
           )}
         </span>
@@ -36,13 +37,7 @@ export function TransactionRow({ tx, category, accountName }: { tx: Transaction;
   );
 }
 
-const METHOD_LABEL: Record<Recurring['method'], string> = {
-  'direct-debit': 'Direct debit',
-  'standing-order': 'Standing order',
-  card: 'Card subscription',
-};
-
-export const methodLabel = (m: Recurring['method']) => METHOD_LABEL[m];
+export const methodLabel = (m: Recurring['method']) => t(`bills.method.${m}`);
 
 export function BillRow({
   rule,
@@ -78,7 +73,7 @@ export function BillRow({
       </div>
       {trailing ?? (
         <span className={'amount row' + (paid ? ' muted' : '')} style={{ gap: 6 }}>
-          {paid && <Icon name="check" size={16} strokeWidth={2.2} label="Paid" />}
+          {paid && <Icon name="check" size={16} strokeWidth={2.2} label={t('bills.paid')} />}
           {formatMoney(rule.amount)}
         </span>
       )}

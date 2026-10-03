@@ -9,6 +9,7 @@ import type { FinanceData, Transaction } from '../db/types';
 import { dayHeading, endOfMonth, startOfMonth, today } from '../lib/dates';
 import { formatMoney } from '../lib/money';
 import { groupByDay, inRange, moneyInOut } from '../lib/selectors';
+import { t } from '../i18n';
 
 const FILTERS = ['All', 'Spending', 'Income', 'Bills', 'Transfers'] as const;
 type Filter = (typeof FILTERS)[number];
@@ -60,10 +61,10 @@ export function Activity({ data }: { data?: FinanceData }) {
   const search = (
     <label className="search">
       <Icon name="search" size={18} />
-      <span className="visually-hidden">Search transactions</span>
+      <span className="visually-hidden">{t('activity.search')}</span>
       <input
         type="search"
-        placeholder="Search payees or categories"
+        placeholder={t('activity.searchPlaceholder')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         enterKeyHint="search"
@@ -72,10 +73,10 @@ export function Activity({ data }: { data?: FinanceData }) {
   );
 
   const chips = (
-    <div className="chips" role="group" aria-label="Filter">
+    <div className="chips" role="group" aria-label={t('activity.filter.label')}>
       {FILTERS.map((f) => (
         <button key={f} type="button" className="chip" aria-pressed={filter === f} onClick={() => setFilter(f)}>
-          {f}
+          {t(`activity.filter.${f}`)}
         </button>
       ))}
     </div>
@@ -84,9 +85,9 @@ export function Activity({ data }: { data?: FinanceData }) {
   const openAccounts = data!.accounts.filter((a) => !a.archived);
   const accountSelect = openAccounts.length > 1 && (
     <label className="select-pill">
-      <span className="visually-hidden">Account</span>
+      <span className="visually-hidden">{t('activity.account')}</span>
       <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
-        <option value="all">All accounts</option>
+        <option value="all">{t('activity.allAccounts')}</option>
         {openAccounts.map((a) => (
           <option key={a.id} value={a.id}>
             {a.name}
@@ -97,30 +98,30 @@ export function Activity({ data }: { data?: FinanceData }) {
   );
 
   const empty = view.groups.length === 0 && (
-    <p className="empty">{filter === 'All' && !query.trim() ? 'No transactions this month yet.' : 'No transactions match.'}</p>
+    <p className="empty">{filter === 'All' && !query.trim() ? t('activity.emptyMonth') : t('activity.noMatch')}</p>
   );
 
   return (
     <main className="screen">
-      <PageHeader title="Activity" actions={<MonthSwitcher month={month} onChange={setMonth} current={ref} />} />
+      <PageHeader title={t('activity.title')} actions={<MonthSwitcher month={month} onChange={setMonth} current={ref} />} />
 
       {isDesktop ? (
         <>
           <div className="stat-grid">
             <div className="card stack">
-              <span className="label">Money out</span>
+              <span className="label">{t('activity.moneyOut')}</span>
               <span className="value-md num">{formatMoney(view.moneyOut)}</span>
             </div>
             <div className="card stack">
-              <span className="label">Money in</span>
+              <span className="label">{t('activity.moneyIn')}</span>
               <span className="value-md num text-pos">{formatMoney(view.moneyIn, { sign: true })}</span>
             </div>
             <div className="card stack">
-              <span className="label">Net</span>
+              <span className="label">{t('activity.net')}</span>
               <span className="value-md num">{formatMoney(view.moneyIn - view.moneyOut, { sign: true })}</span>
             </div>
             <div className="card stack">
-              <span className="label">Transactions</span>
+              <span className="label">{t('activity.count')}</span>
               <span className="value-md num">{view.count}</span>
             </div>
           </div>
@@ -128,9 +129,7 @@ export function Activity({ data }: { data?: FinanceData }) {
             {search}
             {accountSelect}
             {chips}
-            <span className="label toolbar-count">
-              {view.shownCount} of {view.count} shown
-            </span>
+            <span className="label toolbar-count">{t('activity.shown', { shown: view.shownCount, total: view.count })}</span>
           </div>
           {empty || <TransactionTable groups={view.groups} categories={view.categories} accounts={view.accounts} refDate={ref} />}
         </>
@@ -141,11 +140,11 @@ export function Activity({ data }: { data?: FinanceData }) {
           {chips}
           <div className="grid-2">
             <div className="card stack" style={{ padding: '12px 14px' }}>
-              <span className="small muted">Money out</span>
+              <span className="small muted">{t('activity.moneyOut')}</span>
               <span className="value-md num">{formatMoney(view.moneyOut)}</span>
             </div>
             <div className="card stack" style={{ padding: '12px 14px' }}>
-              <span className="small muted">Money in</span>
+              <span className="small muted">{t('activity.moneyIn')}</span>
               <span className="value-md num text-pos">{formatMoney(view.moneyIn, { sign: true })}</span>
             </div>
           </div>
@@ -157,12 +156,12 @@ export function Activity({ data }: { data?: FinanceData }) {
                 <span className="num">{formatMoney(g.total, { sign: true })}</span>
               </div>
               <div className="list">
-                {g.items.map((t) => (
+                {g.items.map((tx) => (
                   <TransactionRow
-                    key={t.id}
-                    tx={t}
-                    category={view.categories.get(t.categoryId)}
-                    accountName={view.accounts.get(t.accountId)?.name}
+                    key={tx.id}
+                    tx={tx}
+                    category={view.categories.get(tx.categoryId)}
+                    accountName={view.accounts.get(tx.accountId)?.name}
                   />
                 ))}
               </div>

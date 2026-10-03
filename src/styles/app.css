@@ -83,7 +83,7 @@ p {
   max-width: var(--max-w);
   margin: 0 auto;
   padding: calc(env(safe-area-inset-top) + 20px) max(20px, env(safe-area-inset-right))
-    calc(env(safe-area-inset-bottom) + var(--nav-h) + 32px) max(20px, env(safe-area-inset-left));
+    calc(env(safe-area-inset-bottom) + var(--nav-h) + 32px) max(20px, env(safe-area-inset-left)); /* symmetric, so fine in RTL */
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -511,7 +511,7 @@ p {
 }
 
 .chip--cat {
-  padding-left: 10px;
+  padding-inline-start: 10px;
 }
 
 .chip--cat[aria-checked='true'] {
@@ -546,7 +546,7 @@ p {
   color: var(--muted);
 }
 
-/* Form rows: label left, control right. */
+/* Form rows: label at the start, control at the end. */
 .field {
   display: flex;
   align-items: center;
@@ -601,7 +601,7 @@ p {
   border: 0;
   outline: 0;
   background: transparent;
-  text-align: left;
+  text-align: start;
   font-size: 56px;
   font-weight: 600;
   letter-spacing: -0.04em;
@@ -960,7 +960,7 @@ dialog::backdrop {
 .table th,
 .table td {
   padding: 12px 20px;
-  text-align: left;
+  text-align: start;
   vertical-align: middle;
   border-bottom: 1px solid var(--border);
 }
@@ -995,7 +995,7 @@ dialog::backdrop {
 }
 
 .table .num-col {
-  text-align: right;
+  text-align: end;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -1035,7 +1035,7 @@ dialog::backdrop {
     gap: 20px;
     padding: 24px 16px;
     background: var(--surface);
-    border-right: 1px solid var(--border);
+    border-inline-end: 1px solid var(--border);
   }
 
   .brand {
@@ -1101,7 +1101,7 @@ dialog::backdrop {
     margin-top: auto;
   }
 
-  /* Content starts right next to the sidebar; on very wide screens the extra space goes to the right. */
+  /* Content starts right next to the sidebar; on very wide screens the extra space goes to the far side. */
   .screen {
     width: 100%;
     max-width: var(--page-w);
@@ -1170,7 +1170,7 @@ dialog::backdrop {
   }
 
   .toolbar-count {
-    margin-left: auto;
+    margin-inline-start: auto;
   }
 
   .chips {
@@ -1252,7 +1252,7 @@ dialog::backdrop {
   border: 0;
   background: transparent;
   font: inherit;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 
@@ -1278,7 +1278,7 @@ dialog::backdrop {
   padding: 0;
   font: inherit;
   color: inherit;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   min-height: 44px;
   justify-content: center;
@@ -1690,7 +1690,7 @@ dialog::backdrop {
 }
 
 .split-row input[inputmode='decimal'] {
-  text-align: right;
+  text-align: end;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1707,4 +1707,30 @@ dialog::backdrop {
 /* A form that lays out as part of its <main>, so form screens keep a main landmark. */
 .form-contents {
   display: contents;
+}
+
+/* ---------- Right-to-left ---------- */
+
+/* Icons that point a direction (back/forward, trends) mirror in RTL. */
+[dir='rtl'] .mirror-rtl {
+  transform: scaleX(-1);
+}
+
+/* Amounts are isolated from surrounding text; in RTL the formatter also wraps them in FSI…PDI marks (lib/money). */
+.num,
+.amount,
+.hero-amount,
+.value-lg,
+.value-md {
+  unicode-bidi: isolate;
+}
+
+/* Arabic script: the Latin display font has no Arabic glyphs. */
+:root[dir='rtl'] {
+  --font: 'Geist', 'IBM Plex Sans Arabic', 'Noto Sans Arabic', system-ui, sans-serif;
+}
+
+/* The forecast line is drawn left to right; in RTL it reads right to left like its date labels. */
+[dir='rtl'] .line-svg {
+  transform: scaleX(-1);
 }

@@ -1,4 +1,5 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { t } from '../i18n';
 
 /** Tells the user when a new version has been downloaded, instead of swapping it in mid-use. */
 export function UpdatePrompt() {
@@ -15,12 +16,12 @@ export function UpdatePrompt() {
   if (!needRefresh) return null;
   return (
     <div className="update-banner" role="status">
-      <span className="grow">A new version of Ledger is ready.</span>
+      <span className="grow">{t('update.ready')}</span>
       <button type="button" className="toast-action" onClick={() => setNeedRefresh(false)}>
-        Later
+        {t('update.later')}
       </button>
       <button type="button" className="toast-action toast-action--primary" onClick={() => void updateServiceWorker(true)}>
-        Update
+        {t('update.update')}
       </button>
     </div>
   );

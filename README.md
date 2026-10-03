@@ -78,6 +78,16 @@ src/
 - **Schema changes** are added as new Dexie versions with an upgrade step; released versions are never edited.
 - **Theme** follows the system by default. Settings can force light or dark, which sets `data-theme` on `<html>`.
 
+## Languages
+
+The app is in English, and the code is ready for other languages: French and Arabic (right to left) are planned.
+
+- All text lives in `src/locales/en.json`.
+- Money and dates follow the chosen language and currency (Settings → Language and currency).
+- Test languages (`?locale=en-XA`, `?locale=ar-XB`) catch untranslated text and right-to-left layout problems.
+
+See [docs/TRANSLATING.md](docs/TRANSLATING.md).
+
 ## Features
 
 - **Home:** safe to spend until payday, spending this month, upcoming bills, and alerts for overdue bills, a low forecast balance and backups.

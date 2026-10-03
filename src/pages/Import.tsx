@@ -6,13 +6,14 @@ import { Field } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
 import { importTransactions, undoImport, ValidationError, type ImportRow } from '../db/repo';
 import { OTHER_EXPENSE_ID, OTHER_INCOME_ID, type FinanceData } from '../db/types';
-import { formatShort } from '../lib/dates';
+import { formatDate, formatShort, toISO } from '../lib/dates';
 import { parseCsv } from '../lib/csv';
 import { detectPreset, guessMapping, mapRows, markDuplicates, type ColumnMapping, type DateFormat } from '../lib/importer';
 import { findBillMatch, paidOccurrenceKeys } from '../lib/matching';
 import { formatMoney } from '../lib/money';
 import { applyAlias, normalisePayee } from '../lib/payees';
 import { suggestCategory } from '../lib/rules';
+import { t } from '../i18n';
 
 interface PreviewRow extends ImportRow {
   line: number;
@@ -86,7 +87,7 @@ export function Import({ data }: { data?: FinanceData }) {
     if (!file) return;
     const text = await file.text();
     const parsed = parseCsv(text);
-    if (parsed.length === 0) return toast({ message: 'That file looks empty.' });
+    if (parsed.length === 0) return toast({ message: t('import.empty') });
     setFileName(file.name);
     setRows(parsed);
     setMapping(guessMapping(parsed));
@@ -107,9 +108,9 @@ export function Import({ data }: { data?: FinanceData }) {
     try {
       const batch = await importTransactions(account, fileName, toImport);
       toast({
-        message: `Imported ${batch.rowCount} transaction${batch.rowCount === 1 ? '' : 's'}`,
+        message: t('import.imported', { count: batch.rowCount }),
         action: {
-          label: 'Undo',
+          label: t('common.undo'),
           onClick: async () => {
             await undoImport(batch.id);
           },
@@ -118,13 +119,13 @@ export function Import({ data }: { data?: FinanceData }) {
       navigate('/activity');
     } catch (err) {
       setBusy(false);
-      toast({ message: err instanceof ValidationError ? err.message : 'Import failed.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('import.failed') });
     }
   }
 
   const columnOptions = (rows?.[0] ?? []).map((h, i) => (
     <option key={i} value={i}>
-      {mapping?.hasHeader ? h || `Column ${i + 1}` : `Column ${i + 1} (${h.slice(0, 18)})`}
+      {mapping?.hasHeader ? h || t('import.column', { n: i + 1 }) : t('import.columnSample', { n: i + 1, sample: h.slice(0, 18) })}
     </option>
   ));
   const setMap = (patch: Partial<ColumnMapping>) => mapping && setMapping({ ...mapping, ...patch });
@@ -133,11 +134,11 @@ export function Import({ data }: { data?: FinanceData }) {
 
   return (
     <main className="screen">
-      <PageHeader title="Import" subtitle="Add transactions from your bank’s CSV statement" />
+      <PageHeader title={t('import.title')} subtitle={t('import.subtitle')} />
 
       <section className="card stack" style={{ gap: 14, maxWidth: 720 }}>
         <div className="list">
-          <Field label="Account">
+          <Field label={t('fields.account')}>
             {(id) => (
               <select id={id} value={account} onChange={(e) => setAccountId(e.target.value)}>
                 {data.accounts
@@ -153,43 +154,40 @@ export function Import({ data }: { data?: FinanceData }) {
         </div>
         <label className="file-drop">
           <Icon name="upload" size={22} />
-          <span>{fileName ? `${fileName} · choose another file` : 'Choose a CSV file'}</span>
+          <span>{fileName ? t('import.chooseAnother', { file: fileName }) : t('import.choose')}</span>
           <input type="file" accept=".csv,text/csv,text/plain" onChange={(e) => void onFile(e.target.files?.[0])} />
         </label>
-        <p className="small muted">
-          Most UK banks let you download statements as CSV from online banking. Monzo, Starling, Barclays, Lloyds, Halifax, Nationwide and
-          NatWest are recognised automatically; for others, pick the columns below. Nothing leaves this device.
-        </p>
+        <p className="small muted">{t('import.help')}</p>
       </section>
 
       {rows && mapping && (
         <section className="section">
-          <h2 className="section-title">{preset ? `Recognised: ${preset.name}` : 'Columns'}</h2>
+          <h2 className="section-title">{preset ? t('import.recognised', { bank: preset.name }) : t('import.columns')}</h2>
           <div className="list" style={{ maxWidth: 720 }}>
-            <Field label="Date">
+            <Field label={t('fields.date')}>
               {(id) => (
                 <select id={id} value={mapping.date} onChange={(e) => setMap({ date: Number(e.target.value) })}>
                   {columnOptions}
                 </select>
               )}
             </Field>
-            <Field label="Format">
+            <Field label={t('import.format')}>
               {(id) => (
                 <select id={id} value={mapping.dateFormat} onChange={(e) => setMap({ dateFormat: e.target.value as DateFormat })}>
-                  <option value="dmy">Day / month / year</option>
-                  <option value="mdy">Month / day / year</option>
-                  <option value="ymd">Year-month-day</option>
+                  <option value="dmy">{t('import.dmy')}</option>
+                  <option value="mdy">{t('import.mdy')}</option>
+                  <option value="ymd">{t('import.ymd')}</option>
                 </select>
               )}
             </Field>
-            <Field label="Payee">
+            <Field label={t('columns.payee')}>
               {(id) => (
                 <select id={id} value={mapping.description} onChange={(e) => setMap({ description: Number(e.target.value) })}>
                   {columnOptions}
                 </select>
               )}
             </Field>
-            <Field label="Amounts">
+            <Field label={t('import.amounts')}>
               {(id) => (
                 <select
                   id={id}
@@ -202,13 +200,13 @@ export function Import({ data }: { data?: FinanceData }) {
                     )
                   }
                 >
-                  <option value="one">One column (money out is negative)</option>
-                  <option value="two">Separate money in and out</option>
+                  <option value="one">{t('import.oneColumn')}</option>
+                  <option value="two">{t('import.twoColumns')}</option>
                 </select>
               )}
             </Field>
             {mapping.amount !== undefined ? (
-              <Field label="Amount">
+              <Field label={t('columns.amount')}>
                 {(id) => (
                   <select id={id} value={mapping.amount} onChange={(e) => setMap({ amount: Number(e.target.value) })}>
                     {columnOptions}
@@ -217,14 +215,14 @@ export function Import({ data }: { data?: FinanceData }) {
               </Field>
             ) : (
               <>
-                <Field label="Money out">
+                <Field label={t('activity.moneyOut')}>
                   {(id) => (
                     <select id={id} value={mapping.moneyOut} onChange={(e) => setMap({ moneyOut: Number(e.target.value) })}>
                       {columnOptions}
                     </select>
                   )}
                 </Field>
-                <Field label="Money in">
+                <Field label={t('activity.moneyIn')}>
                   {(id) => (
                     <select id={id} value={mapping.moneyIn} onChange={(e) => setMap({ moneyIn: Number(e.target.value) })}>
                       {columnOptions}
@@ -237,11 +235,11 @@ export function Import({ data }: { data?: FinanceData }) {
           <div className="row" style={{ gap: 20, flexWrap: 'wrap' }}>
             <label className="check-row">
               <input type="checkbox" checked={mapping.hasHeader} onChange={(e) => setMap({ hasHeader: e.target.checked })} />
-              <span>First row is a header</span>
+              <span>{t('import.header')}</span>
             </label>
             <label className="check-row">
               <input type="checkbox" checked={mapping.invertAmount} onChange={(e) => setMap({ invertAmount: e.target.checked })} />
-              <span>Flip signs (money out shows as positive)</span>
+              <span>{t('import.flip')}</span>
             </label>
           </div>
         </section>
@@ -250,25 +248,29 @@ export function Import({ data }: { data?: FinanceData }) {
       {preview.length > 0 && (
         <section className="section">
           <div className="section-head" style={{ flexWrap: 'wrap', gap: 12 }}>
-            <h2 className="section-title">Preview</h2>
+            <h2 className="section-title">{t('import.preview')}</h2>
             <span className="label">
-              {toImport.length} to import · {counts.duplicates} already in Ledger · {counts.errors} unreadable · {counts.bills} matched to
-              bills
+              {t('import.summary', {
+                toImport: toImport.length,
+                duplicates: counts.duplicates,
+                errors: counts.errors,
+                bills: counts.bills,
+              })}
             </span>
           </div>
           <div className="table-card table-scroll">
             <table className="table">
-              <caption className="visually-hidden">Rows to import</caption>
+              <caption className="visually-hidden">{t('import.rows')}</caption>
               <thead>
                 <tr>
                   <th scope="col">
-                    <span className="visually-hidden">Include</span>
+                    <span className="visually-hidden">{t('import.include')}</span>
                   </th>
-                  <th scope="col">Date</th>
-                  <th scope="col">Payee</th>
-                  <th scope="col">Category</th>
+                  <th scope="col">{t('fields.date')}</th>
+                  <th scope="col">{t('columns.payee')}</th>
+                  <th scope="col">{t('columns.category')}</th>
                   <th scope="col" className="num-col">
-                    Amount
+                    {t('columns.amount')}
                   </th>
                 </tr>
               </thead>
@@ -278,7 +280,7 @@ export function Import({ data }: { data?: FinanceData }) {
                     <td>
                       <input
                         type="checkbox"
-                        aria-label={`Import line ${r.line}`}
+                        aria-label={t('import.includeLine', { line: r.line })}
                         checked={r.include}
                         disabled={!!r.error}
                         onChange={(e) => setOverrides({ ...overrides, [r.line]: { ...overrides[r.line], include: e.target.checked } })}
@@ -291,9 +293,9 @@ export function Import({ data }: { data?: FinanceData }) {
                         <span className="small muted">
                           {r.error ??
                             (r.duplicate
-                              ? 'Already imported'
+                              ? t('import.alreadyImported')
                               : r.billName
-                                ? `Pays bill: ${r.billName}`
+                                ? t('import.paysBill', { name: r.billName })
                                 : r.rawPayee !== r.payee
                                   ? r.rawPayee
                                   : '')}
@@ -303,7 +305,7 @@ export function Import({ data }: { data?: FinanceData }) {
                     <td>
                       {!r.error && (
                         <select
-                          aria-label={`Category for line ${r.line}`}
+                          aria-label={t('import.categoryForLine', { line: r.line })}
                           className="cell-select"
                           value={r.categoryId}
                           onChange={(e) => setOverrides({ ...overrides, [r.line]: { ...overrides[r.line], categoryId: e.target.value } })}
@@ -331,22 +333,25 @@ export function Import({ data }: { data?: FinanceData }) {
             disabled={busy || toImport.length === 0}
             onClick={runImport}
           >
-            Import {toImport.length} transaction{toImport.length === 1 ? '' : 's'}
+            {t('import.run', { count: toImport.length })}
           </button>
         </section>
       )}
 
       {data.importBatches.length > 0 && (
         <section className="section" style={{ maxWidth: 720 }}>
-          <h2 className="section-title">Recent imports</h2>
+          <h2 className="section-title">{t('import.recent')}</h2>
           <div className="list">
             {data.importBatches.slice(0, 5).map((b) => (
               <div key={b.id} className="list-row">
                 <div className="grow stack" style={{ gap: 2 }}>
                   <span className="item-title">{b.fileName}</span>
                   <span className="item-meta">
-                    {b.rowCount} transactions · {new Date(b.importedAt).toLocaleDateString('en-GB')} ·{' '}
-                    {data.accounts.find((a) => a.id === b.accountId)?.name}
+                    {t('import.batchMeta', {
+                      count: b.rowCount,
+                      date: formatDate(toISO(new Date(b.importedAt))),
+                      account: data.accounts.find((a) => a.id === b.accountId)?.name ?? '',
+                    })}
                   </span>
                 </div>
                 <button
@@ -354,10 +359,10 @@ export function Import({ data }: { data?: FinanceData }) {
                   className="btn btn--sm"
                   onClick={async () => {
                     const n = await undoImport(b.id);
-                    toast({ message: `Removed ${n} imported transactions` });
+                    toast({ message: t('import.removed', { count: n }) });
                   }}
                 >
-                  Undo import
+                  {t('import.undo')}
                 </button>
               </div>
             ))}
@@ -365,7 +370,9 @@ export function Import({ data }: { data?: FinanceData }) {
         </section>
       )}
       <p className="small muted">
-        Tip: set up <Link to="/settings/rules">rules</Link> so imports land in the right categories.
+        {t('import.tipPrefix')}
+        <Link to="/settings/rules">{t('import.tipLink')}</Link>
+        {t('import.tipSuffix')}
       </p>
     </main>
   );

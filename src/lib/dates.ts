@@ -1,3 +1,5 @@
+import { t } from '../i18n';
+import { dateFormat } from './format';
 /** Dates are stored as local calendar days, 'YYYY-MM-DD', so they never shift with time zones. */
 export type ISODate = string;
 
@@ -60,34 +62,32 @@ export function dayOfMonth(s: ISODate): number {
   return Number(s.slice(8, 10));
 }
 
-const longFmt = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
-const shortFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
-const monthFmt = new Intl.DateTimeFormat('en-GB', { month: 'long' });
-const monthYearFmt = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric' });
-const weekdayFmt = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
-const fullFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+const fmt = (options: Intl.DateTimeFormatOptions) => (s: ISODate) => dateFormat(options).format(fromISO(s));
 
-export const formatLong = (s: ISODate) => longFmt.format(fromISO(s)); // Wednesday 14 October
-export const formatShort = (s: ISODate) => shortFmt.format(fromISO(s)); // 14 Oct
-export const formatMonth = (s: ISODate) => monthFmt.format(fromISO(s)); // October
-export const formatMonthYear = (s: ISODate) => monthYearFmt.format(fromISO(s)); // October 2026
-export const formatDate = (s: ISODate) => fullFmt.format(fromISO(s)); // 2 June 2027
-export const monthAbbr = (s: ISODate) => formatShort(s).split(' ')[1];
+// Formatted for the display locale (see lib/format). Examples are for English.
+export const formatLong = fmt({ weekday: 'long', day: 'numeric', month: 'long' }); // Wednesday 14 October
+export const formatShort = fmt({ day: 'numeric', month: 'short' }); // 14 Oct
+export const formatMonth = fmt({ month: 'long' }); // October
+export const formatMonthShort = fmt({ month: 'short' }); // Oct
+export const formatMonthYear = fmt({ month: 'long', year: 'numeric' }); // October 2026
+export const formatDate = fmt({ day: 'numeric', month: 'long', year: 'numeric' }); // 2 June 2027
+export const formatDayMonth = fmt({ day: 'numeric', month: 'long' }); // 25 October
+export const monthAbbr = formatMonthShort;
+export const formatDay = fmt({ day: 'numeric' }); // 14
 
 /** "Today", "Yesterday", or "Monday 12 October" — for grouping transaction lists. */
 export function dayHeading(s: ISODate, ref: ISODate): string {
   const diff = daysBetween(s, ref);
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Yesterday';
-  return weekdayFmt.format(fromISO(s));
+  if (diff === 0) return t('time.today');
+  if (diff === 1) return t('time.yesterday');
+  return formatLong(s);
 }
 
 /** "Today", "Tomorrow", "In 4 days" — for upcoming bills. */
 export function dueLabel(s: ISODate, ref: ISODate): string {
   const diff = daysBetween(ref, s);
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Tomorrow';
-  if (diff > 1) return `In ${diff} days`;
-  if (diff === -1) return 'Yesterday';
-  return `${-diff} days ago`;
+  if (diff === 0) return t('time.today');
+  if (diff === 1) return t('time.tomorrow');
+  if (diff === -1) return t('time.yesterday');
+  return diff > 1 ? t('time.inDays', { count: diff }) : t('time.daysAgo', { count: -diff });
 }

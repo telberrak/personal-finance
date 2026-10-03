@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Settings } from '../db/types';
 import { verifyPin } from '../lib/pin';
+import { t } from '../i18n';
 
 /**
  * Locked when a PIN is set: on start, and after the app has been in the background longer than
@@ -40,7 +41,7 @@ export function LockScreen({ settings, onUnlock }: { settings: Settings; onUnloc
     setChecking(false);
     if (ok) onUnlock();
     else {
-      setError('That PIN is not right. Try again.');
+      setError(t('lock.wrongPin'));
       setPin('');
     }
   }
@@ -50,11 +51,11 @@ export function LockScreen({ settings, onUnlock }: { settings: Settings; onUnloc
       <form className="welcome-card stack" style={{ gap: 20, maxWidth: 360 }} onSubmit={submit}>
         <img src="/icon.svg" alt="" width={56} height={56} style={{ borderRadius: 14 }} />
         <div className="stack" style={{ gap: 6 }}>
-          <h1 className="screen-title">Ledger is locked</h1>
-          <p className="label">Enter your PIN to open the app.</p>
+          <h1 className="screen-title">{t('lock.title')}</h1>
+          <p className="label">{t('lock.intro')}</p>
         </div>
         <label className="stack" style={{ gap: 6 }}>
-          <span className="visually-hidden">PIN</span>
+          <span className="visually-hidden">{t('lock.pin')}</span>
           <input
             className="pin-input"
             type="password"
@@ -77,11 +78,9 @@ export function LockScreen({ settings, onUnlock }: { settings: Settings; onUnloc
           </p>
         )}
         <button type="submit" className="btn btn--primary" disabled={pin.length < 4 || checking}>
-          Unlock
+          {t('lock.unlock')}
         </button>
-        <p className="small muted">
-          Forgot your PIN? Clear this site’s data in your browser settings to start again (restore a backup afterwards).
-        </p>
+        <p className="small muted">{t('lock.forgot')}</p>
       </form>
     </main>
   );

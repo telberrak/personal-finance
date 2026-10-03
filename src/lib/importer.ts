@@ -1,7 +1,8 @@
 import type { Transaction } from '../db/types';
 import { toISO, type ISODate } from './dates';
-import type { Pence } from './money';
+import { normaliseNumber, type Pence } from './money';
 import { payeeKey } from './payees';
+import { t } from '../i18n';
 
 export type DateFormat = 'dmy' | 'mdy' | 'ymd';
 
@@ -166,7 +167,7 @@ export function parseDate(input: string, format: DateFormat): ISODate | null {
   return toISO(date);
 }
 
-/** "£1,234.50", "-12.00", "(12.00)", "12.00 DR", "12.00CR" → pence. Empty → null. */
+/** "£1,234.50", "-12.00", "(12.00)", "12.00 DR", "12.00CR", "-1 234,56" → pence. Empty → null. */
 export function parseAmount(input: string): Pence | null {
   let s = input.trim();
   if (!s) return null;
@@ -179,15 +180,18 @@ export function parseAmount(input: string): Pence | null {
     sign = -sign;
     s = s.replace(/\s*dr$/i, '');
   }
-  s = s.replace(/\s*cr$/i, '');
-  s = s.replace(/[£$€,\s]/g, '');
+  s = s
+    .replace(/\s*cr$/i, '')
+    .replace(/[£$€]/g, '')
+    .trim();
   if (s.startsWith('+')) s = s.slice(1);
-  if (s.startsWith('-')) {
+  else if (s.startsWith('-') || s.startsWith('−')) {
     sign = -sign;
     s = s.slice(1);
   }
-  if (!/^\d+(\.\d+)?$|^\.\d+$/.test(s)) return null;
-  return sign * Math.round(Number(s) * 100);
+  const n = normaliseNumber(s);
+  if (n === null || !/^\d+(\.\d+)?$|^\.\d+$/.test(n)) return null;
+  return sign * Math.round(Number(n) * 100);
 }
 
 export interface ParsedRow {
@@ -215,9 +219,9 @@ export function mapRows(rows: string[][], m: ColumnMapping): ParsedRow[] {
     }
     if (amount !== null && m.invertAmount) amount = -amount;
     const row: ParsedRow = { line: i + offset, rawPayee, date: date ?? undefined, amount: amount ?? undefined };
-    if (!date) row.error = `Unreadable date "${r[m.date] ?? ''}"`;
-    else if (amount === null || amount === 0) row.error = 'No amount';
-    else if (!rawPayee) row.error = 'No description';
+    if (!date) row.error = t('import.errors.date', { value: r[m.date] ?? '' });
+    else if (amount === null || amount === 0) row.error = t('import.errors.amount');
+    else if (!rawPayee) row.error = t('import.errors.description');
     return row;
   });
 }

@@ -1,0 +1,83 @@
+import i18next from 'i18next';
+import en from '../locales/en.json';
+import { configureFormatting } from '../lib/format';
+import { pseudoLocalise } from './pseudo';
+
+export interface Language {
+  code: string;
+  /** Name shown in the picker, in the language itself. */
+  name: string;
+  dir: 'ltr' | 'rtl';
+  /** Locale used for Intl number and date formatting. */
+  formatLocale: string;
+  /** Test-only languages are hidden from normal users. */
+  pseudo?: boolean;
+}
+
+/**
+ * Languages the app can show. French ('fr', formatLocale 'fr-FR') and Arabic ('ar', dir 'rtl',
+ * formatLocale 'ar-u-nu-latn' or 'ar' for Arabic-Indic digits) are added here with their
+ * translation files in P12.
+ */
+export const LANGUAGES: Language[] = [
+  { code: 'en', name: 'English', dir: 'ltr', formatLocale: 'en-GB' },
+  // Pseudo-locales for testing: accented and ~40% longer text exposes hard-coded strings and clipping;
+  // the RTL one checks right-to-left layout before real Arabic translations exist.
+  { code: 'en-XA', name: 'Ƥśéûðö (test)', dir: 'ltr', formatLocale: 'en-GB', pseudo: true },
+  { code: 'ar-XB', name: 'RTL test', dir: 'rtl', formatLocale: 'en-GB', pseudo: true },
+];
+
+export const CURRENCIES = ['GBP', 'EUR', 'USD', 'MAD', 'AED', 'SAR', 'EGP', 'TND', 'DZD', 'CHF', 'CAD'] as const;
+
+const pseudoResources = pseudoLocalise(en);
+
+void i18next.init({
+  lng: 'en',
+  fallbackLng: 'en',
+  initAsync: false,
+  resources: {
+    en: { translation: en },
+    'en-XA': { translation: pseudoResources },
+    'ar-XB': { translation: pseudoResources },
+  },
+  interpolation: { escapeValue: false }, // React escapes already
+  returnNull: false,
+});
+
+/** Translate. Re-renders on language change come from settings changing, which re-renders the app. */
+export const t: typeof i18next.t = ((...args: Parameters<typeof i18next.t>) => i18next.t(...args)) as typeof i18next.t;
+
+export const languageOf = (code: string): Language => LANGUAGES.find((l) => l.code === code) ?? LANGUAGES[0];
+
+/** A test language chosen with ?locale=en-XA stays for the browser session without being saved. */
+function sessionOverride(): string | undefined {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get('locale');
+    if (fromUrl && LANGUAGES.some((l) => l.code === fromUrl)) sessionStorage.setItem('ledger-locale', fromUrl);
+    return sessionStorage.getItem('ledger-locale') ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+let arabicFontLoaded = false;
+
+/** Applies language, text direction and number/date formatting. Safe to call on every render. */
+export function applyLocale(languageCode: string, currency: string): Language {
+  const lang = languageOf(sessionOverride() ?? languageCode);
+  if (i18next.language !== lang.code) void i18next.changeLanguage(lang.code);
+  configureFormatting({ locale: lang.formatLocale, currency, isolate: lang.dir === 'rtl' });
+  const html = document.documentElement;
+  if (html.lang !== lang.code) html.lang = lang.code;
+  if (html.dir !== lang.dir) html.dir = lang.dir;
+  if (lang.dir === 'rtl' && !arabicFontLoaded) {
+    arabicFontLoaded = true;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap';
+    document.head.appendChild(link);
+  }
+  return lang;
+}
+
+export default i18next;

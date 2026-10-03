@@ -8,6 +8,9 @@ import { Field } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
 import { archiveCategory, moveCategory, restoreCategory, saveCategory, ValidationError } from '../db/repo';
 import { CATEGORY_COLORS, type Category, type FinanceData } from '../db/types';
+import { t } from '../i18n';
+
+const KINDS = ['expense', 'income'] as const;
 
 type Editing = { category?: Category; kind: 'expense' | 'income' };
 
@@ -28,7 +31,7 @@ export function Categories({ data }: { data?: FinanceData }) {
         <div className="section-head">
           <h2 className="section-title">{title}</h2>
           <button type="button" className="link-btn" onClick={() => setEditing({ kind })}>
-            + Add
+            {t('common.add')}
           </button>
         </div>
         <div className="list">
@@ -37,12 +40,12 @@ export function Categories({ data }: { data?: FinanceData }) {
               <span className="dot" style={catVar(c.color)} />
               <button type="button" className="grow stack plain-btn" style={{ gap: 2 }} onClick={() => setEditing({ category: c, kind })}>
                 <span className="item-title">{c.name}</span>
-                <span className="item-meta">{counts.get(c.id) ?? 0} transactions</span>
+                <span className="item-meta">{t('categories.txCount', { count: counts.get(c.id) ?? 0 })}</span>
               </button>
               <button
                 type="button"
                 className="icon-btn icon-btn--ghost"
-                aria-label={`Move ${c.name} up`}
+                aria-label={t('categories.moveUp', { name: c.name })}
                 disabled={i === 0}
                 onClick={() => moveCategory(c.id, -1)}
               >
@@ -51,7 +54,7 @@ export function Categories({ data }: { data?: FinanceData }) {
               <button
                 type="button"
                 className="icon-btn icon-btn--ghost"
-                aria-label={`Move ${c.name} down`}
+                aria-label={t('categories.moveDown', { name: c.name })}
                 disabled={i === list.length - 1}
                 onClick={() => moveCategory(c.id, 1)}
               >
@@ -68,15 +71,14 @@ export function Categories({ data }: { data?: FinanceData }) {
 
   return (
     <main className="screen screen--modal">
-      <PageHeader title="Categories" />
+      <PageHeader title={t('categories.title')} />
       <Link to="/settings" className="link-btn" style={{ alignSelf: 'flex-start', padding: 0 }}>
-        ‹ Settings
+        {t('common.backToSettings')}
       </Link>
-      {section('expense', 'Spending')}
-      {section('income', 'Income')}
+      {KINDS.map((kind) => section(kind, t(`categories.${kind === 'expense' ? 'spending' : 'income'}`)))}
       {archived.length > 0 && (
         <section className="section">
-          <h2 className="section-label">Archived</h2>
+          <h2 className="section-label">{t('accounts.archived')}</h2>
           <div className="list">
             {archived.map((c) => (
               <div key={c.id} className="list-row">
@@ -87,10 +89,10 @@ export function Categories({ data }: { data?: FinanceData }) {
                   className="btn"
                   onClick={async () => {
                     await restoreCategory(c.id);
-                    toast({ message: `${c.name} restored` });
+                    toast({ message: t('categories.restored', { name: c.name }) });
                   }}
                 >
-                  Restore
+                  {t('common.restore')}
                 </button>
               </div>
             ))}
@@ -98,7 +100,7 @@ export function Categories({ data }: { data?: FinanceData }) {
         </section>
       )}
 
-      <Sheet open={!!editing} onClose={() => setEditing(undefined)} title={editing?.category ? 'Edit category' : 'New category'}>
+      <Sheet open={!!editing} onClose={() => setEditing(undefined)} title={editing?.category ? t('categories.edit') : t('categories.new')}>
         {editing && (
           <CategoryEditor
             key={editing.category?.id ?? 'new-' + editing.kind}
@@ -111,7 +113,11 @@ export function Categories({ data }: { data?: FinanceData }) {
           />
         )}
       </Sheet>
-      <Sheet open={!!archiving} onClose={() => setArchiving(undefined)} title={`Archive ${archiving?.name ?? ''}`}>
+      <Sheet
+        open={!!archiving}
+        onClose={() => setArchiving(undefined)}
+        title={t('categories.archiveTitle', { name: archiving?.name ?? '' })}
+      >
         {archiving && <ArchiveForm key={archiving.id} category={archiving} categories={visible} onDone={() => setArchiving(undefined)} />}
       </Sheet>
     </main>
@@ -127,23 +133,23 @@ function CategoryEditor({ editing, onDone, onArchive }: { editing: Editing; onDo
     e.preventDefault();
     try {
       await saveCategory({ id: editing.category?.id, name, color, kind: editing.kind });
-      toast({ message: editing.category ? 'Category updated' : 'Category added' });
+      toast({ message: editing.category ? t('categories.updated') : t('categories.added') });
       onDone();
     } catch (err) {
-      toast({ message: err instanceof ValidationError ? err.message : 'Could not save the category.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('categories.saveFailed') });
     }
   }
 
   return (
     <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
       <div className="list">
-        <Field label="Name">
+        <Field label={t('fields.name')}>
           {(id) => <input id={id} value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" required />}
         </Field>
       </div>
       <div className="section">
         <span className="section-label" id="colour-label">
-          Colour
+          {t('categories.colour')}
         </span>
         <div className="row" role="radiogroup" aria-labelledby="colour-label" style={{ flexWrap: 'wrap', gap: 10 }}>
           {CATEGORY_COLORS.map((c) => (
@@ -152,7 +158,7 @@ function CategoryEditor({ editing, onDone, onArchive }: { editing: Editing; onDo
               type="button"
               role="radio"
               aria-checked={color === c}
-              aria-label={c}
+              aria-label={t(`colors.${c}`)}
               className="swatch"
               style={catVar(c)}
               onClick={() => setColor(c)}
@@ -163,15 +169,15 @@ function CategoryEditor({ editing, onDone, onArchive }: { editing: Editing; onDo
       <div className="grid-2">
         {editing.category ? (
           <button type="button" className="btn" onClick={() => onArchive(editing.category!)}>
-            Archive
+            {t('common.archive')}
           </button>
         ) : (
           <button type="button" className="btn" onClick={onDone}>
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
         <button type="submit" className="btn btn--solid">
-          Save
+          {t('common.save')}
         </button>
       </div>
     </form>
@@ -187,18 +193,18 @@ function ArchiveForm({ category, categories, onDone }: { category: Category; cat
     e.preventDefault();
     try {
       await archiveCategory(category.id, target);
-      toast({ message: `${category.name} archived` });
+      toast({ message: t('categories.archived', { name: category.name }) });
       onDone();
     } catch (err) {
-      toast({ message: err instanceof ValidationError ? err.message : 'Could not archive the category.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('categories.archiveFailed') });
     }
   }
 
   return (
     <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
-      <p className="label">Its transactions, bills and rules move to another category. Its budget is removed.</p>
+      <p className="label">{t('categories.archiveNote')}</p>
       <div className="list">
-        <Field label="Move to">
+        <Field label={t('categories.moveTo')}>
           {(id) => (
             <select id={id} value={target} onChange={(e) => setTarget(e.target.value)}>
               {options.map((c) => (
@@ -212,10 +218,10 @@ function ArchiveForm({ category, categories, onDone }: { category: Category; cat
       </div>
       <div className="grid-2">
         <button type="button" className="btn" onClick={onDone}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button type="submit" className="btn btn--danger-solid" disabled={!target}>
-          Archive
+          {t('common.archive')}
         </button>
       </div>
     </form>

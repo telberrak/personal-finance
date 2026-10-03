@@ -12,16 +12,17 @@ import { formatMoney } from '../lib/money';
 import { detectRecurring, type RecurringSuggestion } from '../lib/matching';
 import { nextOccurrence } from '../lib/recurring';
 import { billOccurrences, MATCH_WINDOW_DAYS, overdueBills, type BillOccurrence } from '../lib/selectors';
+import { t } from '../i18n';
 
 type Tab = 'upcoming' | 'all' | 'subscriptions';
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'upcoming', label: 'Upcoming' },
-  { id: 'all', label: 'All' },
-  { id: 'subscriptions', label: 'Subscriptions' },
+  { id: 'upcoming', label: 'bills.tabs.upcoming' },
+  { id: 'all', label: 'bills.tabs.all' },
+  { id: 'subscriptions', label: 'bills.tabs.subscriptions' },
 ];
 
 const PER_YEAR: Record<Recurring['frequency'], number> = { weekly: 52, monthly: 12, yearly: 1 };
-const FREQ_LABEL: Record<Recurring['frequency'], string> = { weekly: 'Weekly', monthly: 'Monthly', yearly: 'Yearly' };
+const freqLabel = (f: Recurring['frequency']) => t(`bills.freq.${f}`);
 
 const isOverdue = (o: BillOccurrence, ref: ISODate) => !o.paid && o.date < addDays(ref, -MATCH_WINDOW_DAYS);
 /** Mark-as-paid is offered once a bill is due (or nearly). */
@@ -32,10 +33,10 @@ function Status({ o, refDate }: { o: BillOccurrence; refDate: ISODate }) {
     return (
       <span className="row muted" style={{ gap: 6 }}>
         <Icon name="check" size={16} strokeWidth={2.2} />
-        Paid
+        {t('bills.paid')}
       </span>
     );
-  if (isOverdue(o, refDate)) return <span className="pill pill--warn">Overdue</span>;
+  if (isOverdue(o, refDate)) return <span className="pill pill--warn">{t('bills.overdue')}</span>;
   return <span className="muted">{dueLabel(o.date, refDate)}</span>;
 }
 
@@ -82,9 +83,9 @@ export function Bills({ data }: { data?: FinanceData }) {
   async function pay(o: BillOccurrence) {
     const id = await markBillPaid(o.rule, o.date);
     toast({
-      message: `${o.rule.name} marked as paid`,
+      message: t('bills.markedPaid', { name: o.rule.name }),
       action: {
-        label: 'Undo',
+        label: t('common.undo'),
         onClick: async () => {
           await deleteTransaction(id);
         },
@@ -95,15 +96,15 @@ export function Bills({ data }: { data?: FinanceData }) {
   const markPaidButton = (o: BillOccurrence) =>
     canMarkPaid(o, ref) && (
       <button type="button" className="btn btn--sm" onClick={() => pay(o)}>
-        Mark paid
+        {t('bills.markPaid')}
       </button>
     );
 
   const tabs = (
-    <div className="segmented" role="tablist" aria-label="Bill views">
-      {TABS.map((t) => (
-        <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>
-          {t.label}
+    <div className="segmented" role="tablist" aria-label={t('bills.views')}>
+      {TABS.map((tb) => (
+        <button key={tb.id} type="button" role="tab" aria-selected={tab === tb.id} onClick={() => setTab(tb.id)}>
+          {t(tb.label)}
         </button>
       ))}
     </div>
@@ -112,22 +113,22 @@ export function Bills({ data }: { data?: FinanceData }) {
   const addButton = isDesktop ? (
     <Link to="/bills/new" className="btn btn--solid">
       <Icon name="plus" size={18} strokeWidth={2.2} />
-      Add bill
+      {t('bills.add')}
     </Link>
   ) : (
-    <Link to="/bills/new" className="icon-btn" aria-label="Add bill">
+    <Link to="/bills/new" className="icon-btn" aria-label={t('bills.add')}>
       <Icon name="plus" size={20} strokeWidth={2} />
     </Link>
   );
 
   const summary = (
-    <section className="card stack" style={{ gap: 12 }} aria-label={`${formatMonth(ref)} commitments`}>
+    <section className="card stack" style={{ gap: 12 }} aria-label={t('bills.commitments', { month: formatMonth(ref) })}>
       <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div className="stack">
-          <span className="label">Committed in {formatMonth(ref)}</span>
+          <span className="label">{t('bills.committedIn', { month: formatMonth(ref) })}</span>
           <span className="value-lg num">{formatMoney(committed)}</span>
         </div>
-        <span className="label">{month.length} payments</span>
+        <span className="label">{t('bills.payments', { count: month.length })}</span>
       </div>
       <div className="bar bar--thick" style={catVar('bills')}>
         <span style={{ width: `${committed ? (paid / committed) * 100 : 0}%` }} />
@@ -135,33 +136,31 @@ export function Bills({ data }: { data?: FinanceData }) {
       <div className="row small" style={{ justifyContent: 'space-between', fontSize: 13 }}>
         <span className="row" style={{ gap: 6 }}>
           <span className="dot" style={catVar('bills')} />
-          Paid {formatMoney(paid)}
+          {t('bills.paidAmount', { amount: formatMoney(paid) })}
         </span>
         <span className="row" style={{ gap: 6 }}>
           <span className="dot" style={{ background: 'var(--track)', border: '1px solid var(--border)' }} />
-          Still to go {formatMoney(committed - paid)}
+          {t('bills.stillToGo', { amount: formatMoney(committed - paid) })}
         </span>
       </div>
     </section>
   );
 
   const alerts = priceRises.map((r) => (
-    <section key={r.id} className="callout" aria-label="Price change">
+    <section key={r.id} className="callout" aria-label={t('bills.priceChange')}>
       <span className="callout-icon">
         <Icon name="trendUp" size={20} />
       </span>
       <div className="stack grow" style={{ gap: 2 }}>
         <span style={{ fontSize: 14, fontWeight: 600 }}>
-          {r.name} went up by {formatMoney(r.amount - (r.previousAmount ?? 0))}
+          {t('bills.wentUp', { name: r.name, amount: formatMoney(r.amount - (r.previousAmount ?? 0)) })}
         </span>
-        <span className="label">
-          Now {formatMoney(r.amount)}, was {formatMoney(r.previousAmount ?? 0)}
-        </span>
+        <span className="label">{t('bills.nowWas', { now: formatMoney(r.amount), was: formatMoney(r.previousAmount ?? 0) })}</span>
       </div>
       <button
         type="button"
         className="icon-btn icon-btn--ghost"
-        aria-label={`Dismiss ${r.name} price alert`}
+        aria-label={t('bills.dismissAlert', { name: r.name })}
         onClick={() => dismissPriceAlert(r.id)}
       >
         <Icon name="close" size={18} />
@@ -170,8 +169,8 @@ export function Bills({ data }: { data?: FinanceData }) {
   ));
 
   const suggestionSection = suggestions.length > 0 && (
-    <section className="section" aria-label="Suggested bills">
-      <h2 className="section-title">Looks like a regular payment</h2>
+    <section className="section" aria-label={t('bills.suggested')}>
+      <h2 className="section-title">{t('bills.looksRegular')}</h2>
       <div className="list">
         {suggestions.map((s) => (
           <div key={s.key} className="list-row">
@@ -181,16 +180,19 @@ export function Bills({ data }: { data?: FinanceData }) {
             <div className="grow stack" style={{ gap: 2 }}>
               <span className="item-title">{s.payee}</span>
               <span className="item-meta">
-                {formatMoney(s.amount)} {s.frequency === 'weekly' ? 'every week' : 'every month'} · seen {s.count} times
+                {t(s.frequency === 'weekly' ? 'bills.suggestionWeekly' : 'bills.suggestionMonthly', {
+                  amount: formatMoney(s.amount),
+                  count: s.count,
+                })}
               </span>
             </div>
             <Link to={suggestionLink(s)} className="btn btn--sm">
-              Add as bill
+              {t('bills.addAsBill')}
             </Link>
             <button
               type="button"
               className="icon-btn icon-btn--ghost"
-              aria-label={`Not a bill: ${s.payee}`}
+              aria-label={t('bills.notABill', { name: s.payee })}
               onClick={() => dismissSuggestion(s.key)}
             >
               <Icon name="close" size={18} />
@@ -205,8 +207,8 @@ export function Bills({ data }: { data?: FinanceData }) {
     return (
       <main className="screen">
         <PageHeader
-          title="Bills"
-          subtitle="Direct debits, standing orders and subscriptions"
+          title={t('bills.title')}
+          subtitle={t('bills.subtitle')}
           actions={
             <>
               {tabs}
@@ -218,9 +220,9 @@ export function Bills({ data }: { data?: FinanceData }) {
           {summary}
           <div className="stack" style={{ gap: 12 }}>
             {nextDue && (
-              <section className="card row" aria-label="Next payment">
+              <section className="card row" aria-label={t('bills.nextPayment')}>
                 <div className="grow stack">
-                  <span className="label">Next payment</span>
+                  <span className="label">{t('bills.nextPayment')}</span>
                   <span className="value-md">{nextDue.rule.name}</span>
                   <span className="label">
                     {methodLabel(nextDue.rule.method)} · {dueLabel(nextDue.date, ref)}
@@ -236,18 +238,18 @@ export function Bills({ data }: { data?: FinanceData }) {
         {tab === 'upcoming' ? (
           <div className="table-card">
             <table className="table">
-              <caption className="visually-hidden">Bills in {formatMonth(ref)}</caption>
+              <caption className="visually-hidden">{t('bills.inMonth', { month: formatMonth(ref) })}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Due</th>
-                  <th scope="col">Payee</th>
-                  <th scope="col">Type</th>
-                  <th scope="col">Status</th>
+                  <th scope="col">{t('columns.due')}</th>
+                  <th scope="col">{t('columns.payee')}</th>
+                  <th scope="col">{t('columns.type')}</th>
+                  <th scope="col">{t('columns.status')}</th>
                   <th scope="col" className="num-col">
-                    Amount
+                    {t('columns.amount')}
                   </th>
                   <th scope="col">
-                    <span className="visually-hidden">Actions</span>
+                    <span className="visually-hidden">{t('columns.actions')}</span>
                   </th>
                 </tr>
               </thead>
@@ -255,7 +257,7 @@ export function Bills({ data }: { data?: FinanceData }) {
                 {due.length + done.length === 0 && (
                   <tr>
                     <td colSpan={6} className="empty">
-                      No bills this month. <Link to="/bills/new">Add your first bill</Link>
+                      {t('bills.noneThisMonth')} <Link to="/bills/new">{t('bills.addFirst')}</Link>
                     </td>
                   </tr>
                 )}
@@ -281,18 +283,18 @@ export function Bills({ data }: { data?: FinanceData }) {
         ) : (
           <div className="table-card">
             <table className="table">
-              <caption className="visually-hidden">{tab === 'all' ? 'All recurring payments' : 'Card subscriptions'}</caption>
+              <caption className="visually-hidden">{tab === 'all' ? t('bills.allRecurring') : t('bills.cardSubscriptions')}</caption>
               <thead>
                 <tr>
-                  <th scope="col">Payee</th>
-                  <th scope="col">Type</th>
-                  <th scope="col">Frequency</th>
-                  <th scope="col">Next payment</th>
+                  <th scope="col">{t('columns.payee')}</th>
+                  <th scope="col">{t('columns.type')}</th>
+                  <th scope="col">{t('columns.frequency')}</th>
+                  <th scope="col">{t('columns.nextPayment')}</th>
                   <th scope="col" className="num-col">
-                    Amount
+                    {t('columns.amount')}
                   </th>
                   <th scope="col" className="num-col">
-                    Per year
+                    {t('columns.perYear')}
                   </th>
                 </tr>
               </thead>
@@ -300,7 +302,7 @@ export function Bills({ data }: { data?: FinanceData }) {
                 {recurringList.length === 0 && (
                   <tr>
                     <td colSpan={6} className="empty">
-                      None yet.
+                      {t('common.noneYet')}
                     </td>
                   </tr>
                 )}
@@ -312,7 +314,7 @@ export function Bills({ data }: { data?: FinanceData }) {
                       </Link>
                     </td>
                     <td className="muted">{methodLabel(rule.method)}</td>
-                    <td className="muted">{FREQ_LABEL[rule.frequency]}</td>
+                    <td className="muted">{freqLabel(rule.frequency)}</td>
                     <td className="num">{next ? formatShort(next) : '—'}</td>
                     <td className="num-col amount">{formatMoney(rule.amount)}</td>
                     <td className="num-col num muted">{formatMoney(rule.amount * PER_YEAR[rule.frequency])}</td>
@@ -327,8 +329,8 @@ export function Bills({ data }: { data?: FinanceData }) {
                         </Link>
                       </td>
                       <td>{methodLabel(rule.method)}</td>
-                      <td>{FREQ_LABEL[rule.frequency]}</td>
-                      <td>Paused</td>
+                      <td>{freqLabel(rule.frequency)}</td>
+                      <td>{t('bills.paused')}</td>
                       <td className="num-col">{formatMoney(rule.amount)}</td>
                       <td className="num-col">—</td>
                     </tr>
@@ -344,7 +346,7 @@ export function Bills({ data }: { data?: FinanceData }) {
 
   return (
     <main className="screen">
-      <PageHeader title="Bills" actions={addButton} />
+      <PageHeader title={t('bills.title')} actions={addButton} />
       {tabs}
       {summary}
       {alerts}
@@ -352,9 +354,11 @@ export function Bills({ data }: { data?: FinanceData }) {
       {tab === 'upcoming' && (
         <>
           <section className="section">
-            <h2 className="section-label">Due this month</h2>
+            <h2 className="section-label">{t('bills.dueThisMonth')}</h2>
             <div className="list">
-              {due.length === 0 && <p className="empty">{month.length ? `All paid for ${formatMonth(ref)}.` : 'No bills yet.'}</p>}
+              {due.length === 0 && (
+                <p className="empty">{month.length ? t('bills.allPaidFor', { month: formatMonth(ref) }) : t('bills.noBills')}</p>
+              )}
               {due.map((o) => (
                 <BillRow
                   key={o.rule.id + o.date}
@@ -363,7 +367,7 @@ export function Bills({ data }: { data?: FinanceData }) {
                   to={`/bills/${o.rule.id}`}
                   meta={
                     isOverdue(o, ref) ? (
-                      <span className="text-warn">Overdue · {formatShort(o.date)}</span>
+                      <span className="text-warn">{t('bills.overdueOn', { date: formatShort(o.date) })}</span>
                     ) : (
                       `${methodLabel(o.rule.method)} · ${dueLabel(o.date, ref)}`
                     )
@@ -382,7 +386,7 @@ export function Bills({ data }: { data?: FinanceData }) {
           </section>
           {done.length > 0 && (
             <section className="section">
-              <h2 className="section-label">Paid</h2>
+              <h2 className="section-label">{t('bills.paid')}</h2>
               <div className="list">
                 {done.map((o) => (
                   <BillRow
@@ -402,26 +406,32 @@ export function Bills({ data }: { data?: FinanceData }) {
 
       {tab !== 'upcoming' && (
         <section className="section">
-          <h2 className="section-label">{tab === 'all' ? 'All recurring payments' : 'Card subscriptions'}</h2>
+          <h2 className="section-label">{tab === 'all' ? t('bills.allRecurring') : t('bills.cardSubscriptions')}</h2>
           <div className="list">
-            {recurringList.length === 0 && <p className="empty">None yet.</p>}
+            {recurringList.length === 0 && <p className="empty">{t('common.noneYet')}</p>}
             {recurringList.map(({ rule, next }) => (
               <BillRow
                 key={rule.id}
                 rule={rule}
                 date={next ?? rule.startDate}
                 to={`/bills/${rule.id}`}
-                meta={`${methodLabel(rule.method)} · ${FREQ_LABEL[rule.frequency]}${next ? ' · next ' + formatShort(next) : ''}`}
+                meta={[methodLabel(rule.method), freqLabel(rule.frequency), next && t('bills.nextOn', { date: formatShort(next) })]
+                  .filter(Boolean)
+                  .join(' · ')}
                 trailing={
                   <span className="stack" style={{ alignItems: 'flex-end', gap: 2 }}>
                     <span className="amount">{formatMoney(rule.amount)}</span>
-                    <span className="small muted num">{formatMoney(rule.amount * PER_YEAR[rule.frequency])}/yr</span>
+                    <span className="small muted num">
+                      {t('bills.perYearShort', { amount: formatMoney(rule.amount * PER_YEAR[rule.frequency]) })}
+                    </span>
                   </span>
                 }
               />
             ))}
             {tab === 'all' &&
-              paused.map((rule) => <BillRow key={rule.id} rule={rule} date={rule.startDate} to={`/bills/${rule.id}`} meta="Paused" paid />)}
+              paused.map((rule) => (
+                <BillRow key={rule.id} rule={rule} date={rule.startDate} to={`/bills/${rule.id}`} meta={t('bills.paused')} paid />
+              ))}
           </div>
         </section>
       )}

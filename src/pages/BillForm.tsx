@@ -7,9 +7,10 @@ import { Field, MoneyInput } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
 import { deleteRecurring, saveRecurring, ValidationError } from '../db/repo';
 import type { FinanceData, PaymentMethod, Recurring } from '../db/types';
-import { today } from '../lib/dates';
+import { formatDate, formatShort, today } from '../lib/dates';
 import { formatMoney, parseMoney } from '../lib/money';
 import type { Frequency } from '../lib/recurring';
+import { t } from '../i18n';
 
 /** /bills/new (optionally prefilled from a suggestion) and /bills/:id */
 export function BillForm({ data }: { data?: FinanceData }) {
@@ -19,9 +20,9 @@ export function BillForm({ data }: { data?: FinanceData }) {
   if (id && !existing) {
     return (
       <main className="screen screen--modal">
-        <h1 className="screen-title">Bill not found</h1>
+        <h1 className="screen-title">{t('billForm.notFound')}</h1>
         <Link to="/bills" className="btn" style={{ alignSelf: 'flex-start' }}>
-          Back to Bills
+          {t('billForm.backToBills')}
         </Link>
       </main>
     );
@@ -56,7 +57,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (amount === null) return toast({ message: 'Enter the amount, e.g. 9.99' });
+    if (amount === null) return toast({ message: t('billForm.amountHint') });
     try {
       await saveRecurring({
         id: existing?.id,
@@ -70,24 +71,24 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
         categoryId: categoryId!,
         active,
       });
-      toast({ message: existing ? 'Bill updated' : 'Bill added' });
+      toast({ message: existing ? t('billForm.updated') : t('billForm.added') });
       navigate('/bills');
     } catch (err) {
-      toast({ message: err instanceof ValidationError ? err.message : 'Could not save the bill.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('billForm.saveFailed') });
     }
   }
 
   async function remove() {
     if (!existing) return;
     const ok = await confirm({
-      title: `Delete ${existing.name}?`,
-      message: 'Its past payments stay in Activity as ordinary transactions.',
-      confirmLabel: 'Delete',
+      title: t('billForm.deleteTitle', { name: existing.name }),
+      message: t('billForm.deleteBody'),
+      confirmLabel: t('common.delete'),
       danger: true,
     });
     if (!ok) return;
     await deleteRecurring(existing.id);
-    toast({ message: 'Bill deleted' });
+    toast({ message: t('billForm.deleted') });
     navigate('/bills');
   }
 
@@ -95,12 +96,12 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
     <main className="screen screen--modal">
       <form className="form-contents" onSubmit={submit}>
         <header className="screen-header">
-          <Link to="/bills" className="icon-btn" aria-label="Back to bills">
+          <Link to="/bills" className="icon-btn" aria-label={t('billForm.back')}>
             <Icon name="close" size={20} strokeWidth={2} />
           </Link>
-          <h1 style={{ fontSize: 17, fontWeight: 600 }}>{existing ? 'Edit bill' : 'New bill'}</h1>
+          <h1 style={{ fontSize: 17, fontWeight: 600 }}>{existing ? t('billForm.edit') : t('billForm.new')}</h1>
           {existing ? (
-            <button type="button" className="icon-btn" aria-label="Delete bill" onClick={remove}>
+            <button type="button" className="icon-btn" aria-label={t('billForm.delete')} onClick={remove}>
               <Icon name="trash" size={20} />
             </button>
           ) : (
@@ -111,36 +112,42 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
         <MoneyInput value={amountText} onChange={setAmountText} autoFocus={!existing} />
 
         <div className="list">
-          <Field label="Name">
+          <Field label={t('fields.name')}>
             {(id) => (
-              <input id={id} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Council Tax" autoComplete="off" />
+              <input
+                id={id}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t('billForm.namePlaceholder')}
+                autoComplete="off"
+              />
             )}
           </Field>
-          <Field label="Type">
+          <Field label={t('fields.type')}>
             {(id) => (
               <select id={id} value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
-                <option value="direct-debit">Direct debit</option>
-                <option value="standing-order">Standing order</option>
-                <option value="card">Card subscription</option>
+                <option value="direct-debit">{t('bills.method.direct-debit')}</option>
+                <option value="standing-order">{t('bills.method.standing-order')}</option>
+                <option value="card">{t('bills.method.card')}</option>
               </select>
             )}
           </Field>
-          <Field label="Repeats">
+          <Field label={t('billForm.repeats')}>
             {(id) => (
               <select id={id} value={frequency} onChange={(e) => setFrequency(e.target.value as Frequency)}>
-                <option value="weekly">Every week</option>
-                <option value="monthly">Every month</option>
-                <option value="yearly">Every year</option>
+                <option value="weekly">{t('billForm.every.weekly')}</option>
+                <option value="monthly">{t('billForm.every.monthly')}</option>
+                <option value="yearly">{t('billForm.every.yearly')}</option>
               </select>
             )}
           </Field>
-          <Field label={existing ? 'Starts' : 'Next due'}>
+          <Field label={existing ? t('billForm.starts') : t('billForm.nextDue')}>
             {(id) => <input id={id} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />}
           </Field>
-          <Field label="Ends">
+          <Field label={t('billForm.ends')}>
             {(id) => <input id={id} type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} />}
           </Field>
-          <Field label="Account">
+          <Field label={t('fields.account')}>
             {(id) => (
               <select id={id} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
                 {accounts.map((a) => (
@@ -151,7 +158,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
               </select>
             )}
           </Field>
-          <Field label="Category">
+          <Field label={t('fields.category')}>
             {(id) => (
               <select id={id} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
                 {categories.map((c) => (
@@ -168,31 +175,34 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
           <label className="check-row">
             <input type="checkbox" checked={!active} onChange={(e) => setActive(!e.target.checked)} />
             <span>
-              Paused
+              {t('billForm.paused')}
               <span className="small muted" style={{ display: 'block' }}>
-                Hidden from upcoming bills and “safe to spend”
+                {t('billForm.pausedHint')}
               </span>
             </span>
           </label>
         )}
         {existing?.previousAmount !== undefined && existing.previousAmount !== existing.amount && (
           <p className="small muted">
-            Was {formatMoney(existing.previousAmount)} until {existing.amountChangedOn ?? 'recently'}.
+            {t('billForm.wasUntil', {
+              amount: formatMoney(existing.previousAmount),
+              date: existing.amountChangedOn ? formatShort(existing.amountChangedOn) : t('billForm.recently'),
+            })}
           </p>
         )}
 
         <button type="submit" className="btn btn--primary">
-          {existing ? 'Save changes' : 'Add bill'}
+          {existing ? t('common.saveChanges') : t('bills.add')}
         </button>
 
         {payments.length > 0 && (
           <section className="section">
-            <h2 className="section-label">Recent payments</h2>
+            <h2 className="section-label">{t('billForm.recentPayments')}</h2>
             <div className="list">
-              {payments.map((t) => (
-                <Link key={t.id} to={`/transactions/${t.id}`} className="list-row list-row--link">
-                  <span className="grow num">{t.date}</span>
-                  <span className="amount">{formatMoney(t.amount)}</span>
+              {payments.map((tx) => (
+                <Link key={tx.id} to={`/transactions/${tx.id}`} className="list-row list-row--link">
+                  <span className="grow num">{formatDate(tx.date)}</span>
+                  <span className="amount">{formatMoney(tx.amount)}</span>
                 </Link>
               ))}
             </div>

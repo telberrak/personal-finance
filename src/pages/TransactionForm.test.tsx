@@ -18,7 +18,7 @@ describe('Transaction form', () => {
     render(<App />);
     const before = await db.transactions.count();
 
-    await user.type(await screen.findByLabelText('Amount in pounds'), '12.5');
+    await user.type(await screen.findByLabelText('Amount'), '12.5');
     await user.type(screen.getByLabelText('Payee'), 'Pret A Manger');
     const categories = screen.getByRole('radiogroup', { name: 'Category' });
     expect(within(categories).getByRole('radio', { name: 'Eating out' })).toBeChecked();
@@ -40,11 +40,11 @@ describe('Transaction form', () => {
     render(<App />);
     const save = await screen.findByRole('button', { name: 'Save expense' });
     expect(save).toBeDisabled();
-    await user.type(screen.getByLabelText('Amount in pounds'), '1.234');
+    await user.type(screen.getByLabelText('Amount'), '1.234');
     await user.type(screen.getByLabelText('Payee'), 'Shop');
     expect(save).toBeDisabled();
-    await user.clear(screen.getByLabelText('Amount in pounds'));
-    await user.type(screen.getByLabelText('Amount in pounds'), '1.23');
+    await user.clear(screen.getByLabelText('Amount'));
+    await user.type(screen.getByLabelText('Amount'), '1.23');
     expect(save).toBeEnabled();
   });
 
@@ -66,7 +66,7 @@ describe('Transaction form', () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(await screen.findByRole('radio', { name: 'Transfer' }));
-    await user.type(screen.getByLabelText('Amount in pounds'), '50');
+    await user.type(screen.getByLabelText('Amount'), '50');
     await user.selectOptions(screen.getByLabelText('From'), 'Current account');
     await user.selectOptions(screen.getByLabelText('To'), 'Savings');
     await user.click(screen.getByRole('button', { name: 'Save transfer' }));

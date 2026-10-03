@@ -3,6 +3,7 @@ import { dayHeading, type ISODate } from '../lib/dates';
 import { formatMoney } from '../lib/money';
 import { Link } from 'react-router';
 import { catVar } from './rows';
+import { t } from '../i18n';
 
 /** Desktop transaction list: one table, a header row per day with that day's total. */
 export function TransactionTable({
@@ -19,15 +20,15 @@ export function TransactionTable({
   return (
     <div className="table-card">
       <table className="table">
-        <caption className="visually-hidden">Transactions</caption>
+        <caption className="visually-hidden">{t('activity.title')}</caption>
         <thead>
           <tr>
-            <th scope="col">Payee</th>
-            <th scope="col">Category</th>
-            <th scope="col">Account</th>
-            <th scope="col">Time</th>
+            <th scope="col">{t('columns.payee')}</th>
+            <th scope="col">{t('columns.category')}</th>
+            <th scope="col">{t('columns.account')}</th>
+            <th scope="col">{t('columns.time')}</th>
             <th scope="col" className="num-col">
-              Amount
+              {t('columns.amount')}
             </th>
           </tr>
         </thead>
@@ -39,43 +40,49 @@ export function TransactionTable({
               </th>
               <td className="num-col num">{formatMoney(g.total, { sign: true })}</td>
             </tr>
-            {g.items.map((t) => {
-              const category = categories.get(t.categoryId);
+            {g.items.map((tx) => {
+              const category = categories.get(tx.categoryId);
               return (
-                <tr key={t.id}>
+                <tr key={tx.id}>
                   <td>
                     <div className="row" style={{ gap: 12 }}>
                       <div className="tile tile--sm" style={catVar(category?.color)} aria-hidden="true">
-                        {t.transferId ? '⇄' : t.payee.charAt(0).toUpperCase()}
+                        {tx.transferId ? '⇄' : tx.payee.charAt(0).toUpperCase()}
                       </div>
                       <div className="stack grow" style={{ gap: 0 }}>
-                        <Link to={`/transactions/${t.id}`} className="item-title row-link">
-                          {t.payee}
+                        <Link to={`/transactions/${tx.id}`} className="item-title row-link">
+                          {tx.payee}
                         </Link>
-                        {t.note && <span className="small muted">{t.note}</span>}
+                        {tx.note && (
+                          <span className="small muted" translate="no">
+                            {tx.note}
+                          </span>
+                        )}
                       </div>
-                      {t.recurringId && (
-                        <span className="tag" title="Recurring payment">
-                          DD
+                      {tx.recurringId && (
+                        <span className="tag" title={t('tags.recurringTitle')}>
+                          {t('tags.recurring')}
                         </span>
                       )}
-                      {t.splitId && (
-                        <span className="tag" title="Part of a split payment">
-                          Split
+                      {tx.splitId && (
+                        <span className="tag" title={t('tags.splitTitle')}>
+                          {t('tags.split')}
                         </span>
                       )}
                     </div>
                   </td>
                   <td>
-                    <span className="row" style={{ gap: 8 }}>
+                    <span className="row" style={{ gap: 8 }} translate="no">
                       <span className="dot" style={catVar(category?.color)} />
-                      {category?.name ?? 'Uncategorised'}
+                      {category?.name ?? t('common.uncategorised')}
                     </span>
                   </td>
-                  <td className="muted">{accounts.get(t.accountId)?.name ?? '—'}</td>
-                  <td className="muted num">{t.time ?? '—'}</td>
-                  <td className={'num-col amount' + (t.amount > 0 && !t.transferId ? ' amount--in' : '')}>
-                    {formatMoney(t.amount, { sign: true })}
+                  <td className="muted" translate="no">
+                    {accounts.get(tx.accountId)?.name ?? '—'}
+                  </td>
+                  <td className="muted num">{tx.time ?? '—'}</td>
+                  <td className={'num-col amount' + (tx.amount > 0 && !tx.transferId ? ' amount--in' : '')}>
+                    {formatMoney(tx.amount, { sign: true })}
                   </td>
                 </tr>
               );

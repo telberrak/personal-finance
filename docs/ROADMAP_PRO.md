@@ -37,6 +37,17 @@ Sizes are rough effort for one developer: **S** ≈ under a day, **M** ≈ 1–3
 
 ## P1 — Multi-language foundation (English only) — L
 
+**Status (3 October 2026): done.** It covers:
+
+- i18next with 655 English strings and a key-check test;
+- locale and currency settings, with formatting through `Intl`;
+- amount parsing for comma decimals and Arabic-Indic digits;
+- right-to-left CSS with mirrored icons and isolated amounts, plus an Arabic font fallback;
+- `en-XA` and `ar-XB` pseudo-locales with Playwright checks;
+- a lint rule that blocks hard-coded text.
+
+How to add a language: [TRANSLATING.md](TRANSLATING.md).
+
 Goal: the app looks exactly the same in English, but nothing in the code assumes English, left-to-right, pounds or UK dates.
 
 | #    | Task                                                                                                                                                                                                                                                           | Size |

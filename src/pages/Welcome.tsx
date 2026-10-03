@@ -3,12 +3,13 @@ import { Field, MoneyInput } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
 import { completeOnboarding, startWithDemoData, ValidationError } from '../db/repo';
 import { parseMoney } from '../lib/money';
+import { t } from '../i18n';
 
 /** First-run setup: start fresh with your own balance, or explore with demo data. */
 export function Welcome() {
   const toast = useToast();
   const [step, setStep] = useState<'choose' | 'fresh'>('choose');
-  const [accountName, setAccountName] = useState('Current account');
+  const [accountName, setAccountName] = useState(() => t('accounts.defaultName'));
   const [balanceText, setBalanceText] = useState('');
   const [payday, setPayday] = useState(25);
   const [savingsText, setSavingsText] = useState('');
@@ -23,7 +24,7 @@ export function Welcome() {
       await completeOnboarding({ accountName, balance: balance ?? 0, payday, monthlySavings: parseMoney(savingsText) ?? 0 });
     } catch (err) {
       setBusy(false);
-      toast({ message: err instanceof ValidationError ? err.message : 'Could not finish setup.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('welcome.setupFailed') });
     }
   }
 
@@ -39,50 +40,49 @@ export function Welcome() {
         {step === 'choose' ? (
           <>
             <div className="stack" style={{ gap: 8 }}>
-              <h1 className="screen-title">Welcome to Ledger</h1>
+              <h1 className="screen-title">{t('welcome.title')}</h1>
               <p className="label" style={{ fontSize: 15, lineHeight: 1.5 }}>
-                Track everyday spending, direct debits and budgets, and always know what is safe to spend until payday. Everything stays on
-                this device.
+                {t('welcome.intro')}
               </p>
             </div>
             <button type="button" className="btn btn--primary" onClick={() => setStep('fresh')}>
-              Set up my account
+              {t('welcome.setup')}
             </button>
             <button type="button" className="btn" style={{ height: 54, borderRadius: 16 }} onClick={explore} disabled={busy}>
-              Explore with demo data
+              {t('welcome.demo')}
             </button>
           </>
         ) : (
           <form className="stack" style={{ gap: 16 }} onSubmit={startFresh}>
             <div className="stack" style={{ gap: 6 }}>
-              <h1 className="screen-title">Your main account</h1>
-              <p className="label">You can add more accounts, bills and budgets later.</p>
+              <h1 className="screen-title">{t('welcome.mainAccount')}</h1>
+              <p className="label">{t('welcome.addLater')}</p>
             </div>
             <div className="stack" style={{ gap: 4 }}>
-              <span className="section-label">Current balance</span>
-              <MoneyInput value={balanceText} onChange={setBalanceText} label="Current balance in pounds" autoFocus />
+              <span className="section-label">{t('welcome.currentBalance')}</span>
+              <MoneyInput value={balanceText} onChange={setBalanceText} label={t('welcome.currentBalance')} autoFocus />
             </div>
             <div className="list">
-              <Field label="Name">
+              <Field label={t('fields.name')}>
                 {(id) => <input id={id} value={accountName} onChange={(e) => setAccountName(e.target.value)} autoComplete="off" />}
               </Field>
-              <Field label="Payday">
+              <Field label={t('settings.payday')}>
                 {(id) => (
                   <select id={id} value={payday} onChange={(e) => setPayday(Number(e.target.value))}>
                     {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                       <option key={d} value={d}>
-                        Day {d} of the month
+                        {t('settings.paydayOption', { day: d })}
                       </option>
                     ))}
                   </select>
                 )}
               </Field>
-              <Field label="Savings">
+              <Field label={t('settings.savings')}>
                 {(id) => (
                   <input
                     id={id}
                     inputMode="decimal"
-                    placeholder="Per month, e.g. 200"
+                    placeholder={t('welcome.savingsPlaceholder')}
                     value={savingsText}
                     onChange={(e) => setSavingsText(e.target.value)}
                   />
@@ -91,10 +91,10 @@ export function Welcome() {
             </div>
             <div className="grid-2">
               <button type="button" className="btn" style={{ height: 54, borderRadius: 16 }} onClick={() => setStep('choose')}>
-                Back
+                {t('common.back')}
               </button>
               <button type="submit" className="btn btn--primary" disabled={busy}>
-                Start
+                {t('welcome.start')}
               </button>
             </div>
           </form>

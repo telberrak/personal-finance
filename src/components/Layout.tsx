@@ -3,12 +3,13 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { shiftMonth, startOfMonth, formatMonthYear, type ISODate } from '../lib/dates';
 import { Icon, type IconName } from './Icon';
 import { useIsDesktop } from './useMediaQuery';
+import { t } from '../i18n';
 
 const TABS: { to: string; label: string; icon: IconName }[] = [
-  { to: '/', label: 'Home', icon: 'home' },
-  { to: '/activity', label: 'Activity', icon: 'activity' },
-  { to: '/bills', label: 'Bills', icon: 'calendar' },
-  { to: '/budgets', label: 'Budgets', icon: 'pie' },
+  { to: '/', label: 'nav.home', icon: 'home' },
+  { to: '/activity', label: 'nav.activity', icon: 'activity' },
+  { to: '/bills', label: 'nav.bills', icon: 'calendar' },
+  { to: '/budgets', label: 'nav.budgets', icon: 'pie' },
 ];
 
 /**
@@ -19,15 +20,15 @@ const hidesTabBar = (path: string) => /^\/(add|transactions\/|bills\/|settings)/
 
 /** Extra sections in the desktop sidebar (on the phone they are linked from Home). */
 const MORE: { to: string; label: string; icon: IconName }[] = [
-  { to: '/reports', label: 'Reports', icon: 'chart' },
-  { to: '/goals', label: 'Goals', icon: 'target' },
+  { to: '/reports', label: 'nav.reports', icon: 'chart' },
+  { to: '/goals', label: 'nav.goals', icon: 'target' },
 ];
 
 function Tab({ to, label, icon }: (typeof TABS)[number]) {
   return (
     <NavLink to={to} end className={({ isActive }) => 'nav-link' + (isActive ? ' active' : '')}>
       <Icon name={icon} />
-      {label}
+      {t(label)}
     </NavLink>
   );
 }
@@ -35,11 +36,11 @@ function Tab({ to, label, icon }: (typeof TABS)[number]) {
 /** Phone: bottom tab bar with the add button in the middle. */
 function BottomNav() {
   return (
-    <nav className="nav" aria-label="Main">
+    <nav className="nav" aria-label={t('nav.main')}>
       <div className="nav-inner">
         <Tab {...TABS[0]} />
         <Tab {...TABS[1]} />
-        <NavLink to="/add" className="nav-add" aria-label="Add transaction">
+        <NavLink to="/add" className="nav-add" aria-label={t('nav.addTransaction')}>
           <Icon name="plus" size={26} strokeWidth={2.2} />
         </NavLink>
         <Tab {...TABS[2]} />
@@ -55,31 +56,31 @@ function Sidebar() {
     <aside className="sidebar">
       <Link to="/" className="brand">
         <img src="/icon.svg" alt="" width={32} height={32} />
-        Ledger
+        {t('app.name')}
       </Link>
       <Link to="/add" className="btn btn--solid side-add">
         <Icon name="plus" size={18} strokeWidth={2.2} />
-        Add transaction
+        {t('nav.addTransaction')}
       </Link>
-      <nav className="side-nav" aria-label="Main">
-        {[...TABS, ...MORE].map((t) => (
-          <NavLink key={t.to} to={t.to} end className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')}>
-            <Icon name={t.icon} size={20} />
-            {t.label}
+      <nav className="side-nav" aria-label={t('nav.main')}>
+        {[...TABS, ...MORE].map((tab) => (
+          <NavLink key={tab.to} to={tab.to} end className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')}>
+            <Icon name={tab.icon} size={20} />
+            {t(tab.label)}
           </NavLink>
         ))}
       </nav>
       <div className="sidebar-footer">
         <NavLink to="/import" className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')}>
           <Icon name="upload" size={20} />
-          Import
+          {t('nav.import')}
         </NavLink>
         <NavLink to="/settings" className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')}>
           <Icon name="settings" size={20} />
-          Settings
+          {t('nav.settings')}
         </NavLink>
         <p className="small muted" style={{ padding: '8px 12px 0' }}>
-          Your data stays on this device.
+          {t('nav.dataLocal')}
         </p>
       </div>
     </aside>
@@ -121,7 +122,7 @@ export function MonthSwitcher({ month, onChange, current }: { month: ISODate; on
       <button
         type="button"
         className="icon-btn icon-btn--ghost"
-        aria-label="Previous month"
+        aria-label={t('common.previousMonth')}
         onClick={() => onChange(shiftMonth(month, -1))}
       >
         <Icon name="back" size={20} />
@@ -130,7 +131,7 @@ export function MonthSwitcher({ month, onChange, current }: { month: ISODate; on
       <button
         type="button"
         className="icon-btn icon-btn--ghost"
-        aria-label="Next month"
+        aria-label={t('common.nextMonth')}
         disabled={atCurrent}
         onClick={() => onChange(shiftMonth(month, 1))}
       >
@@ -143,7 +144,7 @@ export function MonthSwitcher({ month, onChange, current }: { month: ISODate; on
 export function Loading() {
   return (
     <main className="screen" aria-busy="true">
-      <p className="empty">Loading…</p>
+      <p className="empty">{t('common.loading')}</p>
     </main>
   );
 }

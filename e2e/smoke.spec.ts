@@ -29,7 +29,7 @@ test('adding an expense shows it in Activity and can be undone', async ({ page }
   await page.goto('/activity');
   await page.getByRole('link', { name: 'Add transaction' }).click();
 
-  await page.getByLabel('Amount in pounds').fill('7.25');
+  await page.getByLabel('Amount', { exact: true }).fill('7.25');
   await page.getByLabel('Payee').fill('Corner Café');
   await page.getByRole('radio', { name: 'Eating out' }).click();
   await page.getByRole('button', { name: 'Save expense' }).click();

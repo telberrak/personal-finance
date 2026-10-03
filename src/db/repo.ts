@@ -2,14 +2,15 @@
  * The only module that writes to the database. Screens read through useFinanceData() and
  * write through these functions, so validation, undo and rules live in one place.
  */
+import { t } from '../i18n';
 import { today, type ISODate } from '../lib/dates';
 import { newId } from '../lib/id';
 import { fingerprint } from '../lib/importer';
 import type { Pence } from '../lib/money';
 import { payeeKey } from '../lib/payees';
 import { hashPin, isValidPin } from '../lib/pin';
-import { db, TRANSFER_CATEGORY } from './db';
-import { DEFAULT_CATEGORIES, seedDemoData } from './seed';
+import { db, transferCategory } from './db';
+import { defaultCategories, seedDemoData } from './seed';
 import {
   DEFAULT_SETTINGS,
   OTHER_EXPENSE_ID,
@@ -43,8 +44,9 @@ const ALL_TABLES = () => [
   db.goals,
 ];
 
-function check(condition: unknown, message: string): asserts condition {
-  if (!condition) throw new ValidationError(message);
+/** Throws a ValidationError with the translated message for `key` (under errors.* in the locale files). */
+function check(condition: unknown, key: string, params?: Record<string, unknown>): asserts condition {
+  if (!condition) throw new ValidationError(t(key, params));
 }
 
 const isPence = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n);
@@ -58,8 +60,8 @@ export async function completeOnboarding(input: {
   payday: number;
   monthlySavings: Pence;
 }): Promise<void> {
-  check(input.accountName.trim(), 'Give your account a name.');
-  check(isPence(input.balance), 'Balance must be an amount.');
+  check(input.accountName.trim(), 'errors.accountNameMissing');
+  check(isPence(input.balance), 'errors.balanceNotAmount');
   await db.transaction('rw', ALL_TABLES(), async () => {
     await Promise.all(ALL_TABLES().map((t) => t.clear()));
     await db.accounts.put({
@@ -69,7 +71,7 @@ export async function completeOnboarding(input: {
       openingBalance: input.balance,
       includeInSafeToSpend: true,
     });
-    await db.categories.bulkPut([...DEFAULT_CATEGORIES, TRANSFER_CATEGORY]);
+    await db.categories.bulkPut([...defaultCategories(), transferCategory()]);
     await db.settings.put({ ...DEFAULT_SETTINGS, payday: input.payday, monthlySavings: input.monthlySavings, onboarded: true });
   });
 }
@@ -98,8 +100,8 @@ export async function eraseAllData(): Promise<void> {
       db.importBatches.clear(),
       db.goals.clear(),
     ]);
-    await db.accounts.put({ id: newId(), name: 'Current account', type: 'current', openingBalance: 0, includeInSafeToSpend: true });
-    if ((await db.categories.count()) === 0) await db.categories.bulkPut([...DEFAULT_CATEGORIES, TRANSFER_CATEGORY]);
+    await db.accounts.put({ id: newId(), name: t('accounts.defaultName'), type: 'current', openingBalance: 0, includeInSafeToSpend: true });
+    if ((await db.categories.count()) === 0) await db.categories.bulkPut([...defaultCategories(), transferCategory()]);
   });
 }
 
@@ -108,11 +110,11 @@ export async function eraseAllData(): Promise<void> {
 export type NewTransaction = Omit<Transaction, 'id'>;
 
 function validateTransaction(t: NewTransaction): void {
-  check(isPence(t.amount) && t.amount !== 0, 'Amount must be a non-zero whole number of pence.');
-  check(ISO_DATE.test(t.date), `Invalid date: ${t.date}`);
-  check(t.payee.trim(), 'Payee is required.');
-  check(t.accountId, 'Account is required.');
-  check(t.categoryId, 'Category is required.');
+  check(isPence(t.amount) && t.amount !== 0, 'errors.amountNonZero');
+  check(ISO_DATE.test(t.date), 'errors.invalidDateValue', { date: t.date });
+  check(t.payee.trim(), 'errors.payeeRequired');
+  check(t.accountId, 'errors.accountRequired');
+  check(t.categoryId, 'errors.categoryRequired');
 }
 
 export async function addTransaction(input: NewTransaction): Promise<string> {
@@ -129,11 +131,8 @@ const SHARED_SPLIT_FIELDS = ['payee', 'date', 'time', 'accountId'] as const;
 export async function updateTransaction(id: string, patch: Partial<NewTransaction>): Promise<void> {
   await db.transaction('rw', db.transactions, async () => {
     const current = await db.transactions.get(id);
-    check(current, 'Transaction not found.');
-    check(
-      !current.splitId || patch.amount === undefined || patch.amount === current.amount,
-      'Change the amounts of a split with Edit split.',
-    );
+    check(current, 'errors.transactionNotFound');
+    check(!current.splitId || patch.amount === undefined || patch.amount === current.amount, 'errors.splitAmountLocked');
     const next = { ...current, ...patch, updatedAt: Date.now() };
     if (patch.payee !== undefined) next.payee = patch.payee.trim();
     if (patch.note !== undefined) next.note = patch.note.trim() || undefined;
@@ -172,21 +171,21 @@ export interface SplitPart {
 export async function splitTransaction(id: string, parts: SplitPart[]): Promise<() => Promise<void>> {
   return db.transaction('rw', db.transactions, db.categories, async () => {
     const t = await db.transactions.get(id);
-    check(t, 'Transaction not found.');
-    check(!t.transferId, 'Transfers cannot be split.');
+    check(t, 'errors.transactionNotFound');
+    check(!t.transferId, 'errors.transferNoSplit');
     const group = await linkedGroup(t);
     const total = group.reduce((s, x) => s + x.amount, 0);
     const sign = total < 0 ? -1 : 1;
-    check(parts.length >= 2, 'A split needs at least two parts.');
+    check(parts.length >= 2, 'errors.splitTwoParts');
     check(
       parts.every((p) => isPence(p.amount) && p.amount > 0),
-      'Every part needs an amount.',
+      'errors.splitPartAmount',
     );
-    check(parts.reduce((s, p) => s + p.amount, 0) === Math.abs(total), 'The parts must add up to the payment.');
+    check(parts.reduce((s, p) => s + p.amount, 0) === Math.abs(total), 'errors.splitTotal');
     const kind = sign < 0 ? 'expense' : 'income';
     for (const p of parts) {
       const cat = await db.categories.get(p.categoryId);
-      check(cat && cat.kind === kind, `Pick ${kind === 'expense' ? 'spending' : 'income'} categories.`);
+      check(cat && cat.kind === kind, kind === 'expense' ? 'errors.pickSpendingCategories' : 'errors.pickIncomeCategories');
     }
 
     const first = group[0];
@@ -223,7 +222,7 @@ export async function splitTransaction(id: string, parts: SplitPart[]): Promise<
 export async function mergeSplit(id: string): Promise<() => Promise<void>> {
   return db.transaction('rw', db.transactions, async () => {
     const t = await db.transactions.get(id);
-    check(t?.splitId, 'This transaction is not split.');
+    check(t?.splitId, 'errors.notSplit');
     const group = await linkedGroup(t);
     const { splitId: _s, splitIndex: _i, ...first } = group[0];
     const merged: Transaction = { ...first, amount: group.reduce((s, x) => s + x.amount, 0), updatedAt: Date.now() };
@@ -256,15 +255,21 @@ export interface TransferInput {
 }
 
 async function transferPair(input: TransferInput, transferId: string, ids?: [string, string]): Promise<[Transaction, Transaction]> {
-  check(isPence(input.amount) && input.amount > 0, 'Amount must be more than zero.');
-  check(input.fromAccountId && input.toAccountId && input.fromAccountId !== input.toAccountId, 'Pick two different accounts.');
-  check(ISO_DATE.test(input.date), 'Invalid date.');
+  check(isPence(input.amount) && input.amount > 0, 'errors.amountPositive');
+  check(input.fromAccountId && input.toAccountId && input.fromAccountId !== input.toAccountId, 'errors.transferSameAccount');
+  check(ISO_DATE.test(input.date), 'errors.invalidDate');
   const [from, to] = await Promise.all([db.accounts.get(input.fromAccountId), db.accounts.get(input.toAccountId)]);
-  check(from && to, 'Account not found.');
+  check(from && to, 'errors.accountNotFound');
   const base = { date: input.date, categoryId: TRANSFER_CATEGORY_ID, transferId, note: input.note?.trim() || undefined };
   return [
-    { ...base, id: ids?.[0] ?? newId(), accountId: from.id, amount: -input.amount, payee: `Transfer to ${to.name}` },
-    { ...base, id: ids?.[1] ?? newId(), accountId: to.id, amount: input.amount, payee: `Transfer from ${from.name}` },
+    { ...base, id: ids?.[0] ?? newId(), accountId: from.id, amount: -input.amount, payee: t('transactions.transferTo', { name: to.name }) },
+    {
+      ...base,
+      id: ids?.[1] ?? newId(),
+      accountId: to.id,
+      amount: input.amount,
+      payee: t('transactions.transferFrom', { name: from.name }),
+    },
   ];
 }
 
@@ -279,7 +284,7 @@ export async function addTransfer(input: TransferInput): Promise<string> {
 export async function updateTransfer(transferId: string, input: TransferInput): Promise<void> {
   await db.transaction('rw', db.transactions, db.accounts, async () => {
     const existing = await db.transactions.where('transferId').equals(transferId).sortBy('amount');
-    check(existing.length === 2, 'Transfer not found.');
+    check(existing.length === 2, 'errors.transferNotFound');
     const pair = await transferPair(input, transferId, [existing[0].id, existing[1].id]);
     await db.transactions.bulkPut(pair.map((t) => ({ ...t, updatedAt: Date.now() })));
   });
@@ -290,8 +295,8 @@ export async function updateTransfer(transferId: string, input: TransferInput): 
 export type AccountInput = Omit<Account, 'id'> & { id?: string };
 
 export async function saveAccount(input: AccountInput): Promise<string> {
-  check(input.name.trim(), 'Account name is required.');
-  check(isPence(input.openingBalance), 'Opening balance must be an amount.');
+  check(input.name.trim(), 'errors.accountNameRequired');
+  check(isPence(input.openingBalance), 'errors.openingNotAmount');
   const id = input.id ?? newId();
   await db.accounts.put({ ...input, id, name: input.name.trim() });
   return id;
@@ -300,7 +305,7 @@ export async function saveAccount(input: AccountInput): Promise<string> {
 export async function setAccountArchived(id: string, archived: boolean): Promise<void> {
   if (archived) {
     const active = (await db.accounts.toArray()).filter((a) => !a.archived && a.id !== id);
-    check(active.length > 0, 'You need at least one open account.');
+    check(active.length > 0, 'errors.lastAccount');
   }
   await db.accounts.update(id, { archived });
 }
@@ -310,11 +315,11 @@ export async function setAccountArchived(id: string, archived: boolean): Promise
 export type CategoryInput = Pick<Category, 'name' | 'color' | 'kind'> & { id?: string };
 
 export async function saveCategory(input: CategoryInput): Promise<string> {
-  check(input.name.trim(), 'Category name is required.');
-  check(input.kind !== 'transfer', 'Transfers are built in.');
+  check(input.name.trim(), 'errors.categoryNameRequired');
+  check(input.kind !== 'transfer', 'errors.transfersBuiltIn');
   if (input.id) {
     const existing = await db.categories.get(input.id);
-    check(existing && !existing.system, 'This category cannot be edited.');
+    check(existing && !existing.system, 'errors.categoryNotEditable');
     await db.categories.update(input.id, { name: input.name.trim(), color: input.color, kind: input.kind });
     return input.id;
   }
@@ -326,11 +331,11 @@ export async function saveCategory(input: CategoryInput): Promise<string> {
 
 /** Archives a category and moves its transactions, bills, rules and budget to `reassignTo`. */
 export async function archiveCategory(id: string, reassignTo: string): Promise<void> {
-  check(id !== reassignTo, 'Pick a different category to move things to.');
+  check(id !== reassignTo, 'errors.reassignSame');
   await db.transaction('rw', [db.categories, db.transactions, db.recurring, db.rules, db.budgets], async () => {
     const [cat, target] = await Promise.all([db.categories.get(id), db.categories.get(reassignTo)]);
-    check(cat && !cat.system, 'This category cannot be archived.');
-    check(target && !target.archived && target.kind === cat.kind, 'Pick an active category of the same type.');
+    check(cat && !cat.system, 'errors.categoryNotArchivable');
+    check(target && !target.archived && target.kind === cat.kind, 'errors.reassignKind');
     await db.transactions.where('categoryId').equals(id).modify({ categoryId: reassignTo });
     await db.recurring.filter((r) => r.categoryId === id).modify({ categoryId: reassignTo });
     await db.rules.filter((r) => r.categoryId === id).modify({ categoryId: reassignTo });
@@ -360,11 +365,11 @@ export async function moveCategory(id: string, direction: -1 | 1): Promise<void>
 export type RecurringInput = Omit<Recurring, 'id' | 'previousAmount' | 'amountChangedOn' | 'priceAlertDismissed'> & { id?: string };
 
 export async function saveRecurring(input: RecurringInput): Promise<string> {
-  check(input.name.trim(), 'Name is required.');
-  check(isPence(input.amount) && input.amount > 0, 'Amount must be more than zero.');
-  check(ISO_DATE.test(input.startDate), 'Pick a first payment date.');
-  check(!input.endDate || input.endDate >= input.startDate, 'The end date must be after the first payment.');
-  check(input.accountId && input.categoryId, 'Pick an account and a category.');
+  check(input.name.trim(), 'errors.nameRequired');
+  check(isPence(input.amount) && input.amount > 0, 'errors.amountPositive');
+  check(ISO_DATE.test(input.startDate), 'errors.startDateRequired');
+  check(!input.endDate || input.endDate >= input.startDate, 'errors.endBeforeStart');
+  check(input.accountId && input.categoryId, 'errors.accountAndCategory');
   const id = input.id ?? newId();
   await db.transaction('rw', db.recurring, async () => {
     const existing = input.id ? await db.recurring.get(input.id) : undefined;
@@ -435,7 +440,7 @@ export async function setBudget(categoryId: string, limit: Pence | null): Promis
       if (existing) await db.budgets.delete(existing.id);
       return;
     }
-    check(isPence(limit) && limit > 0, 'Budget must be more than zero.');
+    check(isPence(limit) && limit > 0, 'errors.budgetPositive');
     await db.budgets.put({ id: existing?.id ?? newId(), categoryId, monthlyLimit: limit });
   });
 }
@@ -445,8 +450,8 @@ export async function setBudget(categoryId: string, limit: Pence | null): Promis
 export type RuleInput = Omit<Rule, 'id' | 'priority'> & { id?: string; priority?: number };
 
 export async function saveRule(input: RuleInput): Promise<string> {
-  check(input.pattern.trim(), 'Enter the text to match.');
-  check(input.categoryId, 'Pick a category.');
+  check(input.pattern.trim(), 'errors.patternRequired');
+  check(input.categoryId, 'errors.pickCategory');
   const id = input.id ?? newId();
   const priority = input.priority ?? ((await db.rules.orderBy('priority').last())?.priority ?? 0) + 1;
   await db.rules.put({ id, match: input.match, pattern: input.pattern.trim(), categoryId: input.categoryId, priority });
@@ -460,7 +465,7 @@ export async function deleteRule(id: string): Promise<void> {
 /** Applies a rule's category to existing transactions it matches. Returns how many changed. */
 export async function applyRuleToHistory(rule: Rule, matches: (payee: string) => boolean): Promise<number> {
   const cat = await db.categories.get(rule.categoryId);
-  check(cat, 'Category not found.');
+  check(cat, 'errors.categoryNotFound');
   return db.transactions
     .filter(
       (t) => !t.transferId && matches(t.payee) && (cat.kind === 'income' ? t.amount > 0 : t.amount < 0) && t.categoryId !== rule.categoryId,
@@ -471,7 +476,7 @@ export async function applyRuleToHistory(rule: Rule, matches: (payee: string) =>
 /** Renames a payee everywhere, and remembers the name for future imports. Returns how many transactions changed. */
 export async function renamePayee(from: string, to: string): Promise<number> {
   const key = payeeKey(from);
-  check(key && to.trim(), 'Enter a new name.');
+  check(key && to.trim(), 'errors.newNameRequired');
   return db.transaction('rw', db.payeeAliases, db.transactions, async () => {
     const existing = await db.payeeAliases.where('from').equals(key).first();
     await db.payeeAliases.put({ id: existing?.id ?? newId(), from: key, to: to.trim() });
@@ -498,10 +503,10 @@ export interface ImportRow {
 
 /** Saves an import in one go, tagged with a batch id so it can be undone. */
 export async function importTransactions(accountId: string, fileName: string, rows: ImportRow[]): Promise<ImportBatch> {
-  check(rows.length > 0, 'Nothing to import.');
+  check(rows.length > 0, 'errors.nothingToImport');
   const batch: ImportBatch = { id: newId(), accountId, fileName, importedAt: Date.now(), rowCount: rows.length };
   // Older installs may not have the fallback categories yet.
-  const fallbacks = DEFAULT_CATEGORIES.filter((c) => c.id === OTHER_EXPENSE_ID || c.id === OTHER_INCOME_ID);
+  const fallbacks = defaultCategories().filter((c) => c.id === OTHER_EXPENSE_ID || c.id === OTHER_INCOME_ID);
   const now = Date.now();
   const transactions: Transaction[] = rows.map((r) => ({
     id: newId(),
@@ -538,10 +543,10 @@ export async function undoImport(batchId: string): Promise<number> {
 export type GoalInput = Pick<Goal, 'name' | 'target' | 'saved' | 'deadline'> & { id?: string };
 
 export async function saveGoal(input: GoalInput): Promise<string> {
-  check(input.name.trim(), 'Name your goal.');
-  check(isPence(input.target) && input.target > 0, 'Target must be more than zero.');
-  check(isPence(input.saved) && input.saved >= 0, 'Saved must be zero or more.');
-  check(!input.deadline || ISO_DATE.test(input.deadline), 'Invalid date.');
+  check(input.name.trim(), 'errors.goalNameRequired');
+  check(isPence(input.target) && input.target > 0, 'errors.targetPositive');
+  check(isPence(input.saved) && input.saved >= 0, 'errors.savedNotNegative');
+  check(!input.deadline || ISO_DATE.test(input.deadline), 'errors.invalidDate');
   const id = input.id ?? newId();
   const existing = input.id ? await db.goals.get(input.id) : undefined;
   await db.goals.put({ ...input, id, name: input.name.trim(), createdAt: existing?.createdAt ?? Date.now() });
@@ -549,10 +554,10 @@ export async function saveGoal(input: GoalInput): Promise<string> {
 }
 
 export async function addToGoal(id: string, amount: Pence): Promise<void> {
-  check(isPence(amount) && amount !== 0, 'Enter an amount.');
+  check(isPence(amount) && amount !== 0, 'errors.amountRequired');
   await db.transaction('rw', db.goals, async () => {
     const goal = await db.goals.get(id);
-    check(goal, 'Goal not found.');
+    check(goal, 'errors.goalNotFound');
     await db.goals.update(id, { saved: Math.max(0, goal.saved + amount) });
   });
 }
@@ -564,12 +569,10 @@ export async function deleteGoal(id: string): Promise<void> {
 // ---------------------------------------------------------------- settings
 
 export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>): Promise<void> {
-  if (patch.payday !== undefined)
-    check(Number.isInteger(patch.payday) && patch.payday >= 1 && patch.payday <= 31, 'Payday must be a day between 1 and 31.');
-  if (patch.monthlySavings !== undefined)
-    check(isPence(patch.monthlySavings) && patch.monthlySavings >= 0, 'Savings must be zero or more.');
+  if (patch.payday !== undefined) check(Number.isInteger(patch.payday) && patch.payday >= 1 && patch.payday <= 31, 'errors.paydayRange');
+  if (patch.monthlySavings !== undefined) check(isPence(patch.monthlySavings) && patch.monthlySavings >= 0, 'errors.savingsNotNegative');
   if (patch.lowBalanceThreshold !== undefined)
-    check(isPence(patch.lowBalanceThreshold) && patch.lowBalanceThreshold >= 0, 'Threshold must be zero or more.');
+    check(isPence(patch.lowBalanceThreshold) && patch.lowBalanceThreshold >= 0, 'errors.thresholdNotNegative');
   await db.transaction('rw', db.settings, async () => {
     const current = (await db.settings.get('app')) ?? DEFAULT_SETTINGS;
     await db.settings.put({ ...DEFAULT_SETTINGS, ...current, ...patch });
@@ -577,7 +580,7 @@ export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>): Prom
 }
 
 export async function setPin(pin: string): Promise<void> {
-  check(isValidPin(pin), 'Use 4 to 8 digits.');
+  check(isValidPin(pin), 'errors.pinDigits');
   const { hash, salt } = await hashPin(pin);
   await updateSettings({ pinHash: hash, pinSalt: salt });
 }
@@ -629,19 +632,19 @@ export async function restoreBackup(json: string): Promise<{ transactions: numbe
   try {
     parsed = JSON.parse(json);
   } catch {
-    throw new ValidationError('This file is not a Ledger backup.');
+    throw new ValidationError(t('errors.notBackup'));
   }
-  check(parsed?.format === BACKUP_FORMAT && parsed.data && typeof parsed.data === 'object', 'This file is not a Ledger backup.');
-  check(parsed.version <= 2, 'This backup is from a newer version of Ledger.');
+  check(parsed?.format === BACKUP_FORMAT && parsed.data && typeof parsed.data === 'object', 'errors.notBackup');
+  check(parsed.version <= 2, 'errors.backupTooNew');
   const d = parsed.data;
   const arr = (k: string) => (Array.isArray(d[k]) ? d[k] : []) as never[];
-  check(Array.isArray(d.accounts) && Array.isArray(d.transactions), 'The backup is missing accounts or transactions.');
+  check(Array.isArray(d.accounts) && Array.isArray(d.transactions), 'errors.backupIncomplete');
   const keep = await db.settings.get('app');
   await db.transaction('rw', ALL_TABLES(), async () => {
     await Promise.all(ALL_TABLES().map((t) => t.clear()));
     await db.accounts.bulkPut(arr('accounts'));
     await db.categories.bulkPut(arr('categories'));
-    if (!(await db.categories.get(TRANSFER_CATEGORY_ID))) await db.categories.put(TRANSFER_CATEGORY);
+    if (!(await db.categories.get(TRANSFER_CATEGORY_ID))) await db.categories.put(transferCategory());
     await db.transactions.bulkPut(arr('transactions'));
     await db.recurring.bulkPut(arr('recurring'));
     await db.budgets.bulkPut(arr('budgets'));

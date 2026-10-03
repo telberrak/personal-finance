@@ -3,7 +3,8 @@ import { Icon } from '../components/Icon';
 import { useToast } from '../components/ui/Toast';
 import { mergeSplit, splitTransaction, ValidationError } from '../db/repo';
 import type { FinanceData, Transaction } from '../db/types';
-import { formatMoney, parseMoney } from '../lib/money';
+import { formatMoney, parseMoney, zeroPlaceholder } from '../lib/money';
+import { t } from '../i18n';
 
 interface Row {
   key: number;
@@ -68,30 +69,28 @@ export function SplitEditor({ data, group, onDone }: { data: FinanceData; group:
         group[0].id,
         rows.map((r, i) => ({ categoryId: r.categoryId, amount: amounts[i]!, note: r.note })),
       );
-      toast({ message: `Split into ${rows.length} parts`, action: { label: 'Undo', onClick: undo } });
+      toast({ message: t('split.done', { count: rows.length }), action: { label: t('common.undo'), onClick: undo } });
       onDone(true);
     } catch (err) {
       setBusy(false);
-      toast({ message: err instanceof ValidationError ? err.message : 'Could not split this payment.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('split.failed') });
     }
   }
 
   async function unsplit() {
     const undo = await mergeSplit(group[0].id);
-    toast({ message: 'Split removed', action: { label: 'Undo', onClick: undo } });
+    toast({ message: t('split.removed'), action: { label: t('common.undo'), onClick: undo } });
     onDone(true);
   }
 
   return (
     <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
-      <p className="label">
-        {group[0].payee} · {formatMoney(total)} across categories.
-      </p>
+      <p className="label">{t('split.intro', { payee: group[0].payee, amount: formatMoney(total) })}</p>
       <div className="stack" style={{ gap: 10 }}>
         {rows.map((r, i) => (
           <div key={r.key} className="split-row">
             <label className="visually-hidden" htmlFor={`split-cat-${r.key}`}>
-              Category for part {i + 1}
+              {t('split.categoryFor', { n: i + 1 })}
             </label>
             <select id={`split-cat-${r.key}`} value={r.categoryId} onChange={(e) => update(r.key, { categoryId: e.target.value })}>
               {categories.map((c) => (
@@ -101,12 +100,12 @@ export function SplitEditor({ data, group, onDone }: { data: FinanceData; group:
               ))}
             </select>
             <label className="visually-hidden" htmlFor={`split-amt-${r.key}`}>
-              Amount for part {i + 1}
+              {t('split.amountFor', { n: i + 1 })}
             </label>
             <input
               id={`split-amt-${r.key}`}
               inputMode="decimal"
-              placeholder="0.00"
+              placeholder={zeroPlaceholder()}
               value={r.text}
               aria-invalid={r.text !== '' && amounts[i] === null}
               onChange={(e) => update(r.key, { text: e.target.value.replace(/[^\d.,]/g, '') })}
@@ -114,19 +113,19 @@ export function SplitEditor({ data, group, onDone }: { data: FinanceData; group:
             <button
               type="button"
               className="icon-btn icon-btn--ghost"
-              aria-label={`Remove part ${i + 1}`}
+              aria-label={t('split.remove', { n: i + 1 })}
               disabled={rows.length <= 2}
               onClick={() => setRows(rows.filter((x) => x.key !== r.key))}
             >
               <Icon name="close" size={18} />
             </button>
             <label className="visually-hidden" htmlFor={`split-note-${r.key}`}>
-              Note for part {i + 1}
+              {t('split.noteFor', { n: i + 1 })}
             </label>
             <input
               id={`split-note-${r.key}`}
               className="split-note"
-              placeholder="Note (optional)"
+              placeholder={t('split.notePlaceholder')}
               value={r.note}
               onChange={(e) => update(r.key, { note: e.target.value })}
             />
@@ -137,22 +136,22 @@ export function SplitEditor({ data, group, onDone }: { data: FinanceData; group:
       <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
         <span className={'num ' + (remaining === 0 ? 'text-pos' : 'text-warn')} role="status">
           {remaining === 0
-            ? 'All assigned'
+            ? t('split.allAssigned')
             : remaining > 0
-              ? `${formatMoney(remaining)} left to assign`
-              : `${formatMoney(-remaining)} too much`}
+              ? t('split.left', { amount: formatMoney(remaining) })
+              : t('split.tooMuch', { amount: formatMoney(-remaining) })}
         </span>
         <div className="row" style={{ gap: 8 }}>
           {remaining !== 0 && (
             <button type="button" className="btn btn--sm" onClick={balanceFirst}>
-              Balance first part
+              {t('split.balanceFirst')}
             </button>
           )}
           <button type="button" className="btn btn--sm" onClick={splitEvenly}>
-            Split evenly
+            {t('split.evenly')}
           </button>
           <button type="button" className="btn btn--sm" onClick={addRow}>
-            + Add part
+            {t('split.addPart')}
           </button>
         </div>
       </div>
@@ -160,15 +159,15 @@ export function SplitEditor({ data, group, onDone }: { data: FinanceData; group:
       <div className="grid-2">
         {isSplit ? (
           <button type="button" className="btn" onClick={unsplit}>
-            Remove split
+            {t('split.removeSplit')}
           </button>
         ) : (
           <button type="button" className="btn" onClick={() => onDone(false)}>
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
         <button type="submit" className="btn btn--solid" disabled={!valid || busy}>
-          Save split
+          {t('split.save')}
         </button>
       </div>
     </form>

@@ -13,9 +13,10 @@ import { parseMoney } from '../lib/money';
 import { formatMoney } from '../lib/money';
 import { suggestCategory } from '../lib/rules';
 import { SplitEditor } from './SplitEditor';
+import { t } from '../i18n';
 
 type Kind = 'expense' | 'income' | 'transfer';
-const KIND_LABEL: Record<Kind, string> = { expense: 'Expense', income: 'Income', transfer: 'Transfer' };
+const kindLabel = (k: Kind) => t(`txForm.kind.${k}`);
 
 const nowTime = () => {
   const d = new Date();
@@ -26,14 +27,14 @@ const nowTime = () => {
 export function TransactionForm({ data }: { data?: FinanceData }) {
   const { id } = useParams();
   if (!data) return <Loading />;
-  const existing = id ? data.transactions.find((t) => t.id === id) : undefined;
+  const existing = id ? data.transactions.find((x) => x.id === id) : undefined;
   if (id && !existing) {
     return (
       <main className="screen screen--modal">
-        <h1 className="screen-title">Transaction not found</h1>
-        <p className="label">It may have been deleted.</p>
+        <h1 className="screen-title">{t('txForm.notFound')}</h1>
+        <p className="label">{t('txForm.maybeDeleted')}</p>
         <Link to="/activity" className="btn" style={{ alignSelf: 'flex-start' }}>
-          Back to Activity
+          {t('txForm.backToActivity')}
         </Link>
       </main>
     );
@@ -47,7 +48,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
   const [params] = useSearchParams();
   const toast = useToast();
 
-  const pair = existing?.transferId ? data.transactions.filter((t) => t.transferId === existing.transferId) : [];
+  const pair = existing?.transferId ? data.transactions.filter((x) => x.transferId === existing.transferId) : [];
   const initialKind: Kind = existing
     ? existing.transferId
       ? 'transfer'
@@ -62,15 +63,15 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
   const [payee, setPayee] = useState(existing && !existing.transferId ? existing.payee : '');
   const [date, setDate] = useState(existing?.date ?? today());
   const [accountId, setAccountId] = useState(existing?.accountId ?? params.get('account') ?? openAccounts[0]?.id);
-  const [fromAccountId, setFromAccountId] = useState(pair.find((t) => t.amount < 0)?.accountId ?? openAccounts[0]?.id);
-  const [toAccountId, setToAccountId] = useState(pair.find((t) => t.amount > 0)?.accountId ?? openAccounts[1]?.id);
+  const [fromAccountId, setFromAccountId] = useState(pair.find((x) => x.amount < 0)?.accountId ?? openAccounts[0]?.id);
+  const [toAccountId, setToAccountId] = useState(pair.find((x) => x.amount > 0)?.accountId ?? openAccounts[1]?.id);
   const [categoryId, setCategoryId] = useState<string | undefined>(existing?.categoryId);
   const [categoryTouched, setCategoryTouched] = useState(!!existing);
   const [note, setNote] = useState(existing?.note ?? '');
   const [saving, setSaving] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
   const splitGroup = existing?.splitId
-    ? data.transactions.filter((t) => t.splitId === existing.splitId).sort((a, b) => (a.splitIndex ?? 0) - (b.splitIndex ?? 0))
+    ? data.transactions.filter((x) => x.splitId === existing.splitId).sort((a, b) => (a.splitIndex ?? 0) - (b.splitIndex ?? 0))
     : existing
       ? [existing]
       : [];
@@ -115,7 +116,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
         const input = { fromAccountId: fromAccountId!, toAccountId: toAccountId!, amount, date, note };
         if (existing?.transferId) await updateTransfer(existing.transferId, input);
         else await addTransfer(input);
-        toast({ message: existing ? 'Transfer updated' : 'Transfer saved' });
+        toast({ message: existing ? t('txForm.transferUpdated') : t('txForm.transferSaved') });
         close();
         return;
       }
@@ -131,13 +132,13 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
         await updateTransaction(existing.id, fields);
         const recategorised = existing.categoryId !== fields.categoryId;
         toast({
-          message: 'Changes saved',
+          message: t('txForm.changesSaved'),
           action: recategorised
             ? {
-                label: `Always ${selectedCategory!.name}`,
+                label: t('txForm.always', { name: selectedCategory!.name }),
                 onClick: async () => {
                   await saveRule({ match: 'exact', pattern: payee.trim(), categoryId: fields.categoryId });
-                  toast({ message: `Future “${payee.trim()}” payments will be ${selectedCategory!.name}` });
+                  toast({ message: t('txForm.ruleCreated', { payee: payee.trim(), category: selectedCategory!.name }) });
                 },
               }
             : undefined,
@@ -145,9 +146,9 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
       } else {
         const id = await addTransaction({ ...fields, time: date === today() ? nowTime() : undefined });
         toast({
-          message: `${KIND_LABEL[kind]} saved`,
+          message: t(`txForm.saved.${kind}`),
           action: {
-            label: 'Undo',
+            label: t('common.undo'),
             onClick: async () => {
               await deleteTransaction(id);
             },
@@ -157,15 +158,15 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
       close();
     } catch (err) {
       setSaving(false);
-      toast({ message: err instanceof ValidationError ? err.message : 'Could not save. Please try again.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('txForm.saveFailed') });
     }
   }
 
   async function remove() {
     if (!existing) return;
     const undo = await deleteTransaction(existing.id);
-    const what = existing.transferId ? 'Transfer' : existing.splitId ? 'Split payment' : 'Transaction';
-    toast({ message: `${what} deleted`, action: { label: 'Undo', onClick: undo } });
+    const what = existing.transferId ? 'transfer' : existing.splitId ? 'split' : 'transaction';
+    toast({ message: t(`txForm.deleted.${what}`), action: { label: t('common.undo'), onClick: undo } });
     close();
   }
 
@@ -180,12 +181,12 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
       <main className="screen screen--modal">
         <form className="form-contents" onSubmit={save}>
           <header className="screen-header">
-            <button type="button" className="icon-btn" aria-label="Close" onClick={close}>
+            <button type="button" className="icon-btn" aria-label={t('common.close')} onClick={close}>
               <Icon name="close" size={20} strokeWidth={2} />
             </button>
-            <h1 style={{ fontSize: 17, fontWeight: 600 }}>{existing ? `Edit ${kind}` : `New ${kind}`}</h1>
+            <h1 style={{ fontSize: 17, fontWeight: 600 }}>{existing ? t(`txForm.edit.${kind}`) : t(`txForm.new.${kind}`)}</h1>
             {existing ? (
-              <button type="button" className="icon-btn" aria-label="Delete" onClick={remove}>
+              <button type="button" className="icon-btn" aria-label={t('common.delete')} onClick={remove}>
                 <Icon name="trash" size={20} />
               </button>
             ) : (
@@ -194,7 +195,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
           </header>
 
           {kinds.length > 1 && (
-            <div className="segmented" role="radiogroup" aria-label="Type">
+            <div className="segmented" role="radiogroup" aria-label={t('fields.type')}>
               {kinds.map((k) => (
                 <button
                   key={k}
@@ -209,7 +210,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
                     }
                   }}
                 >
-                  {KIND_LABEL[k]}
+                  {kindLabel(k)}
                 </button>
               ))}
             </div>
@@ -218,13 +219,13 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
           <MoneyInput value={amountText} onChange={setAmountText} autoFocus={!existing} disabled={!!existing?.splitId} />
           {existing?.splitId && (
             <p className="label" style={{ textAlign: 'center', marginTop: -8 }}>
-              Part of a {formatMoney(Math.abs(splitTotal))} payment split into {splitGroup.length} parts
+              {t('txForm.splitInfo', { amount: formatMoney(Math.abs(splitTotal)), count: splitGroup.length })}
             </p>
           )}
 
           {kind === 'transfer' ? (
             <div className="list">
-              <Field label="From">
+              <Field label={t('txForm.from')}>
                 {(id) => (
                   <select id={id} value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)}>
                     {openAccounts.map((a) => (
@@ -235,7 +236,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
                   </select>
                 )}
               </Field>
-              <Field label="To">
+              <Field label={t('txForm.to')}>
                 {(id) => (
                   <select id={id} value={toAccountId} onChange={(e) => setToAccountId(e.target.value)}>
                     {openAccounts.map((a) => (
@@ -246,23 +247,31 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
                   </select>
                 )}
               </Field>
-              <Field label="Date">
+              <Field label={t('fields.date')}>
                 {(id) => <input id={id} type="date" value={date} onChange={(e) => setDate(e.target.value || today())} />}
               </Field>
-              <Field label="Note">
-                {(id) => <input id={id} autoComplete="off" placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} />}
+              <Field label={t('fields.note')}>
+                {(id) => (
+                  <input
+                    id={id}
+                    autoComplete="off"
+                    placeholder={t('fields.optional')}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                )}
               </Field>
             </div>
           ) : (
             <div className="list">
-              <Field label={kind === 'expense' ? 'Payee' : 'From'}>
+              <Field label={kind === 'expense' ? t('txForm.payee') : t('txForm.from')}>
                 {(id) => (
                   <input
                     id={id}
                     list="payees"
                     autoComplete="off"
                     autoCapitalize="words"
-                    placeholder="e.g. Tesco"
+                    placeholder={t('txForm.payeePlaceholder')}
                     value={payee}
                     onChange={(e) => onPayeeChange(e.target.value)}
                   />
@@ -273,10 +282,10 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
                   <option key={p} value={p} />
                 ))}
               </datalist>
-              <Field label="Date">
+              <Field label={t('fields.date')}>
                 {(id) => <input id={id} type="date" value={date} onChange={(e) => setDate(e.target.value || today())} />}
               </Field>
-              <Field label="Account">
+              <Field label={t('fields.account')}>
                 {(id) => (
                   <select id={id} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
                     {openAccounts.map((a) => (
@@ -287,22 +296,30 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
                   </select>
                 )}
               </Field>
-              <Field label="Note">
-                {(id) => <input id={id} autoComplete="off" placeholder="Optional" value={note} onChange={(e) => setNote(e.target.value)} />}
+              <Field label={t('fields.note')}>
+                {(id) => (
+                  <input
+                    id={id}
+                    autoComplete="off"
+                    placeholder={t('fields.optional')}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                )}
               </Field>
             </div>
           )}
 
           {kind === 'transfer' && openAccounts.length < 2 && (
             <p className="callout small">
-              You need two accounts to move money between them. <Link to="/settings/accounts">Add an account</Link>
+              {t('txForm.needTwoAccounts')} <Link to="/settings/accounts">{t('txForm.addAccount')}</Link>
             </p>
           )}
 
           {kind !== 'transfer' && (
             <div className="section">
               <span className="section-label" id="cat-label">
-                Category
+                {t('fields.category')}
               </span>
               <div className="chips" role="radiogroup" aria-labelledby="cat-label">
                 {categories.map((c) => (
@@ -328,26 +345,32 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
 
           {existing && !existing.transferId && (
             <button type="button" className="btn" style={{ alignSelf: 'flex-start' }} onClick={() => setSplitOpen(true)}>
-              {existing.splitId ? 'Edit split' : 'Split across categories'}
+              {existing.splitId ? t('txForm.editSplit') : t('txForm.split')}
             </button>
           )}
 
           {linkedBill && (
             <p className="label">
-              Payment for the bill <Link to={`/bills/${linkedBill.id}`}>{linkedBill.name}</Link>.
+              {t('txForm.billPrefix')}
+              <Link to={`/bills/${linkedBill.id}`}>{linkedBill.name}</Link>
+              {t('txForm.billSuffix')}
             </p>
           )}
           {existing?.rawPayee && existing.rawPayee !== existing.payee && (
-            <p className="small muted">Bank description: {existing.rawPayee}</p>
+            <p className="small muted">{t('txForm.bankDescription', { text: existing.rawPayee })}</p>
           )}
 
           <button type="submit" className="btn btn--primary" disabled={!canSave} style={{ marginTop: 8 }}>
-            {existing ? 'Save changes' : `Save ${kind}`}
+            {existing ? t('common.saveChanges') : t(`txForm.save.${kind}`)}
           </button>
         </form>
       </main>
       {/* Outside the form: a nested form's submit would also submit this one. */}
-      <Sheet open={splitOpen} onClose={() => setSplitOpen(false)} title={existing?.splitId ? 'Edit split' : 'Split payment'}>
+      <Sheet
+        open={splitOpen}
+        onClose={() => setSplitOpen(false)}
+        title={existing?.splitId ? t('txForm.editSplit') : t('txForm.splitTitle')}
+      >
         {splitOpen && existing && (
           <SplitEditor
             data={data}

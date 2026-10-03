@@ -23,13 +23,14 @@ import {
 } from '../db/repo';
 import type { FinanceData, ThemePreference } from '../db/types';
 import { today } from '../lib/dates';
-import { formatMoney, parseMoney } from '../lib/money';
+import { currencyName, formatMoney, parseMoney } from '../lib/money';
 import { isValidPin, pinSupported } from '../lib/pin';
+import { CURRENCIES, LANGUAGES, t } from '../i18n';
 
 const THEMES: { id: ThemePreference; label: string }[] = [
-  { id: 'system', label: 'System' },
-  { id: 'light', label: 'Light' },
-  { id: 'dark', label: 'Dark' },
+  { id: 'system', label: 'settings.theme.system' },
+  { id: 'light', label: 'settings.theme.light' },
+  { id: 'dark', label: 'settings.theme.dark' },
 ];
 
 function LinkRow({ to, icon, title, detail }: { to: string; icon: IconName; title: string; detail: string }) {
@@ -64,7 +65,7 @@ function MoneySetting({ label, value, onSave }: { label: string; value: number; 
             if (text === undefined) return;
             const pence = parseMoney(text);
             if (pence !== null) await onSave(pence);
-            else toast({ message: 'Enter an amount, like 200 or 150.50' });
+            else toast({ message: t('settings.amountHint') });
             setText(undefined);
           }}
           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
@@ -95,33 +96,33 @@ export function Settings({ data }: { data?: FinanceData }) {
 
   async function onReset() {
     const ok = await confirm({
-      title: 'Reset demo data?',
-      message: 'This replaces everything in the app with fresh demo data.',
-      confirmLabel: 'Reset',
+      title: t('settings.resetTitle'),
+      message: t('settings.resetBody'),
+      confirmLabel: t('settings.reset'),
       danger: true,
     });
     if (!ok) return;
     await resetDemoData();
-    toast({ message: 'Demo data restored' });
+    toast({ message: t('settings.resetDone') });
   }
 
   async function onErase() {
     const ok = await confirm({
-      title: 'Erase all data?',
-      message: 'All transactions, bills, budgets and goals on this device will be deleted. This cannot be undone.',
-      confirmLabel: 'Erase',
+      title: t('settings.eraseTitle'),
+      message: t('settings.eraseBody'),
+      confirmLabel: t('settings.erase'),
       danger: true,
     });
     if (!ok) return;
     await eraseAllData();
-    toast({ message: 'All data erased' });
+    toast({ message: t('settings.eraseDone') });
   }
 
   async function onBackup() {
     const backup = await createBackup();
     downloadFile(backupFileName(), JSON.stringify(backup, null, 2), 'application/json');
     await markBackedUp();
-    toast({ message: 'Backup downloaded' });
+    toast({ message: t('settings.backupDone') });
   }
 
   async function onCsv() {
@@ -131,92 +132,125 @@ export function Settings({ data }: { data?: FinanceData }) {
   async function onRestoreFile(file: File | undefined) {
     if (!file) return;
     const ok = await confirm({
-      title: 'Restore this backup?',
-      message: `Everything in the app will be replaced with the contents of ${file.name}.`,
-      confirmLabel: 'Restore',
+      title: t('settings.restoreTitle'),
+      message: t('settings.restoreBody', { file: file.name }),
+      confirmLabel: t('settings.restore'),
       danger: true,
     });
     if (!ok) return;
     try {
       const { transactions } = await restoreBackup(await file.text());
-      toast({ message: `Backup restored: ${transactions} transactions` });
+      toast({ message: t('settings.restored', { count: transactions }) });
     } catch (err) {
-      toast({ message: err instanceof ValidationError ? err.message : 'Could not read that backup.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('settings.restoreFailed') });
     }
   }
 
   async function onRemovePin() {
-    const ok = await confirm({ title: 'Turn off the app lock?', confirmLabel: 'Turn off' });
+    const ok = await confirm({ title: t('settings.lockOffTitle'), confirmLabel: t('settings.turnOff') });
     if (!ok) return;
     await clearPin();
-    toast({ message: 'App lock turned off' });
+    toast({ message: t('settings.lockOffDone') });
   }
 
   return (
     <main className="screen screen--modal">
       {isDesktop ? (
-        <PageHeader title="Settings" />
+        <PageHeader title={t('settings.title')} />
       ) : (
         <header className="screen-header">
-          <Link to="/" className="icon-btn" aria-label="Back">
+          <Link to="/" className="icon-btn" aria-label={t('common.back')}>
             <Icon name="back" size={20} strokeWidth={2} />
           </Link>
-          <h1 style={{ fontSize: 17, fontWeight: 600 }}>Settings</h1>
+          <h1 style={{ fontSize: 17, fontWeight: 600 }}>{t('settings.title')}</h1>
           <span style={{ width: 44 }} />
         </header>
       )}
 
-      <Section title="Appearance">
-        <div className="segmented" role="radiogroup" aria-label="Theme">
-          {THEMES.map((t) => (
+      <Section title={t('settings.appearance')}>
+        <div className="segmented" role="radiogroup" aria-label={t('settings.themeLabel')}>
+          {THEMES.map((th) => (
             <button
-              key={t.id}
+              key={th.id}
               type="button"
               role="radio"
-              aria-checked={settings.theme === t.id}
-              onClick={() => updateSettings({ theme: t.id })}
+              aria-checked={settings.theme === th.id}
+              onClick={() => updateSettings({ theme: th.id })}
             >
-              {t.label}
+              {t(th.label)}
             </button>
           ))}
         </div>
       </Section>
 
-      <Section title="Pay cycle">
+      <Section title={t('settings.languageRegion')}>
         <div className="list">
-          <Field label="Payday">
+          <Field label={t('settings.language')}>
             {(id) => (
-              <select id={id} value={settings.payday} onChange={(e) => updateSettings({ payday: Number(e.target.value) })}>
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={d}>
-                    Day {d} of the month
+              <select id={id} value={settings.language} onChange={(e) => updateSettings({ language: e.target.value })}>
+                {LANGUAGES.filter((l) => !l.pseudo || import.meta.env.DEV).map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.name}
                   </option>
                 ))}
               </select>
             )}
           </Field>
-          <MoneySetting label="Savings" value={settings.monthlySavings} onSave={(v) => updateSettings({ monthlySavings: v })} />
+          <Field label={t('settings.currency')}>
+            {(id) => (
+              <select id={id} value={settings.currency} onChange={(e) => updateSettings({ currency: e.target.value })}>
+                {CURRENCIES.map((c) => (
+                  <option key={c} value={c}>
+                    {currencyName(c)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        </div>
+        <p className="small muted" style={{ padding: '0 4px' }}>
+          {t('settings.currencyNote')}
+        </p>
+      </Section>
+
+      <Section title={t('settings.payCycle')}>
+        <div className="list">
+          <Field label={t('settings.payday')}>
+            {(id) => (
+              <select id={id} value={settings.payday} onChange={(e) => updateSettings({ payday: Number(e.target.value) })}>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                  <option key={d} value={d}>
+                    {t('settings.paydayOption', { day: d })}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
           <MoneySetting
-            label="Warn below"
+            label={t('settings.savings')}
+            value={settings.monthlySavings}
+            onSave={(v) => updateSettings({ monthlySavings: v })}
+          />
+          <MoneySetting
+            label={t('settings.warnBelow')}
             value={settings.lowBalanceThreshold}
             onSave={(v) => updateSettings({ lowBalanceThreshold: v })}
           />
         </div>
         <p className="small muted" style={{ padding: '0 4px' }}>
-          Savings are set aside each pay cycle and left out of “safe to spend”. You are warned when your forecast balance may drop below the
-          low balance amount.
+          {t('settings.payCycleNote')}
         </p>
       </Section>
 
-      <Section title="Budgets">
-        <div className="segmented" role="radiogroup" aria-label="Budget period">
+      <Section title={t('settings.budgets')}>
+        <div className="segmented" role="radiogroup" aria-label={t('settings.budgetPeriod')}>
           <button
             type="button"
             role="radio"
             aria-checked={settings.budgetPeriod === 'month'}
             onClick={() => updateSettings({ budgetPeriod: 'month' })}
           >
-            Calendar month
+            {t('settings.calendarMonth')}
           </button>
           <button
             type="button"
@@ -224,108 +258,117 @@ export function Settings({ data }: { data?: FinanceData }) {
             aria-checked={settings.budgetPeriod === 'payday'}
             onClick={() => updateSettings({ budgetPeriod: 'payday' })}
           >
-            Payday to payday
+            {t('settings.paydayToPayday')}
           </button>
         </div>
         <label className="check-row">
           <input type="checkbox" checked={settings.budgetRollover} onChange={(e) => updateSettings({ budgetRollover: e.target.checked })} />
           <span>
-            Carry over what is left
+            {t('settings.rollover')}
             <span className="small muted" style={{ display: 'block' }}>
-              Unspent (or overspent) budget moves into the next period
+              {t('settings.rolloverHint')}
             </span>
           </span>
         </label>
       </Section>
 
-      <Section title="Manage">
+      <Section title={t('settings.manage')}>
         <div className="list">
           <LinkRow
             to="/settings/accounts"
             icon="wallet"
-            title="Accounts"
-            detail={`${data.accounts.filter((a) => !a.archived).length} open`}
+            title={t('settings.accounts')}
+            detail={t('settings.accountsOpen', { count: data.accounts.filter((a) => !a.archived).length })}
           />
           <LinkRow
             to="/settings/categories"
             icon="tag"
-            title="Categories"
-            detail={`${data.categories.filter((c) => !c.system && !c.archived).length} categories`}
+            title={t('settings.categories')}
+            detail={t('settings.categoriesCount', { count: data.categories.filter((c) => !c.system && !c.archived).length })}
           />
-          <LinkRow to="/settings/rules" icon="rules" title="Rules and payee names" detail={`${data.rules.length} rules`} />
-          <LinkRow to="/import" icon="upload" title="Import a bank statement" detail="CSV from your bank" />
+          <LinkRow
+            to="/settings/rules"
+            icon="rules"
+            title={t('settings.rules')}
+            detail={t('settings.rulesCount', { count: data.rules.length })}
+          />
+          <LinkRow to="/import" icon="upload" title={t('settings.importStatement')} detail={t('settings.importDetail')} />
         </div>
       </Section>
 
-      <Section title="Security">
+      <Section title={t('settings.security')}>
         <div className="list">
           <div className="list-row">
             <div className="tile" aria-hidden="true">
               <Icon name="lock" size={20} />
             </div>
             <div className="grow stack" style={{ gap: 2 }}>
-              <span className="item-title">App lock</span>
+              <span className="item-title">{t('settings.appLock')}</span>
               <span className="item-meta">
-                {!pinSupported() ? 'Needs HTTPS or localhost' : settings.pinHash ? 'On — PIN required to open' : 'Off'}
+                {!pinSupported() ? t('settings.lockNeedsHttps') : settings.pinHash ? t('settings.lockOn') : t('settings.lockOff')}
               </span>
             </div>
             {pinSupported() && (
               <button type="button" className="btn btn--sm" onClick={() => setPinSheet(true)}>
-                {settings.pinHash ? 'Change PIN' : 'Set PIN'}
+                {settings.pinHash ? t('settings.changePin') : t('settings.setPin')}
               </button>
             )}
           </div>
           {settings.pinHash && (
             <>
-              <Field label="Lock after">
+              <Field label={t('settings.lockAfter')}>
                 {(id) => (
                   <select
                     id={id}
                     value={settings.lockAfterMinutes}
                     onChange={(e) => updateSettings({ lockAfterMinutes: Number(e.target.value) })}
                   >
-                    <option value={0}>Immediately</option>
-                    <option value={1}>1 minute</option>
-                    <option value={5}>5 minutes</option>
-                    <option value={15}>15 minutes</option>
-                    <option value={60}>1 hour</option>
+                    <option value={0}>{t('settings.immediately')}</option>
+                    <option value={1}>{t('settings.minutes', { count: 1 })}</option>
+                    <option value={5}>{t('settings.minutes', { count: 5 })}</option>
+                    <option value={15}>{t('settings.minutes', { count: 15 })}</option>
+                    <option value={60}>{t('settings.oneHour')}</option>
                   </select>
                 )}
               </Field>
               <button type="button" className="list-row plain-btn text-warn" onClick={onRemovePin}>
-                Turn off app lock
+                {t('settings.turnOffLock')}
               </button>
             </>
           )}
         </div>
         <p className="small muted" style={{ padding: '0 4px' }}>
-          The PIN keeps others out of the app on this device. If you forget it, clear this site’s data in your browser to start again.
+          {t('settings.lockNote')}
         </p>
       </Section>
 
-      <Section title="Backup" id="backup">
+      <Section title={t('settings.backup')} id="backup">
         <p className="label" style={{ padding: '0 4px' }}>
-          {backupAge === undefined ? 'Not backed up yet.' : backupAge === 0 ? 'Last backup: today.' : `Last backup: ${backupAge} days ago.`}{' '}
-          Your data only lives on this device, so keep a copy somewhere safe.
+          {backupAge === undefined
+            ? t('settings.notBackedUp')
+            : backupAge === 0
+              ? t('settings.backupToday')
+              : t('settings.backupDays', { count: backupAge })}{' '}
+          {t('settings.backupNote')}
         </p>
         <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
           <button type="button" className="btn btn--solid" onClick={onBackup}>
             <Icon name="download" size={18} />
-            Download backup
+            {t('settings.downloadBackup')}
           </button>
           <button type="button" className="btn" onClick={() => fileInput.current?.click()}>
             <Icon name="upload" size={18} />
-            Restore from backup
+            {t('settings.restoreFromBackup')}
           </button>
           <button type="button" className="btn" onClick={onCsv}>
-            Export transactions (CSV)
+            {t('settings.exportCsv')}
           </button>
           <input
             ref={fileInput}
             type="file"
             accept="application/json,.json"
             hidden
-            aria-label="Backup file"
+            aria-label={t('settings.backupFile')}
             onChange={(e) => {
               void onRestoreFile(e.target.files?.[0]);
               e.target.value = '';
@@ -334,18 +377,18 @@ export function Settings({ data }: { data?: FinanceData }) {
         </div>
       </Section>
 
-      <Section title="Data">
+      <Section title={t('settings.data')}>
         <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
           <button type="button" className="btn" onClick={onReset}>
-            Reset demo data
+            {t('settings.resetDemo')}
           </button>
           <button type="button" className="btn btn--danger" onClick={onErase}>
-            Erase all data
+            {t('settings.eraseAll')}
           </button>
         </div>
       </Section>
 
-      <Sheet open={pinSheet} onClose={() => setPinSheet(false)} title={settings.pinHash ? 'Change PIN' : 'Set a PIN'}>
+      <Sheet open={pinSheet} onClose={() => setPinSheet(false)} title={settings.pinHash ? t('settings.changePin') : t('settings.setAPin')}>
         {pinSheet && <PinForm onDone={() => setPinSheet(false)} />}
       </Sheet>
     </main>
@@ -363,17 +406,17 @@ function PinForm({ onDone }: { onDone: () => void }) {
     if (!valid) return;
     try {
       await setPin(pin);
-      toast({ message: 'App lock is on' });
+      toast({ message: t('settings.lockIsOn') });
       onDone();
     } catch (err) {
-      toast({ message: err instanceof ValidationError ? err.message : 'Could not set the PIN.' });
+      toast({ message: err instanceof ValidationError ? err.message : t('settings.pinFailed') });
     }
   }
 
   return (
     <form className="stack" style={{ gap: 16 }} onSubmit={submit}>
       <div className="list">
-        <Field label="New PIN">
+        <Field label={t('settings.newPin')}>
           {(id) => (
             <input
               id={id}
@@ -386,7 +429,7 @@ function PinForm({ onDone }: { onDone: () => void }) {
             />
           )}
         </Field>
-        <Field label="Repeat">
+        <Field label={t('settings.repeat')}>
           {(id) => (
             <input
               id={id}
@@ -400,13 +443,16 @@ function PinForm({ onDone }: { onDone: () => void }) {
           )}
         </Field>
       </div>
-      <p className="small muted">4 to 8 digits.{again && pin !== again ? ' The PINs do not match.' : ''}</p>
+      <p className="small muted">
+        {t('settings.pinDigits')}
+        {again && pin !== again ? t('settings.pinMismatch') : ''}
+      </p>
       <div className="grid-2">
         <button type="button" className="btn" onClick={onDone}>
-          Cancel
+          {t('common.cancel')}
         </button>
         <button type="submit" className="btn btn--solid" disabled={!valid}>
-          Save PIN
+          {t('settings.savePin')}
         </button>
       </div>
     </form>

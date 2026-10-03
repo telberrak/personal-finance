@@ -109,6 +109,9 @@ const PATHS = {
 
 export type IconName = keyof typeof PATHS;
 
+/** Icons that point left or right flip in right-to-left languages. */
+const MIRRORED = new Set<IconName>(['back', 'forward', 'trendUp']);
+
 export function Icon({
   name,
   size = 24,
@@ -122,6 +125,7 @@ export function Icon({
 }) {
   return (
     <svg
+      className={MIRRORED.has(name) ? 'mirror-rtl' : undefined}
       width={size}
       height={size}
       viewBox="0 0 24 24"

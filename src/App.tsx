@@ -6,6 +6,7 @@ import { ConfirmProvider } from './components/ui/Dialog';
 import { ToastProvider } from './components/ui/Toast';
 import { useTheme } from './components/useTheme';
 import { useFinanceData } from './db/db';
+import { applyLocale } from './i18n';
 import type { FinanceData } from './db/types';
 import { Activity } from './pages/Activity';
 import { BillForm } from './pages/BillForm';
@@ -28,6 +29,8 @@ const Rules = page(() => import('./pages/Rules'), 'Rules');
 
 export function App() {
   const data = useFinanceData();
+  // Language, text direction and number/date formats must be in place before anything renders.
+  if (data) applyLocale(data.settings.language, data.settings.currency);
   useTheme(data?.settings.theme);
   const lock = useAppLock(data?.settings);
 

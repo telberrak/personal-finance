@@ -139,6 +139,10 @@ export interface Settings {
   /** Set aside each pay cycle; excluded from "safe to spend". */
   monthlySavings: Pence;
   theme: ThemePreference;
+  /** Interface language code (see LANGUAGES in src/i18n). */
+  language: string;
+  /** ISO 4217 code used to display amounts. Changing it does not convert anything. */
+  currency: string;
   /** Calendar months, or payday to the day before the next payday. */
   budgetPeriod: BudgetPeriod;
   /** Carry unspent (or overspent) budget into the next period. */
@@ -161,6 +165,8 @@ export const DEFAULT_SETTINGS: Settings = {
   payday: 25,
   monthlySavings: 20000,
   theme: 'system',
+  language: 'en',
+  currency: 'GBP',
   budgetPeriod: 'month',
   budgetRollover: false,
   lowBalanceThreshold: 10000,

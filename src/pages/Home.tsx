@@ -5,9 +5,21 @@ import { BillRow, catVar, methodLabel, TransactionRow } from '../components/rows
 import { useIsDesktop } from '../components/useMediaQuery';
 import { daysSinceBackup } from '../db/repo';
 import type { FinanceData } from '../db/types';
-import { addDays, daysBetween, dueLabel, endOfMonth, formatLong, formatMonth, shiftMonth, startOfMonth, today } from '../lib/dates';
+import {
+  addDays,
+  daysBetween,
+  dueLabel,
+  endOfMonth,
+  formatDayMonth,
+  formatLong,
+  formatMonth,
+  formatShort,
+  shiftMonth,
+  startOfMonth,
+  today,
+} from '../lib/dates';
 import { forecastBalance } from '../lib/forecast';
-import { formatMoney, formatPounds } from '../lib/money';
+import { formatMoney, formatWhole, moneyParts } from '../lib/money';
 import { periodFor } from '../lib/periods';
 import {
   billOccurrences,
@@ -19,11 +31,12 @@ import {
   safeToSpend,
   spendVersusLastMonth,
 } from '../lib/selectors';
+import { t } from '../i18n';
 
 function greeting(hour: number) {
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return t('home.goodMorning');
+  if (hour < 18) return t('home.goodAfternoon');
+  return t('home.goodEvening');
 }
 
 export function Home({ data }: { data?: FinanceData }) {
@@ -32,7 +45,7 @@ export function Home({ data }: { data?: FinanceData }) {
 
   const ref = today();
   const s = safeToSpend(data, ref);
-  const [safePounds, safePence] = formatMoney(s.safe).split('.');
+  const safeParts = moneyParts(s.safe);
   const spent = dayToDaySpend(data.transactions, startOfMonth(ref), ref);
   const budgetTotal = data.budgets.reduce((sum, b) => sum + b.monthlyLimit, 0);
   const diff = spendVersusLastMonth(data.transactions, ref);
@@ -62,22 +75,26 @@ export function Home({ data }: { data?: FinanceData }) {
           <h1 className="home-title">{greeting(new Date().getHours())}</h1>
         </div>
         {!isDesktop && (
-          <Link to="/settings" className="icon-btn" aria-label="Settings">
+          <Link to="/settings" className="icon-btn" aria-label={t('nav.settings')}>
             <Icon name="settings" size={20} />
           </Link>
         )}
       </header>
 
       {(overdue.length > 0 || lowSoon || needsBackup) && (
-        <div className="alerts" aria-label="Alerts">
+        <div className="alerts" aria-label={t('home.alerts')}>
           {overdue.length > 0 && (
             <Link to="/bills" className="callout callout--link">
               <span className="callout-icon">
                 <Icon name="alert" size={20} />
               </span>
               <span className="stack grow" style={{ gap: 2 }}>
-                <strong>{overdue.length === 1 ? `${overdue[0].rule.name} looks overdue` : `${overdue.length} bills look overdue`}</strong>
-                <span className="label">No payment recorded yet. Check and mark them as paid.</span>
+                <strong>
+                  {overdue.length === 1
+                    ? t('home.overdueOne', { name: overdue[0].rule.name })
+                    : t('home.overdueMany', { count: overdue.length })}
+                </strong>
+                <span className="label">{t('home.overdueBody')}</span>
               </span>
             </Link>
           )}
@@ -88,9 +105,9 @@ export function Home({ data }: { data?: FinanceData }) {
               </span>
               <span className="stack grow" style={{ gap: 2 }}>
                 <strong>
-                  Your balance may drop to {formatPounds(forecast.lowest.balance)} around {formatLong(forecast.lowest.date)}
+                  {t('home.lowBalance', { amount: formatWhole(forecast.lowest.balance), date: formatLong(forecast.lowest.date) })}
                 </strong>
-                <span className="label">Based on upcoming bills and your usual spending.</span>
+                <span className="label">{t('home.lowBalanceBody')}</span>
               </span>
             </Link>
           )}
@@ -100,8 +117,8 @@ export function Home({ data }: { data?: FinanceData }) {
                 <Icon name="download" size={20} />
               </span>
               <span className="stack grow" style={{ gap: 2 }}>
-                <strong>{backupAge === undefined ? 'Back up your data' : `Last backup was ${backupAge} days ago`}</strong>
-                <span className="label">Your data only lives on this device. Download a backup to keep it safe.</span>
+                <strong>{backupAge === undefined ? t('home.backupNever') : t('home.backupAge', { count: backupAge })}</strong>
+                <span className="label">{t('home.backupBody')}</span>
               </span>
             </Link>
           )}
@@ -110,40 +127,36 @@ export function Home({ data }: { data?: FinanceData }) {
 
       <div className="home-grid">
         <div className="col">
-          <section className="hero" aria-label="Safe to spend">
+          <section className="hero" aria-label={t('home.safeToSpend')}>
             <div className="row" style={{ justifyContent: 'space-between' }}>
               <span className="muted" style={{ fontSize: 14 }}>
-                Safe to spend
+                {t('home.safeToSpend')}
               </span>
-              <span className="hero-chip">
-                {s.daysToPayday} {s.daysToPayday === 1 ? 'day' : 'days'} to payday
-              </span>
+              <span className="hero-chip">{t('home.daysToPayday', { count: s.daysToPayday })}</span>
             </div>
             <div className="hero-amount num">
-              {safePounds}
-              <span className="muted">.{safePence}</span>
+              {safeParts.main}
+              <span className="muted">{safeParts.fraction}</span>
             </div>
             <p className="muted" style={{ fontSize: 13 }}>
-              {s.safe > 0
-                ? `About ${formatMoney(s.perDay)} a day until payday on ${formatLong(s.payday).split(' ').slice(1).join(' ')}`
-                : 'Upcoming bills and savings are more than your balance.'}
+              {s.safe > 0 ? t('home.perDay', { amount: formatMoney(s.perDay), date: formatDayMonth(s.payday) }) : t('home.overspent')}
             </p>
             <div className="hero-divider" />
             <div className="grid-3">
               <div className="stack" style={{ gap: 3 }}>
-                <span className="muted small">Balance</span>
+                <span className="muted small">{t('home.balance')}</span>
                 <span className="num" style={{ fontWeight: 500 }}>
                   {formatMoney(s.balance)}
                 </span>
               </div>
               <div className="stack" style={{ gap: 3 }}>
-                <span className="muted small">Bills before payday</span>
+                <span className="muted small">{t('home.billsBeforePayday')}</span>
                 <span className="num" style={{ fontWeight: 500 }}>
                   {formatMoney(-s.billsBeforePayday)}
                 </span>
               </div>
               <div className="stack" style={{ gap: 3 }}>
-                <span className="muted small">Savings</span>
+                <span className="muted small">{t('home.savings')}</span>
                 <span className="num" style={{ fontWeight: 500 }}>
                   {formatMoney(-s.savings)}
                 </span>
@@ -151,22 +164,25 @@ export function Home({ data }: { data?: FinanceData }) {
             </div>
           </section>
 
-          <section className="card stack" style={{ gap: 14 }} aria-label="Spending this month">
+          <section className="card stack" style={{ gap: 14 }} aria-label={t('home.spendingThisMonth')}>
             <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div className="stack">
-                <span className="label">Spent in {formatMonth(ref)}</span>
+                <span className="label">{t('home.spentIn', { month: formatMonth(ref) })}</span>
                 <span className="value-lg num">{formatMoney(spent)}</span>
               </div>
               <div className="stack" style={{ alignItems: 'flex-end' }}>
-                {budgetTotal > 0 && <span className="label">of {formatPounds(budgetTotal)} budget</span>}
+                {budgetTotal > 0 && <span className="label">{t('home.ofBudget', { amount: formatWhole(budgetTotal) })}</span>}
                 {diff !== 0 && (
                   <span className={'pill ' + (diff < 0 ? 'pill--pos' : 'pill--warn')}>
-                    {formatPounds(Math.abs(diff))} {diff < 0 ? 'less' : 'more'} than {formatMonth(shiftMonth(ref, -1))}
+                    {t(diff < 0 ? 'home.lessThan' : 'home.moreThan', {
+                      amount: formatWhole(Math.abs(diff)),
+                      month: formatMonth(shiftMonth(ref, -1)),
+                    })}
                   </span>
                 )}
               </div>
             </div>
-            <div className="spark" role="img" aria-label={`Daily spending this month, highest ${formatMoney(maxDay)}`}>
+            <div className="spark" role="img" aria-label={t('home.dailyChart', { amount: formatMoney(maxDay) })}>
               {days.map((v, i) => (
                 <span
                   key={i}
@@ -179,23 +195,23 @@ export function Home({ data }: { data?: FinanceData }) {
               ))}
             </div>
             <div className="row small muted" style={{ justifyContent: 'space-between' }}>
-              <span>1 {formatMonth(ref).slice(0, 3)}</span>
-              <span>Today</span>
+              <span>{formatShort(startOfMonth(ref))}</span>
+              <span>{t('time.today')}</span>
             </div>
           </section>
 
           {isDesktop && (
-            <section className="section" aria-label="Recent transactions">
+            <section className="section" aria-label={t('home.recent')}>
               <div className="section-head">
-                <h2 className="section-title">Recent transactions</h2>
+                <h2 className="section-title">{t('home.recent')}</h2>
                 <Link to="/activity" className="link-btn">
-                  View all
+                  {t('common.viewAll')}
                 </Link>
               </div>
               <div className="list">
-                {data.transactions.length === 0 && <p className="empty">No transactions yet.</p>}
-                {recent.map((t) => (
-                  <TransactionRow key={t.id} tx={t} category={categories.get(t.categoryId)} accountName={accounts.get(t.accountId)} />
+                {data.transactions.length === 0 && <p className="empty">{t('home.noTransactions')}</p>}
+                {recent.map((tx) => (
+                  <TransactionRow key={tx.id} tx={tx} category={categories.get(tx.categoryId)} accountName={accounts.get(tx.accountId)} />
                 ))}
               </div>
             </section>
@@ -203,15 +219,15 @@ export function Home({ data }: { data?: FinanceData }) {
         </div>
 
         <div className="col">
-          <section className="section" aria-label="Upcoming bills">
+          <section className="section" aria-label={t('home.upcomingBills')}>
             <div className="section-head">
-              <h2 className="section-title">Upcoming bills</h2>
+              <h2 className="section-title">{t('home.upcomingBills')}</h2>
               <Link to="/bills" className="link-btn">
-                See all
+                {t('common.seeAll')}
               </Link>
             </div>
             <div className="list">
-              {upcoming.length === 0 && <p className="empty">Nothing due in the next month.</p>}
+              {upcoming.length === 0 && <p className="empty">{t('home.nothingDue')}</p>}
               {upcoming.map((o) => (
                 <BillRow
                   key={o.rule.id + o.date}
@@ -226,18 +242,18 @@ export function Home({ data }: { data?: FinanceData }) {
           {isDesktop && <BudgetSummary data={data} />}
 
           {!isDesktop && (
-            <nav className="quick-links" aria-label="More">
+            <nav className="quick-links" aria-label={t('home.more')}>
               <Link to="/reports" className="quick-link">
                 <Icon name="chart" size={22} />
-                Reports
+                {t('nav.reports')}
               </Link>
               <Link to="/goals" className="quick-link">
                 <Icon name="target" size={22} />
-                Goals
+                {t('nav.goals')}
               </Link>
               <Link to="/import" className="quick-link">
                 <Icon name="upload" size={22} />
-                Import
+                {t('nav.import')}
               </Link>
             </nav>
           )}
@@ -251,32 +267,32 @@ function BudgetSummary({ data }: { data: FinanceData }) {
   const period = periodFor(today(), data.settings.budgetPeriod, data.settings.payday);
   const rows = budgetProgress(data.budgets, data.categories, data.transactions, period);
   return (
-    <section className="section" aria-label="Budgets">
+    <section className="section" aria-label={t('nav.budgets')}>
       <div className="section-head">
-        <h2 className="section-title">Budgets</h2>
+        <h2 className="section-title">{t('nav.budgets')}</h2>
         <Link to="/budgets" className="link-btn">
-          Details
+          {t('common.details')}
         </Link>
       </div>
       <div className="card stack" style={{ gap: 14 }}>
-        {rows.length === 0 && <p className="empty">No budgets set yet.</p>}
+        {rows.length === 0 && <p className="empty">{t('home.noBudgets')}</p>}
         {rows.map((r) => {
           const tight = r.ratio >= 0.95;
           return (
             <div key={r.budget.id} className="stack" style={{ gap: 6, ...catVar(r.category.color) }}>
               <div className="row" style={{ justifyContent: 'space-between', fontSize: 14 }}>
-                <span className="row" style={{ gap: 8 }}>
+                <span className="row" style={{ gap: 8 }} translate="no">
                   <span className="dot" />
                   {r.category.name}
                 </span>
                 <span className={'num small ' + (tight ? 'text-warn' : 'muted')}>
-                  {formatMoney(r.spent)} / {formatPounds(r.limit)}
+                  {formatMoney(r.spent)} / {formatWhole(r.limit)}
                 </span>
               </div>
               <div
                 className="bar"
                 role="progressbar"
-                aria-label={`${r.category.name} budget used`}
+                aria-label={t('budgets.usedLabel', { name: r.category.name })}
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={Math.round(r.ratio * 100)}

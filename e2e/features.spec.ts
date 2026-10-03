@@ -13,7 +13,7 @@ plain('first run: setting up your own account', async ({ page }, info) => {
   plain.skip(info.project.name.endsWith('-dark'), 'covered by the light run');
   await page.goto('/');
   await page.getByRole('button', { name: 'Set up my account' }).click();
-  await page.getByLabel('Current balance in pounds').fill('1000');
+  await page.getByLabel('Current balance', { exact: true }).fill('1000');
   await page.getByLabel('Name').fill('Monzo');
   await page.getByRole('button', { name: 'Start' }).click();
   await expect(page.getByLabel('Safe to spend')).toContainText('£1,000');
@@ -49,7 +49,7 @@ test('a suggested regular payment can be added as a bill', async ({ page }) => {
   await expect(suggestions).toContainText('Disney Plus');
   await suggestions.getByRole('link', { name: 'Add as bill' }).click();
   await expect(page.getByLabel('Name')).toHaveValue('Disney Plus');
-  await expect(page.getByLabel('Amount in pounds')).toHaveValue('7.99');
+  await expect(page.getByLabel('Amount', { exact: true })).toHaveValue('7.99');
   await page.getByRole('button', { name: 'Add bill' }).click();
   await expect(page.getByText('Bill added')).toBeVisible();
   await expect(page.getByRole('region', { name: 'Suggested bills' })).toHaveCount(0);
@@ -70,7 +70,7 @@ test('reports, goals and backup', async ({ page }) => {
   await sheet.getByRole('button', { name: 'Save' }).click();
   const card = page.locator('article', { hasText: 'New laptop' });
   await card.getByRole('button', { name: 'Add money' }).click();
-  await page.getByRole('dialog').getByLabel('Amount in pounds').fill('100');
+  await page.getByRole('dialog').getByLabel('Amount', { exact: true }).fill('100');
   await page.getByRole('dialog').getByRole('button', { name: /^Add/ }).click();
   await expect(card).toContainText('£100.00');
 
