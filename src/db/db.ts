@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { encryptionMiddleware } from './encryption';
 import { outboxMiddleware } from './outbox';
 import {
+  ACCOUNT_TYPE_ORDER,
   DEFAULT_SETTINGS,
   TRANSFER_CATEGORY_ID,
   type Account,
@@ -137,7 +138,10 @@ export function useFinanceData(): FinanceData | undefined {
         db.settings.get('app'),
       ]);
     return {
-      accounts,
+      // Everyday accounts first, so they are the default wherever an account is picked.
+      accounts: accounts.sort(
+        (a, b) => ACCOUNT_TYPE_ORDER.indexOf(a.type) - ACCOUNT_TYPE_ORDER.indexOf(b.type) || a.name.localeCompare(b.name),
+      ),
       categories,
       transactions,
       recurring,

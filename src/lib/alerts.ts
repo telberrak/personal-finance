@@ -11,14 +11,24 @@ import { forecastBalance } from './forecast';
 import { formatMoney } from './money';
 import { periodFor } from './periods';
 import { nextOccurrence, nextPayday } from './recurring';
-import { billOccurrences, budgetProgress, isTransfer } from './selectors';
+import { accountBalance, billOccurrences, budgetProgress, isTransfer } from './selectors';
 import { payeeKey } from './payees';
 
-export const ALERT_TYPES = ['billDue', 'payday', 'budget', 'lowBalance', 'unusual', 'trialEnding', 'renewal', 'bankConsent'] as const;
+export const ALERT_TYPES = [
+  'billDue',
+  'payday',
+  'cardDue',
+  'budget',
+  'lowBalance',
+  'unusual',
+  'trialEnding',
+  'renewal',
+  'bankConsent',
+] as const;
 export type AlertType = (typeof ALERT_TYPES)[number];
 
 /** Types that can be scheduled ahead and pushed while the app is closed. */
-export const SCHEDULED_TYPES = new Set<AlertType>(['billDue', 'payday', 'trialEnding', 'renewal', 'bankConsent']);
+export const SCHEDULED_TYPES = new Set<AlertType>(['billDue', 'payday', 'cardDue', 'trialEnding', 'renewal', 'bankConsent']);
 
 export interface Alert {
   /** Stable: the same event always has the same id, so it is shown and notified once. */
@@ -127,6 +137,24 @@ export function computeAlerts(data: FinanceData, now: Date): Alert[] {
         });
       }
     }
+  }
+
+  // Credit cards: three days before the payment is due, with the balance to clear.
+  for (const card of data.accounts) {
+    const dueDay = card.credit?.dueDay;
+    if (card.archived || card.type !== 'credit' || !dueDay) continue;
+    const owed = -accountBalance(card, data.transactions);
+    if (owed <= 0) continue;
+    const due = nextPayday(addDays(today, -1), dueDay); // the next date with that day of the month
+    if (daysBetween(today, due) > 8 + 3) continue;
+    out.push({
+      id: `cardDue:${card.id}:${due}`,
+      type: 'cardDue',
+      at: at(addDays(due, -3), '09:00'),
+      title: t('alerts.cardDue.title', { name: card.name }),
+      body: t('alerts.cardDue.body', { amount: formatMoney(owed) }),
+      link: '/networth',
+    });
   }
 
   // Bank connections: a week before consent runs out.

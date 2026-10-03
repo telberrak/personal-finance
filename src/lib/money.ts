@@ -96,6 +96,11 @@ export function currencySymbol(): string {
 }
 
 /** 0.82 → "82%" (or "82 %" in French). */
+/** An interest rate given in percent: 22.9 → "22.9%". */
+export function formatRate(percent: number): string {
+  return numberFormat({ style: 'percent', maximumFractionDigits: 2 }).format(percent / 100);
+}
+
 export function formatPercent(ratio: number): string {
   return numberFormat({ style: 'percent', maximumFractionDigits: 0 }).format(ratio);
 }

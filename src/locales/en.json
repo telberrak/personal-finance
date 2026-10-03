@@ -64,7 +64,12 @@
       "current": "Current account",
       "savings": "Savings",
       "credit": "Credit card",
-      "cash": "Cash"
+      "cash": "Cash",
+      "loan": "Loan",
+      "mortgage": "Mortgage",
+      "investment": "Investments",
+      "pension": "Pension",
+      "property": "Property"
     },
     "title": "Accounts",
     "netWorth": "Net worth {{amount}}",
@@ -84,7 +89,15 @@
     "opening": "Opening",
     "openingNote": "Opening balance is what the account held before the first transaction you record here. Use a minus sign for money owed on a card.",
     "everydayAccount": "Everyday account",
-    "everydayHint": "Counted in “safe to spend”"
+    "everydayHint": "Counted in “safe to spend”",
+    "apr": "Interest rate (APR %)",
+    "aprHint": "Enter the interest rate as a number, for example 22.9.",
+    "limit": "Credit limit",
+    "statementDay": "Statement day",
+    "dueDay": "Payment due day",
+    "minPayment": "Minimum payment",
+    "monthlyPayment": "Monthly payment",
+    "notSet": "Not set"
   },
   "categories": {
     "transfer": "Transfers",
@@ -125,7 +138,10 @@
     "salary": "Salary",
     "returnedJacket": "Returned jacket",
     "summerHoliday": "Summer holiday",
-    "emergencyFund": "Emergency fund"
+    "emergencyFund": "Emergency fund",
+    "creditCard": "Credit card",
+    "carLoan": "Car loan",
+    "pension": "Workplace pension"
   },
   "nav": {
     "home": "Home",
@@ -139,7 +155,8 @@
     "import": "Import",
     "settings": "Settings",
     "dataLocal": "Your data stays on this device.",
-    "dataSynced": "Synced, end-to-end encrypted."
+    "dataSynced": "Synced, end-to-end encrypted.",
+    "networth": "Net worth"
   },
   "app": {
     "name": "Ledger"
@@ -901,7 +918,12 @@
       "budget": "Budget update",
       "lowBalance": "Balance warning",
       "unusual": "Unusual payment",
-      "body": "Open Ledger to see the details."
+      "body": "Open Ledger to see the details.",
+      "cardDue": "A card payment is due soon"
+    },
+    "cardDue": {
+      "title": "{{name}} payment due in 3 days",
+      "body": "Pay {{amount}} in full to avoid interest."
     }
   },
   "notifications": {
@@ -924,7 +946,8 @@
       "unusual": "Unusual payment",
       "trialEnding": "Free trial ending",
       "renewal": "Yearly payment renewing",
-      "bankConsent": "Bank connection expiring"
+      "bankConsent": "Bank connection expiring",
+      "cardDue": "Credit card payment due"
     },
     "quietFrom": "Quiet from",
     "quietTo": "Quiet until",
@@ -964,5 +987,43 @@
     "loading": "Loading banks…",
     "noneFound": "No bank found.",
     "consentNote": "You will confirm the connection on your bank’s own website or app, then come back here."
+  },
+  "networth": {
+    "title": "Net worth",
+    "subtitle": "Everything you own, minus everything you owe",
+    "total": "Net worth today",
+    "assets": "Assets",
+    "liabilities": "Debts",
+    "chartLabel": "Net worth over the last 12 months",
+    "manageAccounts": "Add or edit accounts",
+    "apr": "{{rate}} APR",
+    "paidOffBy": "paid off by {{date}}",
+    "neverPaidOff": "the payment does not cover the interest",
+    "valuedOn": "valued {{date}}",
+    "update": "Update value",
+    "updateValue": "Update value",
+    "valueIntro": "What is {{name}} worth? Ledger uses the latest value, plus any transactions after it.",
+    "value": "Value",
+    "valueHint": "Enter the value as an amount, for example 12500.",
+    "valueSaved": "Value saved"
+  },
+  "planner": {
+    "title": "Debt payoff planner",
+    "intro": "Your minimum payments add up to {{minimums}} a month. Choose how much you can put towards debts in total.",
+    "budget": "Each month",
+    "extra": "What if I paid extra",
+    "strategy": "Strategy",
+    "avalanche": "Avalanche",
+    "snowball": "Snowball",
+    "avalancheHint": "Highest interest first: the least interest overall.",
+    "snowballHint": "Smallest balance first: quick wins that keep you going.",
+    "notEnough": "That is less than the minimum payments ({{minimums}}). Increase the monthly amount.",
+    "debtFreeBy_one": "Debt-free by {{date}} ({{count}} month), paying {{interest}} in interest.",
+    "debtFreeBy_other": "Debt-free by {{date}} ({{count}} months), paying {{interest}} in interest.",
+    "compare_one": "{{other}} would take {{count}} month and cost {{interest}} in interest.",
+    "compare_other": "{{other}} would take {{count}} months and cost {{interest}} in interest.",
+    "extraSaves_one": "Paying {{amount}} more a month clears your debts {{count}} month sooner and saves {{interest}} in interest.",
+    "extraSaves_other": "Paying {{amount}} more a month clears your debts {{count}} months sooner and saves {{interest}} in interest.",
+    "same": "Both strategies give the same result for your debts."
   }
 }

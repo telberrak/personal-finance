@@ -92,6 +92,37 @@ export async function seedDemoData(ref: ISODate = today()): Promise<void> {
     openingBalance: 320000,
     includeInSafeToSpend: false,
   };
+  // Debts and assets for the Net worth page.
+  const card: Account = {
+    id: 'card',
+    name: t('demo.creditCard'),
+    type: 'credit',
+    openingBalance: -184_250,
+    includeInSafeToSpend: false,
+    apr: 22.9,
+    credit: { limit: 500_000, statementDay: 3, dueDay: 28, minPayment: 5_500 },
+  };
+  const carLoan: Account = {
+    id: 'car-loan',
+    name: t('demo.carLoan'),
+    type: 'loan',
+    openingBalance: -642_000,
+    includeInSafeToSpend: false,
+    apr: 6.9,
+    monthlyPayment: 21_500,
+  };
+  const pension: Account = {
+    id: 'pension',
+    name: t('demo.pension'),
+    type: 'pension',
+    openingBalance: 0,
+    includeInSafeToSpend: false,
+    valuations: [
+      { date: shiftMonth(ref, -6), value: 2_310_000 },
+      { date: shiftMonth(ref, -3), value: 2_395_000 },
+      { date: ref, value: 2_468_000 },
+    ],
+  };
   const from = startOfMonth(shiftMonth(ref, -1));
   const yearAgo = shiftMonth(ref, -12);
   const dayOf = (d: number) => yearAgo.slice(0, 8) + String(d).padStart(2, '0');
@@ -195,7 +226,7 @@ export async function seedDemoData(ref: ISODate = today()): Promise<void> {
   ];
   await db.transaction('rw', tables, async () => {
     await Promise.all(tables.filter((t) => t !== db.settings).map((t) => t.clear()));
-    await db.accounts.bulkPut([current, savings]);
+    await db.accounts.bulkPut([current, savings, card, carLoan, pension]);
     await db.categories.bulkPut([...defaultCategories(), transferCategory()]);
     await db.budgets.bulkPut(BUDGETS);
     await db.recurring.bulkPut(recurring);

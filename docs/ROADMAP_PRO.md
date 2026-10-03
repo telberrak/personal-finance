@@ -133,6 +133,8 @@ See [SERVER.md](SERVER.md).
 
 ## P6 — Debts, credit cards and net worth — L
 
+**Status (3 October 2026): done.** Account types and fields, valuations, Net worth page with history, amortisation and payoff dates, avalanche/snowball planner with extra-payment what-ifs, card-due reminders.
+
 - **Credit cards:** statement date, due date, minimum payment and interest rate. "Pay in full" reminders, and card balances kept out of safe to spend.
 - **Loans and mortgages:** amortisation schedule, payoff date, and extra-payment what-ifs.
 - **Assets:** savings, investments, pension and property, with manual values and a value history.

@@ -18,6 +18,7 @@ const SCREENS = [
   '/settings/sync',
   '/notifications',
   '/settings/banks',
+  '/networth',
 ];
 
 for (const path of SCREENS) {

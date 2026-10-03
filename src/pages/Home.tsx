@@ -255,6 +255,10 @@ export function Home({ data }: { data?: FinanceData }) {
                 <Icon name="target" size={22} />
                 {t('nav.goals')}
               </Link>
+              <Link to="/networth" className="quick-link">
+                <Icon name="wallet" size={22} />
+                {t('nav.networth')}
+              </Link>
               <Link to="/import" className="quick-link">
                 <Icon name="upload" size={22} />
                 {t('nav.import')}

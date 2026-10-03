@@ -23,6 +23,7 @@ const hidesTabBar = (path: string) => /^\/(add|transactions\/|bills\/|settings)/
 const MORE: { to: string; label: string; icon: IconName }[] = [
   { to: '/reports', label: 'nav.reports', icon: 'chart' },
   { to: '/goals', label: 'nav.goals', icon: 'target' },
+  { to: '/networth', label: 'nav.networth', icon: 'wallet' },
 ];
 
 function Tab({ to, label, icon }: (typeof TABS)[number]) {

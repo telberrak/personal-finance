@@ -14,16 +14,25 @@ export function inRange(t: { date: ISODate }, from: ISODate, to: ISODate): boole
   return t.date >= from && t.date <= to;
 }
 
-export function accountBalance(account: Account, transactions: Transaction[]): Pence {
-  return transactions.reduce((sum, t) => (t.accountId === account.id ? sum + t.amount : sum), account.openingBalance);
+/**
+ * An account's balance at the end of `date` (default: now). For valued accounts (investments,
+ * pensions, property) the latest valuation on or before the date counts, plus any transactions after it.
+ */
+export function accountBalance(account: Account, transactions: Transaction[], date: ISODate = '9999-12-31'): Pence {
+  const sorted = [...(account.valuations ?? [])].sort((a, b) => (a.date < b.date ? -1 : 1));
+  // Before the first valuation the value is unknown: the earliest one is the best guess.
+  const valuation = sorted.filter((v) => v.date <= date).at(-1) ?? sorted[0];
+  const start = valuation ? valuation.value : account.openingBalance;
+  return transactions.reduce(
+    (sum, t) => (t.accountId === account.id && t.date <= date && (!valuation || t.date > valuation.date) ? sum + t.amount : sum),
+    start,
+  );
 }
 
 /** Total across accounts; by default only those counted in "safe to spend". */
 export function totalBalance(data: Pick<FinanceData, 'accounts' | 'transactions'>, which: 'safe' | 'all' = 'safe'): Pence {
   const accounts = data.accounts.filter((a) => !a.archived && (which === 'all' || a.includeInSafeToSpend !== false));
-  const ids = new Set(accounts.map((a) => a.id));
-  const opening = accounts.reduce((sum, a) => sum + a.openingBalance, 0);
-  return data.transactions.reduce((sum, t) => (ids.has(t.accountId) ? sum + t.amount : sum), opening);
+  return accounts.reduce((sum, a) => sum + accountBalance(a, data.transactions), 0);
 }
 
 /** Day-to-day spending: money out that is not a bill payment or transfer. Returned as a positive amount. */

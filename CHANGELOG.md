@@ -2,6 +2,13 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.7.0 — P6: debts, credit cards and net worth
+
+- New account types: loan, mortgage, investments, pension and property. Credit cards record limit, statement and due days, minimum payment and APR; loans and mortgages their APR and monthly payment.
+- Net worth page: total, assets and debts, a 12-month chart, payoff dates, and dated valuations for investments, pensions and property.
+- Debt payoff planner: avalanche or snowball, debt-free date, total interest, and what paying extra saves.
+- "Pay in full" reminder three days before a card payment is due.
+
 ## 0.6.0 — P5: Open Banking
 
 - Connect a bank (read-only) through an authorised provider; transactions come in automatically every few hours through the usual import pipeline, never twice.

@@ -6,12 +6,12 @@ import { Sheet } from '../components/ui/Dialog';
 import { Field } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
 import { saveAccount, setAccountArchived, ValidationError } from '../db/repo';
-import type { Account, AccountType, FinanceData } from '../db/types';
+import { LIABILITY_TYPES, type Account, type AccountType, type FinanceData } from '../db/types';
 import { formatMoney, parseMoney } from '../lib/money';
 import { accountBalance, totalBalance } from '../lib/selectors';
 import { t } from '../i18n';
 
-const TYPES: AccountType[] = ['current', 'savings', 'credit', 'cash'];
+const TYPES: AccountType[] = ['current', 'savings', 'cash', 'credit', 'loan', 'mortgage', 'investment', 'pension', 'property'];
 const typeLabel = (type: AccountType) => t(`accounts.type.${type}`);
 
 /** Signed money input: "-250.00" for a credit card balance owed. */
@@ -102,11 +102,22 @@ function AccountEditor({ account, onDone }: { account?: Account; onDone: () => v
   const [type, setType] = useState<AccountType>(account?.type ?? 'current');
   const [openingText, setOpeningText] = useState(account ? (account.openingBalance / 100).toFixed(2) : '0.00');
   const [everyday, setEveryday] = useState(account?.includeInSafeToSpend ?? true);
+  const pounds = (p?: number) => (p === undefined ? '' : (p / 100).toFixed(2));
+  const [aprText, setAprText] = useState(account?.apr?.toString() ?? '');
+  const [limitText, setLimitText] = useState(pounds(account?.credit?.limit));
+  const [dueDay, setDueDay] = useState(account?.credit?.dueDay ?? 0);
+  const [statementDay, setStatementDay] = useState(account?.credit?.statementDay ?? 0);
+  const [minText, setMinText] = useState(pounds(account?.credit?.minPayment));
+  const [paymentText, setPaymentText] = useState(pounds(account?.monthlyPayment));
+  const liability = LIABILITY_TYPES.includes(type);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     const opening = parseSigned(openingText);
     if (opening === null) return toast({ message: t('accounts.openingHint') });
+    const apr = aprText.trim() ? Number(aprText.replace(',', '.')) : undefined;
+    if (apr !== undefined && !(apr >= 0 && apr < 1000)) return toast({ message: t('accounts.aprHint') });
+    const money = (s: string) => (s.trim() ? (parseMoney(s) ?? undefined) : undefined);
     try {
       await saveAccount({
         id: account?.id,
@@ -115,6 +126,13 @@ function AccountEditor({ account, onDone }: { account?: Account; onDone: () => v
         openingBalance: opening,
         includeInSafeToSpend: everyday,
         archived: account?.archived,
+        valuations: account?.valuations,
+        apr: liability ? apr : undefined,
+        credit:
+          type === 'credit'
+            ? { limit: money(limitText), dueDay: dueDay || undefined, statementDay: statementDay || undefined, minPayment: money(minText) }
+            : undefined,
+        monthlyPayment: type === 'loan' || type === 'mortgage' ? money(paymentText) : undefined,
       });
       toast({ message: account ? t('accounts.updated') : t('accounts.added') });
       onDone();
@@ -162,6 +180,50 @@ function AccountEditor({ account, onDone }: { account?: Account; onDone: () => v
         <Field label={t('accounts.opening')}>
           {(id) => <input id={id} inputMode="decimal" value={openingText} onChange={(e) => setOpeningText(e.target.value)} />}
         </Field>
+        {liability && (
+          <Field label={t('accounts.apr')}>
+            {(id) => <input id={id} inputMode="decimal" placeholder="22.9" value={aprText} onChange={(e) => setAprText(e.target.value)} />}
+          </Field>
+        )}
+        {type === 'credit' && (
+          <>
+            <Field label={t('accounts.limit')}>
+              {(id) => <input id={id} inputMode="decimal" value={limitText} onChange={(e) => setLimitText(e.target.value)} />}
+            </Field>
+            <Field label={t('accounts.statementDay')}>
+              {(id) => (
+                <select id={id} value={statementDay} onChange={(e) => setStatementDay(Number(e.target.value))}>
+                  <option value={0}>{t('accounts.notSet')}</option>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>
+                      {t('settings.paydayOption', { day: d })}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field label={t('accounts.dueDay')}>
+              {(id) => (
+                <select id={id} value={dueDay} onChange={(e) => setDueDay(Number(e.target.value))}>
+                  <option value={0}>{t('accounts.notSet')}</option>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>
+                      {t('settings.paydayOption', { day: d })}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+            <Field label={t('accounts.minPayment')}>
+              {(id) => <input id={id} inputMode="decimal" value={minText} onChange={(e) => setMinText(e.target.value)} />}
+            </Field>
+          </>
+        )}
+        {(type === 'loan' || type === 'mortgage') && (
+          <Field label={t('accounts.monthlyPayment')}>
+            {(id) => <input id={id} inputMode="decimal" value={paymentText} onChange={(e) => setPaymentText(e.target.value)} />}
+          </Field>
+        )}
       </div>
       <p className="small muted">{t('accounts.openingNote')}</p>
       <label className="check-row">

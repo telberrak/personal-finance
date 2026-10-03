@@ -122,10 +122,15 @@ export function BalanceLine({
   points,
   threshold,
   label,
+  showLowest = true,
+  formatTick = formatShort,
 }: {
   points: { date: ISODate; balance: Pence }[];
   threshold?: Pence;
   label: string;
+  /** Mark and label the lowest point (forecasts), or not (history). */
+  showLowest?: boolean;
+  formatTick?: (date: ISODate) => string;
 }) {
   const W = 600;
   const H = 180;
@@ -158,22 +163,26 @@ export function BalanceLine({
           />
         )}
         <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-        <circle
-          cx={x(lowestIndex)}
-          cy={y(points[lowestIndex].balance)}
-          r="5"
-          fill="var(--surface)"
-          stroke="var(--accent)"
-          strokeWidth="2.5"
-          vectorEffect="non-scaling-stroke"
-        />
+        {showLowest && (
+          <circle
+            cx={x(lowestIndex)}
+            cy={y(points[lowestIndex].balance)}
+            r="5"
+            fill="var(--surface)"
+            stroke="var(--accent)"
+            strokeWidth="2.5"
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
       </svg>
       <div className="row small muted" style={{ justifyContent: 'space-between' }}>
-        <span>{formatShort(points[0].date)}</span>
-        <span>
-          {t('reports.lowestOn', { amount: formatWhole(points[lowestIndex].balance), date: formatShort(points[lowestIndex].date) })}
-        </span>
-        <span>{formatShort(points[points.length - 1].date)}</span>
+        <span>{formatTick(points[0].date)}</span>
+        {showLowest && (
+          <span>
+            {t('reports.lowestOn', { amount: formatWhole(points[lowestIndex].balance), date: formatShort(points[lowestIndex].date) })}
+          </span>
+        )}
+        <span>{formatTick(points[points.length - 1].date)}</span>
       </div>
     </figure>
   );

@@ -2,7 +2,25 @@ import type { ISODate } from '../lib/dates';
 import type { Pence } from '../lib/money';
 import type { Frequency } from '../lib/recurring';
 
-export type AccountType = 'current' | 'credit' | 'savings' | 'cash';
+export type AccountType = 'current' | 'savings' | 'cash' | 'credit' | 'loan' | 'mortgage' | 'investment' | 'pension' | 'property';
+
+/** Display order: everyday accounts first, then savings, debts and other assets. */
+export const ACCOUNT_TYPE_ORDER: AccountType[] = [
+  'current',
+  'cash',
+  'savings',
+  'credit',
+  'loan',
+  'mortgage',
+  'investment',
+  'pension',
+  'property',
+];
+
+/** Money owed: balances are negative. */
+export const LIABILITY_TYPES: AccountType[] = ['credit', 'loan', 'mortgage'];
+/** Valued by hand (Update value) rather than by transactions alone. */
+export const VALUED_TYPES: AccountType[] = ['investment', 'pension', 'property'];
 
 export interface Account {
   id: string;
@@ -12,6 +30,14 @@ export interface Account {
   /** Counted in "safe to spend". Defaults to true for current and cash accounts. */
   includeInSafeToSpend: boolean;
   archived?: boolean;
+  /** Annual percentage rate (credit cards, loans, mortgages), e.g. 22.9. */
+  apr?: number;
+  /** Credit cards: limit, statement and due days of the month, minimum payment. */
+  credit?: { limit?: Pence; statementDay?: number; dueDay?: number; minPayment?: Pence };
+  /** Loans and mortgages: the contractual monthly payment. */
+  monthlyPayment?: Pence;
+  /** Investments, pensions and property: the value on a date. The latest sets the balance. */
+  valuations?: { date: ISODate; value: Pence }[];
 }
 
 /** Keys into the category palette in tokens.css (--cat-<color>). */
