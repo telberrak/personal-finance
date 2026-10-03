@@ -1703,3 +1703,8 @@ dialog::backdrop {
 .amount-input input:disabled {
   color: var(--muted);
 }
+
+/* A form that lays out as part of its <main>, so form screens keep a main landmark. */
+.form-contents {
+  display: contents;
+}

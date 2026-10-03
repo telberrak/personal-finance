@@ -92,111 +92,113 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
   }
 
   return (
-    <form className="screen screen--modal" onSubmit={submit}>
-      <header className="screen-header">
-        <Link to="/bills" className="icon-btn" aria-label="Back to bills">
-          <Icon name="close" size={20} strokeWidth={2} />
-        </Link>
-        <h1 style={{ fontSize: 17, fontWeight: 600 }}>{existing ? 'Edit bill' : 'New bill'}</h1>
-        {existing ? (
-          <button type="button" className="icon-btn" aria-label="Delete bill" onClick={remove}>
-            <Icon name="trash" size={20} />
-          </button>
-        ) : (
-          <span style={{ width: 44 }} />
-        )}
-      </header>
+    <main className="screen screen--modal">
+      <form className="form-contents" onSubmit={submit}>
+        <header className="screen-header">
+          <Link to="/bills" className="icon-btn" aria-label="Back to bills">
+            <Icon name="close" size={20} strokeWidth={2} />
+          </Link>
+          <h1 style={{ fontSize: 17, fontWeight: 600 }}>{existing ? 'Edit bill' : 'New bill'}</h1>
+          {existing ? (
+            <button type="button" className="icon-btn" aria-label="Delete bill" onClick={remove}>
+              <Icon name="trash" size={20} />
+            </button>
+          ) : (
+            <span style={{ width: 44 }} />
+          )}
+        </header>
 
-      <MoneyInput value={amountText} onChange={setAmountText} autoFocus={!existing} />
+        <MoneyInput value={amountText} onChange={setAmountText} autoFocus={!existing} />
 
-      <div className="list">
-        <Field label="Name">
-          {(id) => (
-            <input id={id} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Council Tax" autoComplete="off" />
-          )}
-        </Field>
-        <Field label="Type">
-          {(id) => (
-            <select id={id} value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
-              <option value="direct-debit">Direct debit</option>
-              <option value="standing-order">Standing order</option>
-              <option value="card">Card subscription</option>
-            </select>
-          )}
-        </Field>
-        <Field label="Repeats">
-          {(id) => (
-            <select id={id} value={frequency} onChange={(e) => setFrequency(e.target.value as Frequency)}>
-              <option value="weekly">Every week</option>
-              <option value="monthly">Every month</option>
-              <option value="yearly">Every year</option>
-            </select>
-          )}
-        </Field>
-        <Field label={existing ? 'Starts' : 'Next due'}>
-          {(id) => <input id={id} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />}
-        </Field>
-        <Field label="Ends">
-          {(id) => <input id={id} type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} />}
-        </Field>
-        <Field label="Account">
-          {(id) => (
-            <select id={id} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </Field>
-        <Field label="Category">
-          {(id) => (
-            <select id={id} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </Field>
-      </div>
+        <div className="list">
+          <Field label="Name">
+            {(id) => (
+              <input id={id} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Council Tax" autoComplete="off" />
+            )}
+          </Field>
+          <Field label="Type">
+            {(id) => (
+              <select id={id} value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
+                <option value="direct-debit">Direct debit</option>
+                <option value="standing-order">Standing order</option>
+                <option value="card">Card subscription</option>
+              </select>
+            )}
+          </Field>
+          <Field label="Repeats">
+            {(id) => (
+              <select id={id} value={frequency} onChange={(e) => setFrequency(e.target.value as Frequency)}>
+                <option value="weekly">Every week</option>
+                <option value="monthly">Every month</option>
+                <option value="yearly">Every year</option>
+              </select>
+            )}
+          </Field>
+          <Field label={existing ? 'Starts' : 'Next due'}>
+            {(id) => <input id={id} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />}
+          </Field>
+          <Field label="Ends">
+            {(id) => <input id={id} type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} />}
+          </Field>
+          <Field label="Account">
+            {(id) => (
+              <select id={id} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+          <Field label="Category">
+            {(id) => (
+              <select id={id} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        </div>
 
-      {existing && (
-        <label className="check-row">
-          <input type="checkbox" checked={!active} onChange={(e) => setActive(!e.target.checked)} />
-          <span>
-            Paused
-            <span className="small muted" style={{ display: 'block' }}>
-              Hidden from upcoming bills and “safe to spend”
+        {existing && (
+          <label className="check-row">
+            <input type="checkbox" checked={!active} onChange={(e) => setActive(!e.target.checked)} />
+            <span>
+              Paused
+              <span className="small muted" style={{ display: 'block' }}>
+                Hidden from upcoming bills and “safe to spend”
+              </span>
             </span>
-          </span>
-        </label>
-      )}
-      {existing?.previousAmount !== undefined && existing.previousAmount !== existing.amount && (
-        <p className="small muted">
-          Was {formatMoney(existing.previousAmount)} until {existing.amountChangedOn ?? 'recently'}.
-        </p>
-      )}
+          </label>
+        )}
+        {existing?.previousAmount !== undefined && existing.previousAmount !== existing.amount && (
+          <p className="small muted">
+            Was {formatMoney(existing.previousAmount)} until {existing.amountChangedOn ?? 'recently'}.
+          </p>
+        )}
 
-      <button type="submit" className="btn btn--primary">
-        {existing ? 'Save changes' : 'Add bill'}
-      </button>
+        <button type="submit" className="btn btn--primary">
+          {existing ? 'Save changes' : 'Add bill'}
+        </button>
 
-      {payments.length > 0 && (
-        <section className="section">
-          <h2 className="section-label">Recent payments</h2>
-          <div className="list">
-            {payments.map((t) => (
-              <Link key={t.id} to={`/transactions/${t.id}`} className="list-row list-row--link">
-                <span className="grow num">{t.date}</span>
-                <span className="amount">{formatMoney(t.amount)}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-    </form>
+        {payments.length > 0 && (
+          <section className="section">
+            <h2 className="section-label">Recent payments</h2>
+            <div className="list">
+              {payments.map((t) => (
+                <Link key={t.id} to={`/transactions/${t.id}`} className="list-row list-row--link">
+                  <span className="grow num">{t.date}</span>
+                  <span className="amount">{formatMoney(t.amount)}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+      </form>
+    </main>
   );
 }
