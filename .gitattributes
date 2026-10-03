@@ -1,3 +1,8 @@
-# Windows scripts need CRLF line endings.
+# Line endings: LF everywhere (matches Prettier), CRLF for Windows scripts.
+* text=auto eol=lf
 *.bat text eol=crlf
 *.cmd text eol=crlf
+*.png binary
+*.jpg binary
+*.jar binary
+*.gz binary
