@@ -100,6 +100,8 @@ test('right-to-left layout mirrors without breaking', async ({ page }, info) => 
 test('language and currency settings change how amounts look', async ({ page }) => {
   await page.goto('/settings');
   await page.getByLabel('Currency').selectOption('EUR');
+  // Saved to the database first; wait for it before reloading.
+  await expect(page.getByLabel('Currency')).toHaveValue('EUR');
   await page.goto('/');
   await expect(page.getByLabel('Safe to spend')).toContainText('€');
   await expect(page.getByLabel('Safe to spend')).not.toContainText('£');
