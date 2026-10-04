@@ -39,7 +39,7 @@ test('desktop shows a sidebar, tables and a multi-column home', async ({ page },
   await expect(page.getByRole('region', { name: 'Recent transactions' })).toBeVisible();
 
   // Home is two columns: the bills column sits to the right of the safe-to-spend card.
-  const hero = await page.getByLabel('Safe to spend').boundingBox();
+  const hero = await page.getByRole('region', { name: 'Safe to spend' }).boundingBox();
   const bills = await page.getByRole('region', { name: 'Upcoming bills' }).boundingBox();
   expect(bills!.x).toBeGreaterThan(hero!.x + hero!.width);
 

@@ -13,10 +13,13 @@ test('help, privacy policy and terms read in the chosen language', async ({ page
 });
 
 test('about: version, service status, what’s new, feedback and usage counts', async ({ page }) => {
+  // Feedback is limited to 5 messages an hour per address; every run (and retry) gets its own.
+  await page.setExtraHTTPHeaders({ 'x-forwarded-for': `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.1` });
   await page.goto('/settings/about');
   await expect(page.getByText(/^Version \d+\.\d+\.\d+$/)).toBeVisible();
   await expect(page.getByText('Sync service: working.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /P13|P12/ }).first()).toBeVisible();
+  // What's new: the latest changelog entries, headed by their version.
+  await expect(page.getByRole('heading', { name: /^\d+\.\d+\.\d+ — / }).first()).toBeVisible();
   await page.getByLabel('Message').fill('The calendar is great.');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(page.getByText('Thank you, your message was sent.')).toBeVisible();
@@ -38,7 +41,7 @@ test('a first-run tour follows setting up your own account', async ({ browser, b
   await page.getByRole('button', { name: 'Skip' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.reload();
-  await expect(page.getByLabel('Safe to spend')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Safe to spend' })).toBeVisible();
   await expect(page.getByRole('dialog', { name: 'Safe to spend' })).toHaveCount(0);
   await page.context().close();
 });

@@ -18,6 +18,8 @@ test('split an expense with a friend, request and settle up', async ({ page }) =
   await sheet.getByLabel('Name').fill('Jamie');
   await sheet.getByLabel('Payment link').fill('https://monzo.me/jamie');
   await sheet.getByRole('button', { name: 'Save' }).click();
+  await expect(sheet).toBeHidden(); // saved before leaving the page
+  await expect(page.getByText('Jamie').first()).toBeVisible();
 
   await page.goto('/add');
   await page.getByLabel('Amount', { exact: true }).fill('30');
@@ -57,6 +59,7 @@ test('a household shares chosen accounts between two people', async ({ page, bro
   await page.getByLabel('Groceries').press('Enter');
   await expect(page.getByText('Groceries: £420.00 a month')).toBeVisible();
   await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByText(/of £420\.00/)).toBeVisible();
   await page.goto('/settings/sync');
   await page.getByRole('button', { name: 'Sync now' }).click();
   await expect(page.getByText(/Up to date/)).toBeVisible({ timeout: 15_000 });
@@ -77,6 +80,6 @@ test('a household shares chosen accounts between two people', async ({ page, bro
   await expect(sam.getByText('Tesco').first()).toBeVisible({ timeout: 15_000 });
   await sam.goto('/budgets');
   await sam.getByRole('tab', { name: 'Home' }).click();
-  await expect(sam.getByText(/of £420\.00/)).toBeVisible();
+  await expect(sam.getByText(/of £420\.00/)).toBeVisible({ timeout: 15_000 });
   await sam.context().close();
 });

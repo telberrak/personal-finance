@@ -43,7 +43,7 @@ test('the app runs under a strict content security policy', async ({ page }) => 
   const headers = response!.headers();
   expect(headers['content-security-policy']).toContain("script-src 'self'");
   expect(headers['x-frame-options']).toBe('DENY');
-  await expect(page.getByLabel('Safe to spend')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Safe to spend' })).toBeVisible();
   for (const path of ['/activity', '/bills', '/reports', '/settings']) {
     await page.goto(path);
     await expect(page.locator('main')).toBeVisible();
@@ -75,6 +75,7 @@ test('locks after the chosen time without activity', async ({ page }) => {
   await page.clock.install();
   await setPin(page);
   await page.getByLabel('Lock after').selectOption('1');
+  await expect(page.getByLabel('Lock after')).toHaveValue('1'); // saved before the clock moves on
   await page.clock.runFor(70_000);
   await expect(page.getByRole('heading', { name: 'Mizan is locked' })).toBeVisible();
 });
@@ -85,7 +86,7 @@ test('hide amounts masks every amount', async ({ page }) => {
   await page.getByLabel(/Hide amounts/).click();
   await expect(page.getByLabel(/Hide amounts/)).toBeChecked();
   await page.goto('/');
-  const hero = page.getByLabel('Safe to spend');
+  const hero = page.getByRole('region', { name: 'Safe to spend' });
   await expect(hero).toContainText('£•••');
   expect(await hero.textContent()).not.toMatch(/£\d/);
   await expect(page.getByText(/a day until payday/)).not.toContainText(/£\d/);

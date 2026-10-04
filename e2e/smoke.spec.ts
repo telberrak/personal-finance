@@ -10,7 +10,7 @@ async function expectNoHorizontalScroll(page: Page) {
 
 test('home shows safe to spend and the tab bar works', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByLabel('Safe to spend')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Safe to spend' })).toBeVisible();
   await expectNoHorizontalScroll(page);
 
   const nav = page.getByRole('navigation', { name: 'Main' });

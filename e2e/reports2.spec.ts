@@ -37,6 +37,7 @@ test('reports: custom range, comparison, trends, year in review and tax', async 
   await page.getByLabel('From', { exact: true }).fill('Freelance client');
   await page.getByLabel('Tax').selectOption({ label: 'Self-employment income' });
   await page.getByRole('button', { name: /^Save/ }).click();
+  await expect(page.getByText('Income saved')).toBeVisible(); // saved before leaving the page
   await page.goto('/tax');
   await expect(page.getByText('Freelance client')).toBeVisible();
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export CSV' }).click()]);

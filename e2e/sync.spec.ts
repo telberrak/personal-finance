@@ -37,7 +37,7 @@ test('two devices stay in sync, end-to-end encrypted', async ({ page, browser, b
   await b.getByLabel('Recovery key', { exact: true }).fill(recoveryKey.toLowerCase());
   await b.getByRole('button', { name: 'Start syncing' }).click();
   await b.getByRole('alertdialog').getByRole('button', { name: 'Replace' }).click();
-  await expect(b.getByLabel('Safe to spend')).toBeVisible({ timeout: 15_000 });
+  await expect(b.getByRole('region', { name: 'Safe to spend' })).toBeVisible({ timeout: 15_000 });
 
   // B adds an expense; A sees it after syncing.
   await b.goto('/add');

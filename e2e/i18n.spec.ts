@@ -118,8 +118,8 @@ test('language and currency settings change how amounts look', async ({ page }) 
   // Saved to the database first; wait for it before reloading.
   await expect(page.getByLabel('Currency')).toHaveValue('EUR');
   await page.goto('/');
-  await expect(page.getByLabel('Safe to spend')).toContainText('€');
-  await expect(page.getByLabel('Safe to spend')).not.toContainText('£');
+  await expect(page.getByRole('region', { name: 'Safe to spend' })).toContainText('€');
+  await expect(page.getByRole('region', { name: 'Safe to spend' })).not.toContainText('£');
 });
 
 // Real languages: every screen, no raw keys, no untranslated English in Arabic, no sideways scroll.
