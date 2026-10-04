@@ -72,6 +72,8 @@ test('a household shares chosen accounts between two people', async ({ page, bro
   await sam.getByLabel('Current balance').fill('500');
   await sam.getByLabel('Name').fill('Sam’s bank');
   await sam.getByRole('button', { name: /^Start/ }).click();
+  await sam.getByRole('dialog', { name: 'Safe to spend' }).getByRole('button', { name: 'Skip' }).click(); // first-run tour
+  await expect(sam.getByRole('dialog')).toHaveCount(0);
   await signIn(sam, `sam-${run}@example.test`);
   await sam.goto(link.replace(/^https?:\/\/[^/]+/, ''));
   await sam.getByRole('button', { name: 'Join household' }).click();

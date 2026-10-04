@@ -9,10 +9,8 @@ const STEPS = ['safe', 'add', 'bills', 'more'] as const;
 export function Tour({ show }: { show: boolean }) {
   const [step, setStep] = useState(0);
   const [open, setOpen] = useState(true);
-  const finish = () => {
-    setOpen(false);
-    void updateSettings({ tourDone: true });
-  };
+  // Closes once "done" is saved, so leaving or reloading straight away never brings it back.
+  const finish = () => void updateSettings({ tourDone: true }).finally(() => setOpen(false));
   const id = STEPS[step];
   const last = step === STEPS.length - 1;
   return (
