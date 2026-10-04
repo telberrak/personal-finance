@@ -28,31 +28,50 @@ npm run server:dev
 
 Migrations run automatically at start-up ([`server/db.ts`](../server/db.ts)). Never edit a released migration: add a new one.
 
-## Deploy (Fly.io, London)
+## Deploy (DigitalOcean, London)
 
-Two environments are configured: [`fly.production.toml`](../fly.production.toml) and [`fly.staging.toml`](../fly.staging.toml). Both run the [`Dockerfile`](../Dockerfile) in the `lhr` region so data stays in the UK.
+Production runs on [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform) in London (`lon`), so data stays in the UK. One container ([`Dockerfile`](../Dockerfile)) builds the web app and runs the API, which also serves the app (`WEB_DIR=dist`, [`server/web.ts`](../server/web.ts)). App and API share one origin, so the Content-Security-Policy stays `connect-src 'self'` and no CORS is needed. The specs are in [`.do/app.yaml`](../.do/app.yaml) (production) and [`.do/app.staging.yaml`](../.do/app.staging.yaml) (optional staging).
 
-1. Create the apps and a Postgres database (Fly Postgres, Neon or Supabase in London), then set secrets:
+### Costs (checked October 2026; see digitalocean.com/pricing)
+
+| Item                                | Plan                            | Per month     |
+| ----------------------------------- | ------------------------------- | ------------- |
+| App (web app and API)               | Shared 1 vCPU, 512 MB           | $5            |
+| Database                            | Managed PostgreSQL, 1 GB, 10 GB | $15.15        |
+| **Production total**                |                                 | **about $20** |
+| Staging (optional)                  | $5 container + $7 dev database  | $12           |
+| Static sites (e.g. a personal site) | First 3 free, then $3 each      | $0            |
+
+The database cluster can hold databases for other projects too, at no extra cost until it needs a bigger plan. Upgrade the app to `apps-s-1vcpu-1gb-fixed` ($10) if memory alerts fire.
+
+### One-time setup
+
+1. In the DigitalOcean dashboard, create a **PostgreSQL** database cluster named `mizan-db` in **London (LON1)**, Basic plan, 1 GB ($15.15).
+2. Install [`doctl`](https://docs.digitalocean.com/reference/doctl/how-to/install/), run `doctl auth init`, and give DigitalOcean access to the GitHub repository (Apps → Create → GitHub). Then:
 
    ```bash
-   fly apps create mizan-api
-   fly secrets set -c fly.production.toml DATABASE_URL=postgres://… RP_ID=mizan.example.com APP_ORIGINS=https://mizan.example.com RESEND_API_KEY=… MAIL_FROM="Mizan <login@mizan.example.com>"
+   doctl apps create --spec .do/app.yaml
    ```
 
-2. Deploy: `fly deploy -c fly.staging.toml`, check it, then `fly deploy -c fly.production.toml`.
-3. Point the app at it. The app calls `/api` on its own origin, so the host must forward `/api/*` to the API:
-   - **Netlify:** uncomment the `/api/*` redirect in [`netlify.toml`](../netlify.toml) and set the API host.
-   - **Vercel:** add a rewrite before the single-page one: `{ "source": "/api/(.*)", "destination": "https://mizan-api.fly.dev/api/$1" }`.
+3. In the app's settings, set the encrypted variables: `RESEND_API_KEY`, `MAIL_FROM` (a verified sender, e.g. `Mizan <login@mizan.app>`), and optionally `VAPID_*` (`npx web-push generate-vapid-keys`; otherwise keys are created once and kept in the database), `VITE_SUPPORT_EMAIL` and `VITE_OPERATOR_NAME`.
+4. Add your domain under Settings → Domains. `RP_ID` and `APP_ORIGINS` follow the app's primary domain automatically (`${APP_DOMAIN}`, `${APP_URL}`). Passkeys are tied to the domain, so choose it before inviting users.
+5. Every push to `main` now deploys. Check `https://<domain>/api/health`.
 
-   Serving the API from the same origin keeps the Content-Security-Policy at `connect-src 'self'` and avoids CORS.
+Staging: create a `staging` branch, then `doctl apps create --spec .do/app.staging.yaml`. Push to `staging` to test, then merge into `main`.
+
+The database connection is TLS, verified against the cluster's CA certificate (`DATABASE_CA_CERT`, bound from `${db.CA_CERT}`). Rate limits use the client address from DigitalOcean's `do-connecting-ip` header.
+
+### Other hosts
+
+The container runs anywhere Docker does (Render, Fly.io, a VPS) with `DATABASE_URL` set. To host only the web app on a static host instead, use [`netlify.toml`](../netlify.toml) or [`vercel.json`](../vercel.json) and forward `/api/*` to the API.
 
 ## Operations
 
-- **Health and uptime:** `GET /api/health` returns `{ ok, version, environment }` after a database round trip. Fly checks it every 30 seconds; point an external uptime monitor (e.g. UptimeRobot, Better Stack) at it too.
+- **Health and uptime:** `GET /api/health` returns `{ ok, version, environment }` after a database round trip. App Platform checks it every 30 seconds; point an external uptime monitor (e.g. UptimeRobot, Better Stack) at it too.
 - **Logs:** the server logs the method, route and error message only. Never log request bodies, email addresses or tokens. Records are ciphertext anyway, but metadata still matters.
 - **Error reporting:** to add Sentry, call `Sentry.init` in `server/main.ts` with `sendDefaultPii: false` and a `beforeSend` that drops request data. Do not add Sentry to the web app without updating the CSP and the privacy notice.
 - **Releases:** bump `version` in `package.json`, add an entry to [CHANGELOG.md](../CHANGELOG.md), tag `vX.Y.Z`, deploy staging, then production.
-- **Backups:** use the database provider's point-in-time recovery. Backups contain only ciphertext and account metadata.
+- **Backups:** DigitalOcean managed databases keep daily backups with point-in-time recovery (7 days). Backups contain only ciphertext and account metadata.
 - **Account deletion:** `DELETE /api/account` removes the user, sessions, passkeys, vault and records (`ON DELETE CASCADE`).
 
 ## API

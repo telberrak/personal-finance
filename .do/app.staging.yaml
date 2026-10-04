@@ -1,0 +1,54 @@
+# DigitalOcean App Platform, staging (optional, about $12 a month): deploys the staging branch,
+# with a development database. Create: doctl apps create --spec .do/app.staging.yaml
+name: mizan-staging
+region: lon
+
+alerts:
+  - rule: DEPLOYMENT_FAILED
+
+services:
+  - name: app
+    github:
+      repo: telberrak/personal-finance
+      branch: staging
+      deploy_on_push: true
+    dockerfile_path: Dockerfile
+    http_port: 8787
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    instance_count: 1
+    health_check:
+      http_path: /api/health
+      initial_delay_seconds: 10
+    envs:
+      - key: LEDGER_ENV
+        value: staging
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        value: ${db.DATABASE_URL}
+      - key: DATABASE_CA_CERT
+        scope: RUN_TIME
+        value: ${db.CA_CERT}
+      - key: RP_ID
+        scope: RUN_TIME
+        value: ${APP_DOMAIN}
+      - key: APP_ORIGINS
+        scope: RUN_TIME
+        value: ${APP_URL}
+      # The sandbox bank, for testing bank connections without a provider account.
+      - key: BANKS_SANDBOX
+        scope: RUN_TIME
+        value: '1'
+
+ingress:
+  rules:
+    - component:
+        name: app
+      match:
+        path:
+          prefix: /
+
+databases:
+  # A development database ($7 a month, 512 MB): fine for testing, no backups or standby.
+  - name: db
+    engine: PG
+    production: false

@@ -2,10 +2,11 @@
  * Starts the sync API. Configuration comes from environment variables:
  *
  * - PORT (default 8787)
- * - DATABASE_URL: Postgres. Without it, data is kept in PGlite under LEDGER_DATA_DIR
+ * - DATABASE_URL: Postgres, with DATABASE_CA_CERT to verify its TLS certificate. Without it, data is kept in PGlite under LEDGER_DATA_DIR
  *   (default .ledger-api-data), or in memory with LEDGER_DATA_DIR=memory.
  * - RP_ID and APP_ORIGINS (comma-separated): where the app is served, for passkeys.
  * - RESEND_API_KEY and MAIL_FROM: sends sign-in codes by email (otherwise they are logged).
+ * - WEB_DIR: also serve the built web app from this folder (e.g. dist), on the same origin.
  * - LEDGER_DEV=1: development helpers (never in production).
  *
  * Run with `npm run server` (Node 24 runs TypeScript directly).
@@ -17,6 +18,7 @@ import { openPglite, openPostgres, type Sql } from './db.ts';
 import { consoleMailer, resendMailer } from './mailer.ts';
 import { sendDueReminders, webPushSender } from './push.ts';
 import { goCardlessProvider, sandboxProvider } from './banks.ts';
+import { withWebApp } from './web.ts';
 
 const env = process.env;
 const port = Number(env.PORT ?? 8787);
@@ -41,7 +43,7 @@ async function openLocal(): Promise<Sql> {
   }
 }
 
-const sql = env.DATABASE_URL ? await openPostgres(env.DATABASE_URL) : await openLocal();
+const sql = env.DATABASE_URL ? await openPostgres(env.DATABASE_URL, { ca: env.DATABASE_CA_CERT }) : await openLocal();
 const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, env.MAIL_FROM ?? 'Mizan <login@example.com>') : consoleMailer;
 if (!env.RESEND_API_KEY && !dev) console.warn('RESEND_API_KEY is not set: sign-in codes are only printed to this log.');
 
@@ -74,8 +76,11 @@ const app = createApp({
   },
 });
 
-const server = serve({ fetch: app.fetch, port }, () =>
-  console.log(`Mizan API on http://localhost:${port}/api (${env.DATABASE_URL ? 'Postgres' : 'PGlite'})`),
+const site = env.WEB_DIR ? withWebApp(app, env.WEB_DIR, { https: !dev }) : app;
+const server = serve({ fetch: site.fetch, port }, () =>
+  console.log(
+    `Mizan API on http://localhost:${port}/api (${env.DATABASE_URL ? 'Postgres' : 'PGlite'})${env.WEB_DIR ? `, app from ${env.WEB_DIR}` : ''}`,
+  ),
 );
 
 // Push reminders when they are due.

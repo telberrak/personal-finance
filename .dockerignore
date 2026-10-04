@@ -5,7 +5,9 @@ dev-dist
 test-results
 playwright-report
 .git
-src
+.claude
 e2e
-public
 docs
+site
+android
+ios

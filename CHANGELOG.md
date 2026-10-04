@@ -2,6 +2,12 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.15.1 — Hosting on DigitalOcean
+
+- Production moves to DigitalOcean App Platform in London: one container serves the web app and the API on the same origin, with the same security headers. Specs in `.do/`, guide and costs in docs/SERVER.md.
+- Database connections verify the server's TLS certificate when `DATABASE_CA_CERT` is set.
+- The Fly.io configs are removed.
+
 ## 0.15.0 — P14: shared budgets and categories
 
 - Household budgets: a tab per household on Budgets, shared with its members and counting only spending on shared accounts, with alerts at 80% and 100%.

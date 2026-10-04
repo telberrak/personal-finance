@@ -188,9 +188,16 @@ export async function openPglite(dataDir?: string): Promise<Sql> {
   return sql;
 }
 
-export async function openPostgres(url: string): Promise<Sql> {
+/**
+ * With `ca` (the database's CA certificate, e.g. DigitalOcean's ${db.CA_CERT}), the connection is
+ * TLS with the server's certificate verified against it. Without it, the URL's sslmode applies.
+ */
+export async function openPostgres(url: string, { ca }: { ca?: string } = {}): Promise<Sql> {
   const { default: pgModule } = await import('pg');
-  const pool = new pgModule.Pool({ connectionString: url, max: 10 });
+  const pool = ca
+    ? // The URL's sslmode would override the ssl option, so it is dropped when a CA is given.
+      new pgModule.Pool({ connectionString: url.replace(/([?&])sslmode=[^&]*&?/, '$1').replace(/[?&]$/, ''), ssl: { ca }, max: 10 })
+    : new pgModule.Pool({ connectionString: url, max: 10 });
   const client = (c: pg.Pool | pg.PoolClient): Sql => ({
     query: async <T>(text: string, params?: unknown[]) => (await c.query(text, params)).rows as T[],
     transaction: async (fn) => {

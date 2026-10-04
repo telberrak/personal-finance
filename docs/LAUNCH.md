@@ -52,7 +52,7 @@ Event names are fixed in [`server/feedback.ts`](../server/feedback.ts) and [`src
 
 ## 6. Beta programme
 
-1. Deploy staging (`fly.staging.toml`) and a web build that points at it.
+1. Deploy staging (`.do/app.staging.yaml`, see [SERVER.md](SERVER.md)).
 2. Invite 20–50 testers: the web app needs only the link; native builds go through TestFlight (iOS) and Google Play internal testing (see [NATIVE.md](NATIVE.md)).
 3. Ask testers to send feedback from Settings → About; watch `feedback` and error logs.
 4. Run at least one full cycle of: payday, bills, a CSV import, sync on two devices, a backup restore.

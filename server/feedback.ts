@@ -26,7 +26,7 @@ const MAX_MESSAGE = 4000;
 
 export function feedbackRoutes(app: Hono, sql: Sql) {
   const limiter = new RateLimiter();
-  const ip = (c: Context) => c.req.header('fly-client-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0].trim() ?? 'local';
+  const ip = (c: Context) => c.req.header('do-connecting-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0].trim() ?? 'local';
 
   app.post('/feedback', async (c) => {
     if (!limiter.take(`feedback:${ip(c)}`, 5, 3_600_000)) return c.json({ error: 'Too many messages. Try again later.' }, 429);

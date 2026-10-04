@@ -74,7 +74,7 @@ export function createApp({
   const limiter = new RateLimiter();
   const lastCodes = new Map<string, string>();
 
-  const ip = (c: Context) => c.req.header('fly-client-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0].trim() ?? 'local';
+  const ip = (c: Context) => c.req.header('do-connecting-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0].trim() ?? 'local';
   const limit = (key: string, max: number, windowMs: number) => {
     if (!limiter.take(key, max, windowMs)) fail(429, 'Too many attempts. Wait a few minutes and try again.');
   };
