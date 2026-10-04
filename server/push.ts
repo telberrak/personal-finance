@@ -126,7 +126,7 @@ export async function webPushSender(sql: Sql, env: NodeJS.ProcessEnv): Promise<P
       await sql.query("INSERT INTO server_settings (key, value) VALUES ('vapid', $1)", [JSON.stringify({ publicKey, privateKey })]);
     }
   }
-  const vapidDetails = { subject: env.VAPID_SUBJECT ?? 'mailto:support@example.com', publicKey: publicKey!, privateKey: privateKey! };
+  const vapidDetails = { subject: env.VAPID_SUBJECT || 'mailto:support@example.com', publicKey: publicKey!, privateKey: privateKey! };
   return {
     publicKey: publicKey!,
     async send(subscription, payload) {

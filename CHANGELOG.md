@@ -7,6 +7,7 @@ All notable changes. Versions follow [semantic versioning](https://semver.org); 
 - Production moves to DigitalOcean App Platform in London: one container serves the web app and the API on the same origin, with the same security headers. Specs in `.do/`, guide and costs in docs/SERVER.md.
 - Database connections verify the server's TLS certificate when `DATABASE_CA_CERT` is set.
 - The Fly.io configs are removed.
+- Deploys go through GitHub Actions: the production Docker image is built and checked against Postgres, and the app is deployed to DigitalOcean only after every check passes. First-deploy checklist in docs/DEPLOY.md.
 
 ## 0.15.0 — P14: shared budgets and categories
 

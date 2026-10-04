@@ -44,20 +44,9 @@ Production runs on [DigitalOcean App Platform](https://www.digitalocean.com/prod
 
 The database cluster can hold databases for other projects too, at no extra cost until it needs a bigger plan. Upgrade the app to `apps-s-1vcpu-1gb-fixed` ($10) if memory alerts fire.
 
-### One-time setup
+### Setup and releases
 
-1. In the DigitalOcean dashboard, create a **PostgreSQL** database cluster named `mizan-db` in **London (LON1)**, Basic plan, 1 GB ($15.15).
-2. Install [`doctl`](https://docs.digitalocean.com/reference/doctl/how-to/install/), run `doctl auth init`, and give DigitalOcean access to the GitHub repository (Apps → Create → GitHub). Then:
-
-   ```bash
-   doctl apps create --spec .do/app.yaml
-   ```
-
-3. In the app's settings, set the encrypted variables: `RESEND_API_KEY`, `MAIL_FROM` (a verified sender, e.g. `Mizan <login@mizan.app>`), and optionally `VAPID_*` (`npx web-push generate-vapid-keys`; otherwise keys are created once and kept in the database), `VITE_SUPPORT_EMAIL` and `VITE_OPERATOR_NAME`.
-4. Add your domain under Settings → Domains. `RP_ID` and `APP_ORIGINS` follow the app's primary domain automatically (`${APP_DOMAIN}`, `${APP_URL}`). Passkeys are tied to the domain, so choose it before inviting users.
-5. Every push to `main` now deploys. Check `https://<domain>/api/health`.
-
-Staging: create a `staging` branch, then `doctl apps create --spec .do/app.staging.yaml`. Push to `staging` to test, then merge into `main`.
+The step-by-step first deploy is in [DEPLOY.md](DEPLOY.md). In short: create the database cluster `mizan-db` in London, give GitHub a DigitalOcean token and the email settings, and set `DO_DEPLOY=true`. From then on GitHub Actions deploys every push to `main` once all checks pass, and the spec in `.do/app.yaml` is the single source of truth (settings changed only in the dashboard are replaced on the next deploy).
 
 The database connection is TLS, verified against the cluster's CA certificate (`DATABASE_CA_CERT`, bound from `${db.CA_CERT}`). Rate limits use the client address from DigitalOcean's `do-connecting-ip` header.
 

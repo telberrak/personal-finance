@@ -44,7 +44,7 @@ async function openLocal(): Promise<Sql> {
 }
 
 const sql = env.DATABASE_URL ? await openPostgres(env.DATABASE_URL, { ca: env.DATABASE_CA_CERT }) : await openLocal();
-const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, env.MAIL_FROM ?? 'Mizan <login@example.com>') : consoleMailer;
+const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, env.MAIL_FROM || 'Mizan <login@example.com>') : consoleMailer;
 if (!env.RESEND_API_KEY && !dev) console.warn('RESEND_API_KEY is not set: sign-in codes are only printed to this log.');
 
 const push = await webPushSender(sql, env);

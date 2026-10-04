@@ -1,6 +1,8 @@
 # DigitalOcean App Platform, production: the web app and sync API in one container, in London.
-# Create: doctl apps create --spec .do/app.yaml   Update: doctl apps update <app-id> --spec .do/app.yaml
-# Every push to main deploys. See docs/SERVER.md for the one-time setup (database, secrets, domain).
+# Deployed by GitHub Actions (.github/workflows/ci.yml) after every test passes on main: the first
+# run creates the app, later runs update it. ${NAME} values are filled in from GitHub secrets and
+# variables at deploy time; ${APP_URL}, ${APP_DOMAIN} and ${db.*} are filled in by DigitalOcean.
+# Setup: docs/DEPLOY.md.
 name: mizan
 region: lon
 
@@ -13,7 +15,8 @@ services:
     github:
       repo: telberrak/personal-finance
       branch: main
-      deploy_on_push: true
+      # GitHub Actions deploys once the tests pass, so pushes alone do not.
+      deploy_on_push: false
     dockerfile_path: Dockerfile
     http_port: 8787
     # Shared 1 vCPU, 512 MB, $5 a month. Next step up: apps-s-1vcpu-1gb-fixed ($10).
@@ -48,24 +51,27 @@ services:
       - key: APP_ORIGINS
         scope: RUN_TIME
         value: ${APP_URL},capacitor://localhost,https://localhost
-      # Set these in the dashboard (Settings → App-level environment variables), encrypted.
+      # From GitHub (Settings → Secrets and variables → Actions). The app spec is replaced on every
+      # deploy, so set them there, not in the DigitalOcean dashboard.
       - key: RESEND_API_KEY
         scope: RUN_TIME
         type: SECRET
+        value: ${RESEND_API_KEY}
       - key: MAIL_FROM
         scope: RUN_TIME
-      - key: VAPID_PRIVATE_KEY
-        scope: RUN_TIME
-        type: SECRET
-      - key: VAPID_PUBLIC_KEY
-        scope: RUN_TIME
-      - key: VAPID_SUBJECT
-        scope: RUN_TIME
+        value: ${MAIL_FROM}
       # Shown in the privacy policy, terms and help; baked into the web app at build time.
       - key: VITE_SUPPORT_EMAIL
         scope: BUILD_TIME
+        value: ${VITE_SUPPORT_EMAIL}
       - key: VITE_OPERATOR_NAME
         scope: BUILD_TIME
+        value: ${VITE_OPERATOR_NAME}
+
+# Your domain (see docs/DEPLOY.md). Passkeys and CORS follow the primary domain.
+# domains:
+#   - domain: mizan.example.com
+#     type: PRIMARY
 
 ingress:
   rules:

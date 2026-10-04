@@ -7,7 +7,8 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # New pushes replace pull-request runs; on main every run finishes, so a deploy is never cut short.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
@@ -46,3 +47,69 @@ jobs:
           name: playwright-report
           path: playwright-report
           retention-days: 7
+
+  # The production image: built, started against a real Postgres, and checked from outside.
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t mizan .
+      - name: Start the container
+        run: docker run -d --name mizan --network host -e DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres mizan
+      - name: Check the API, the app and its security headers
+        run: |
+          for i in $(seq 1 30); do curl -fs localhost:8787/api/health && break; sleep 2; done
+          curl -fs localhost:8787/api/health | grep -q '"ok":true'
+          curl -fs localhost:8787/bills | grep -q '<title>Mizan</title>'
+          curl -fsI localhost:8787/ | grep -qi '^content-security-policy:'
+          curl -fs -o /dev/null localhost:8787/ocr/lang/eng.traineddata.gz
+      - if: failure()
+        run: docker logs mizan
+
+  # Production deploy to DigitalOcean, only from main and only when every check passed. Turned on by
+  # the repository variable DO_DEPLOY=true once the secrets are set (docs/DEPLOY.md).
+  deploy:
+    needs: [check, e2e, docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DO_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      MAIL_FROM: ${{ vars.MAIL_FROM }}
+      VITE_SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL || 'support@example.com' }}
+      VITE_OPERATOR_NAME: ${{ vars.OPERATOR_NAME || 'the Mizan team' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the deployment settings
+        run: |
+          missing=0
+          for name in DIGITALOCEAN_ACCESS_TOKEN RESEND_API_KEY MAIL_FROM; do
+            if [ -z "${!name}" ]; then echo "::error::$name is not set (docs/DEPLOY.md)"; missing=1; fi
+          done
+          exit $missing
+      - id: deploy
+        uses: digitalocean/app_action/deploy@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          app_spec_location: .do/app.yaml
+          print_build_logs: true
+          print_deploy_logs: true
+      - name: Check the live app
+        env:
+          LIVE_URL: ${{ fromJson(steps.deploy.outputs.app).live_url }}
+        run: |
+          echo "Live at $LIVE_URL"
+          curl -fs "$LIVE_URL/api/health"
