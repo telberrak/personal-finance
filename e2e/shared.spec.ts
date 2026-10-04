@@ -42,6 +42,7 @@ test('split an expense with a friend, request and settle up', async ({ page }) =
 
 test('a household shares chosen accounts between two people', async ({ page, browser, baseURL }, testInfo) => {
   test.skip(!testInfo.project.name.startsWith('desktop-light'), 'Two signed-in browsers: one project is enough');
+  test.setTimeout(90_000); // two people, two browsers and several syncs
   const run = Date.now();
   await signIn(page, `alex-${run}@example.test`);
   await page.goto('/settings/household');
