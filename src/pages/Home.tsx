@@ -26,6 +26,7 @@ import { periodFor } from '../lib/periods';
 import {
   billOccurrences,
   budgetProgress,
+  budgetScope,
   dailySpend,
   dayToDaySpend,
   groupByDay,
@@ -49,7 +50,7 @@ export function Home({ data }: { data?: FinanceData }) {
   const s = safeToSpend(data, ref);
   const safeParts = moneyParts(s.safe);
   const spent = dayToDaySpend(data.transactions, startOfMonth(ref), ref);
-  const budgetTotal = data.budgets.reduce((sum, b) => sum + b.monthlyLimit, 0);
+  const budgetTotal = budgetScope(data).budgets.reduce((sum, b) => sum + b.monthlyLimit, 0);
   const diff = spendVersusLastMonth(data.transactions, ref);
   const days = dailySpend(data.transactions, ref, ref);
   const maxDay = Math.max(1, ...days);
@@ -283,7 +284,8 @@ export function Home({ data }: { data?: FinanceData }) {
 
 function BudgetSummary({ data }: { data: FinanceData }) {
   const period = periodFor(today(), data.settings.budgetPeriod, data.settings.payday);
-  const rows = budgetProgress(data.budgets, data.categories, data.transactions, period);
+  const own = budgetScope(data);
+  const rows = budgetProgress(own.budgets, data.categories, own.transactions, period);
   return (
     <section className="section" aria-label={t('nav.budgets')}>
       <div className="section-head">

@@ -26,6 +26,7 @@ Sizes are rough effort for one developer: **S** ≈ under a day, **M** ≈ 1–3
 | P11 | Shared finances                                  | Couples, households, splitting with friends            | Yes (P3)        | L    |
 | P12 | French and Arabic release, multi-currency        | Opens the app to new users and regions                 | No              | L    |
 | P13 | Launch readiness                                 | Legal, brand, onboarding, support                      | Partly          | M    |
+| P14 | Shared budgets and categories                    | Households plan together; no more "uncategorised"      | Uses P3         | M    |
 
 **Recommended order of work:**
 
@@ -108,8 +109,6 @@ See [SERVER.md](SERVER.md).
 
 **Status (3 October 2026): done.** Alerts are computed on the device (`src/lib/alerts.ts`). The centre and local notifications work without an account; Web Push needs sync, and the server only stores each reminder's time and a generic sentence. Native push comes with P10.
 
-**Status (3 October 2026): done.** Alerts are computed on the device (`src/lib/alerts.ts`). The centre and local notifications work without an account; Web Push needs sync, and the server only stores each reminder's time and a generic sentence. Native push comes with P10.
-
 - Web Push (and native push after P10).
 - **Alerts:**
   - bill due tomorrow;
@@ -181,7 +180,7 @@ See [SERVER.md](SERVER.md).
 
 ## P11 — Shared finances — L (after P3)
 
-**Status (3 October 2026): done.** Households with shared accounts, transactions and bills (end-to-end encrypted, per-household key, one-use invites), and splitting with friends. Shared budgets and custom categories across a household are not shared yet: budgets stay personal, and others' custom categories show as uncategorised.
+**Status (3 October 2026): done.** Households with shared accounts, transactions and bills (end-to-end encrypted, per-household key, one-use invites), and splitting with friends. Shared budgets and custom categories followed in P14.
 
 - **Household space:** shared accounts, bills and budgets with a partner; each person keeps private accounts.
 - **Splitting with friends:** who owes whom, settle-up records and payment links.
@@ -212,6 +211,13 @@ See [SERVER.md](SERVER.md).
 - Privacy policy, terms, cookie-free analytics (opt-in), and UK GDPR / EU GDPR notices in all three languages.
 - First-run tour, empty states, in-app help and feedback, and a status page.
 - Beta programme, support email, a public changelog and versioning.
+
+## P14 — Shared budgets and categories — M (after P11)
+
+**Status (4 October 2026): done.** Closes the gaps P11 left.
+
+- **Shared categories:** a custom category used on a shared transaction, bill or household budget travels with it into the household (end-to-end encrypted), so every member sees its name. Members can rename it; a household can never delete a category or change the built-in ones, and private categories stay private.
+- **Household budgets:** Budgets has a tab per household. A household budget is shared with its members, counts only spending on shared accounts, and raises 80% and 100% alerts for everyone. Your own budgets are unchanged. Leaving a household removes its budgets and keeps its categories.
 
 ---
 

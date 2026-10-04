@@ -1,14 +1,17 @@
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { Icon } from '../components/Icon';
 import { Loading, PageHeader } from '../components/Layout';
 import { catVar } from '../components/rows';
 import { useToast } from '../components/ui/Toast';
+import { db } from '../db/db';
 import { setBudget } from '../db/repo';
-import type { Category, FinanceData } from '../db/types';
+import type { Budget, Category, FinanceData } from '../db/types';
 import { daysBetween, today } from '../lib/dates';
 import { currencySymbol, formatMoney, formatPercent, formatWhole, parseMoney } from '../lib/money';
 import { periodFor, shiftPeriod, type Period } from '../lib/periods';
-import { budgetProgress } from '../lib/selectors';
+import { budgetProgress, budgetScope } from '../lib/selectors';
 import { t } from '../i18n';
 
 const RING_R = 52;
@@ -20,14 +23,20 @@ export function Budgets({ data }: { data?: FinanceData }) {
   const ref = today();
   const [offset, setOffset] = useState(0);
   const [editing, setEditing] = useState(false);
+  const [params, setParams] = useSearchParams();
+  const households = useLiveQuery(() => db.spaceKeys.toArray(), [], []);
   if (!data) return <Loading />;
+
+  // Your own budgets, or a household's (shared with its members, counting only shared spending).
+  const spaceId = households.find((h) => h.id === params.get('household'))?.id;
+  const scope = budgetScope(data, spaceId);
 
   const { budgetPeriod, payday, budgetRollover } = data.settings;
   let period: Period = periodFor(ref, budgetPeriod, payday);
   for (let i = 0; i < -offset; i++) period = shiftPeriod(period, -1, budgetPeriod, payday);
   const previous = shiftPeriod(period, -1, budgetPeriod, payday);
 
-  const rows = budgetProgress(data.budgets, data.categories, data.transactions, period, budgetRollover ? previous : undefined);
+  const rows = budgetProgress(scope.budgets, data.categories, scope.transactions, period, budgetRollover ? previous : undefined);
   const limit = rows.reduce((s, r) => s + r.limit, 0);
   const spent = rows.reduce((s, r) => s + r.spent, 0);
   const left = limit - spent;
@@ -72,8 +81,29 @@ export function Budgets({ data }: { data?: FinanceData }) {
         }
       />
 
+      {households.length > 0 && (
+        <div className="segmented" role="tablist" aria-label={t('budgets.whose')} style={{ marginBottom: 16, alignSelf: 'flex-start' }}>
+          {[{ id: undefined, name: t('budgets.mine') }, ...households].map((h) => (
+            <button
+              key={h.id ?? 'mine'}
+              type="button"
+              role="tab"
+              aria-selected={spaceId === h.id}
+              onClick={() => setParams(h.id ? { household: h.id } : {}, { replace: true })}
+            >
+              {h.name}
+            </button>
+          ))}
+        </div>
+      )}
+      {spaceId && (
+        <p className="label" style={{ marginBottom: 12 }}>
+          {t('budgets.householdNote')}
+        </p>
+      )}
+
       {editing ? (
-        <BudgetEditor data={data} />
+        <BudgetEditor data={data} budgets={scope.budgets} spaceId={spaceId} />
       ) : (
         <div className="budgets-layout">
           <section className="card overview" aria-label={t('budgets.overview')}>
@@ -166,9 +196,9 @@ export function Budgets({ data }: { data?: FinanceData }) {
   );
 }
 
-function BudgetEditor({ data }: { data: FinanceData }) {
+function BudgetEditor({ data, budgets, spaceId }: { data: FinanceData; budgets: Budget[]; spaceId?: string }) {
   const categories = data.categories.filter((c) => c.kind === 'expense' && !c.system && !c.archived);
-  const total = data.budgets.reduce((s, b) => s + b.monthlyLimit, 0);
+  const total = budgets.reduce((s, b) => s + b.monthlyLimit, 0);
   return (
     <section className="stack" style={{ gap: 12, maxWidth: 640 }}>
       <p className="label">
@@ -176,14 +206,19 @@ function BudgetEditor({ data }: { data: FinanceData }) {
       </p>
       <div className="list">
         {categories.map((c) => (
-          <BudgetInput key={c.id} category={c} limit={data.budgets.find((b) => b.categoryId === c.id)?.monthlyLimit} />
+          <BudgetInput
+            key={`${spaceId ?? 'mine'}:${c.id}`}
+            category={c}
+            limit={budgets.find((b) => b.categoryId === c.id)?.monthlyLimit}
+            spaceId={spaceId}
+          />
         ))}
       </div>
     </section>
   );
 }
 
-function BudgetInput({ category, limit }: { category: Category; limit?: number }) {
+function BudgetInput({ category, limit, spaceId }: { category: Category; limit?: number; spaceId?: string }) {
   const toast = useToast();
   const [text, setText] = useState(limit ? (limit / 100).toFixed(0) : '');
   const id = `budget-${category.id}`;
@@ -195,7 +230,7 @@ function BudgetInput({ category, limit }: { category: Category; limit?: number }
       return;
     }
     if (value === (limit ?? null)) return;
-    await setBudget(category.id, value);
+    await setBudget(category.id, value, spaceId);
     toast({
       message: value
         ? t('budgets.setTo', { name: category.name, amount: formatMoney(value) })

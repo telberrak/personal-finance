@@ -15,7 +15,8 @@ import { securityMode } from '../db/crypto';
 import { db } from '../db/db';
 import { isSynced, outboxId } from '../db/outbox';
 import { forgetSpace } from '../db/repo';
-import type { OutboxEntry, SyncState } from '../db/types';
+import { defaultCategories } from '../db/seed';
+import { TRANSFER_CATEGORY_ID, type OutboxEntry, type SyncState } from '../db/types';
 import { api, SyncApiError } from './client';
 import { syncKeys, type SyncedRecord, type SyncKeys } from './keys';
 
@@ -54,7 +55,8 @@ async function keysOf(b64: string): Promise<SyncKeys> {
 
 /**
  * Where records sync: your own stream (everything), and one stream per household you belong to
- * (only shared accounts, their transactions and bills), each under its own key.
+ * (only shared accounts, their transactions and bills, household budgets, and the custom
+ * categories these use), each under its own key.
  */
 interface Stream {
   /** undefined: your own stream; otherwise the household's id. */
@@ -64,8 +66,28 @@ interface Stream {
   cursor: number;
 }
 
-/** Tables a household may write to on this device. */
-const SHARED_TABLES = new Set(['accounts', 'transactions', 'recurring']);
+/** Tables whose records a household shares, marked by their spaceId. */
+const SHARED_TABLES = new Set(['accounts', 'transactions', 'recurring', 'budgets']);
+
+let builtIn: Set<string> | undefined;
+/**
+ * Custom categories (not the built-in ones every install has) travel to a household with the shared
+ * records that use them, so its members see their names instead of "uncategorised".
+ */
+function isCustomCategory(id: unknown): id is string {
+  builtIn ??= new Set([...defaultCategories().map((c) => c.id), TRANSFER_CATEGORY_ID]);
+  return typeof id === 'string' && !builtIn.has(id);
+}
+
+/** Households whose shared records or budgets use a category. */
+async function householdsUsing(categoryId: string): Promise<Set<string | undefined>> {
+  const [transactions, recurring, budgets] = await Promise.all([
+    db.transactions.where('categoryId').equals(categoryId).toArray(),
+    db.recurring.filter((r) => r.categoryId === categoryId).toArray(),
+    db.budgets.where('categoryId').equals(categoryId).toArray(),
+  ]);
+  return new Set([...transactions, ...recurring, ...budgets].map((r) => r.spaceId).filter(Boolean));
+}
 
 async function streamsFor(state: SyncState): Promise<Stream[]> {
   const spaces = await db.spaceKeys.toArray();
@@ -115,7 +137,10 @@ async function apply(records: SyncedRecord[], stream: Stream, cursor: number): P
       // A table this version does not know (written by a newer app) is left for later.
       if (!known.has(r.t) || pending.has(outboxId(r.t, r.k))) continue;
       const table = db.table(r.t);
-      if (stream.spaceId) {
+      if (stream.spaceId && r.t === 'categories') {
+        // Shared custom categories can be added or renamed, never deleted or swapped for built-in ones.
+        if (!r.v || !isCustomCategory(r.k) || r.v.system) continue;
+      } else if (stream.spaceId) {
         // A household can only touch its own shared records, never your private ones.
         if (!SHARED_TABLES.has(r.t)) continue;
         if (r.v && r.v.spaceId !== stream.spaceId) continue;
@@ -144,18 +169,25 @@ async function push(token: string): Promise<void> {
     // Streams are read after the batch: a household's key is saved before anything is shared
     // with it, so every shared record in this batch finds its household.
     const [own, ...spaces] = await streamsFor((await db.syncState.get('sync'))!);
-    // Every record goes to your own stream; shared ones also to their household; deletions to all.
+    // Every record goes to your own stream; shared ones also to their household, with the custom
+    // category they use; a custom category to the households using it; deletions to all.
+    const change = async (s: Stream, r: SyncedRecord) => ({
+      stream: s,
+      change: { rkey: await s.keys.rkey(r.t, r.k), blob: s.keys.seal(r) },
+    });
     const sealed = await Promise.all(
       batch.map(async (e) => {
         const value = ((await db.table(e.table).get(e.key)) ?? null) as Record<string, unknown> | null;
         const v = value && e.table === 'settings' ? withoutDeviceSettings(value) : value;
-        const targets = [own, ...spaces.filter((s) => (v ? SHARED_TABLES.has(e.table) && v.spaceId === s.spaceId : true))];
-        return Promise.all(
-          targets.map(async (s) => ({
-            stream: s,
-            change: { rkey: await s.keys.rkey(e.table, e.key), blob: s.keys.seal({ t: e.table, k: e.key, v }) },
-          })),
-        );
+        const using = v && e.table === 'categories' && isCustomCategory(e.key) ? await householdsUsing(e.key) : new Set();
+        const shared = spaces.filter((s) => (v ? (SHARED_TABLES.has(e.table) && v.spaceId === s.spaceId) || using.has(s.spaceId) : true));
+        const parts = [own, ...shared].map((s) => change(s, { t: e.table, k: e.key, v }));
+        const category =
+          v && SHARED_TABLES.has(e.table) && isCustomCategory(v.categoryId) ? await db.categories.get(v.categoryId) : undefined;
+        if (category && e.table !== 'categories')
+          for (const s of shared)
+            parts.push(change(s, { t: 'categories', k: category.id, v: category as unknown as Record<string, unknown> }));
+        return Promise.all(parts);
       }),
     );
     // Large records (attachments) are sent a few at a time, under the server's request limit.

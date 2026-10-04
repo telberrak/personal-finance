@@ -233,9 +233,13 @@ export async function shareAccount(accountId: string, spaceId: string | undefine
   });
 }
 
-/** After leaving a household: your shared accounts become private again; the others' are removed. */
+/**
+ * After leaving a household: your shared accounts become private again; the others' accounts and
+ * the household's budgets are removed. Shared categories stay, so nothing becomes uncategorised.
+ */
 export async function forgetSpace(spaceId: string, userId: string): Promise<void> {
-  await db.transaction('rw', [db.accounts, db.transactions, db.recurring, db.spaceKeys], async () => {
+  await db.transaction('rw', [db.accounts, db.transactions, db.recurring, db.budgets, db.spaceKeys], async () => {
+    await db.budgets.filter((b) => b.spaceId === spaceId).delete();
     for (const account of await db.accounts.filter((a) => a.spaceId === spaceId).toArray()) {
       if (account.ownerId === userId) {
         await db.accounts.put({ ...account, spaceId: undefined, ownerId: undefined });
@@ -642,16 +646,23 @@ export async function dismissSuggestion(key: string): Promise<void> {
 
 // ---------------------------------------------------------------- budgets
 
-/** Sets a category's monthly limit, or removes the budget with null. */
-export async function setBudget(categoryId: string, limit: Pence | null): Promise<void> {
+/**
+ * Sets a category's monthly limit, or removes the budget with null. With `spaceId`, the budget is
+ * the household's: shared with its members and counting only its shared spending.
+ */
+export async function setBudget(categoryId: string, limit: Pence | null, spaceId?: string): Promise<void> {
   await db.transaction('rw', db.budgets, async () => {
-    const existing = await db.budgets.where('categoryId').equals(categoryId).first();
+    const existing = await db.budgets
+      .where('categoryId')
+      .equals(categoryId)
+      .filter((b) => b.spaceId === spaceId)
+      .first();
     if (limit === null || limit === 0) {
       if (existing) await db.budgets.delete(existing.id);
       return;
     }
     check(isPence(limit) && limit > 0, 'errors.budgetPositive');
-    await db.budgets.put({ id: existing?.id ?? newId(), categoryId, monthlyLimit: limit });
+    await db.budgets.put({ id: existing?.id ?? newId(), categoryId, monthlyLimit: limit, spaceId });
   });
 }
 

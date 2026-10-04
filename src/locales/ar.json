@@ -451,7 +451,10 @@
     "daysLeft_two": " · بقي يومان",
     "daysLeft_few": " · بقيت {{count}} أيام",
     "daysLeft_many": " · بقي {{count}} يومًا",
-    "daysLeft_other": " · بقي {{count}} يوم"
+    "daysLeft_other": " · بقي {{count}} يوم",
+    "whose": "ميزانيات مَن",
+    "mine": "ميزانياتي",
+    "householdNote": "مشتركة مع أسرتك. لا تحتسب هذه الميزانيات إلا الإنفاق من الحسابات المشتركة، ويمكن لكل أفراد الأسرة تعديلها."
   },
   "billForm": {
     "notFound": "لم يتم العثور على الفاتورة",

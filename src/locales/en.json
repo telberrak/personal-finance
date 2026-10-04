@@ -423,7 +423,10 @@
     "amountHint": "Enter the budget as an amount, like 250",
     "setTo": "{{name}}: {{amount}} a month",
     "removed": "{{name}} budget removed",
-    "noBudget": "No budget"
+    "noBudget": "No budget",
+    "whose": "Whose budgets",
+    "mine": "Mine",
+    "householdNote": "Shared with your household. These budgets count only spending on shared accounts, and everyone in the household can change them."
   },
   "billForm": {
     "notFound": "Bill not found",

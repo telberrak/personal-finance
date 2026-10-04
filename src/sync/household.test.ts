@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { createApp } from '../../server/app.ts';
 import { openPglite, type Sql } from '../../server/db.ts';
 import { db } from '../db/db';
-import { addTransaction, shareAccount } from '../db/repo';
+import { addTransaction, saveCategory, setBudget, shareAccount } from '../db/repo';
 import { seedDemoData } from '../db/seed';
 import { resetDb } from '../test/utils';
 import { joinWithRecoveryKey, requestCode, verifyCode } from './account';
@@ -83,6 +83,56 @@ describe('households', () => {
     await leaveHousehold(space);
     expect(await db.accounts.get('current')).toMatchObject({ spaceId: undefined });
     expect(await db.spaceKeys.count()).toBe(0);
+  });
+
+  it('shares custom categories and household budgets, but not personal budgets', async () => {
+    const alex = await device('alex@example.com');
+    await seedDemoData('2026-10-14');
+    const alexKey = alex.kind === 'created' ? alex.recoveryKey : '';
+    const alexId = (await db.syncState.get('sync'))!.userId;
+    const space = await createHousehold('Home');
+    await shareAccount('current', space, alexId);
+    // A custom category on a shared transaction, a private custom category, and two budgets.
+    const kids = await saveCategory({ name: 'Kids', color: 'fun', kind: 'expense' });
+    const hobby = await saveCategory({ name: 'Secret hobby', color: 'fun', kind: 'expense' });
+    await addTransaction({ accountId: 'current', date: '2026-10-14', amount: -2500, payee: 'School trip', categoryId: kids });
+    await addTransaction({ accountId: 'savings', date: '2026-10-14', amount: -900, payee: 'Shop', categoryId: hobby });
+    await setBudget('groceries', 40000, space);
+    await setBudget(hobby, 5000);
+    const link = await inviteLink(space);
+    await syncNow();
+
+    // Sam sees the shared category by name and the household budget; nothing private.
+    await device('sam@example.com');
+    await joinHousehold(parseInvitation(link.split('#')[1])!);
+    expect(await db.categories.get(kids)).toMatchObject({ name: 'Kids' });
+    expect(await db.categories.get(hobby)).toBeUndefined();
+    expect(await db.budgets.toArray()).toEqual([expect.objectContaining({ categoryId: 'groceries', monthlyLimit: 40000, spaceId: space })]);
+
+    // Sam renames the shared category and changes the household budget.
+    await saveCategory({ id: kids, name: 'Children', color: 'fun', kind: 'expense' });
+    await setBudget('groceries', 45000, space);
+    await setBudget(kids, 10000, space);
+    await syncNow();
+
+    await device('alex@example.com');
+    await joinWithRecoveryKey(alexKey);
+    await syncNow();
+    expect(await db.categories.get(kids)).toMatchObject({ name: 'Children' });
+    const household = (await db.budgets.toArray()).filter((b) => b.spaceId === space);
+    expect(household).toHaveLength(2);
+    expect(household).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ categoryId: 'groceries', monthlyLimit: 45000 }),
+        expect.objectContaining({ categoryId: kids, monthlyLimit: 10000 }),
+      ]),
+    );
+    expect((await db.budgets.toArray()).find((b) => b.categoryId === hobby && !b.spaceId)).toBeDefined();
+
+    // Leaving drops the household's budgets but keeps its categories.
+    await leaveHousehold(space);
+    expect((await db.budgets.toArray()).filter((b) => b.spaceId)).toEqual([]);
+    expect(await db.categories.get(kids)).toBeDefined();
   });
 
   it('rejects malformed invitations', () => {

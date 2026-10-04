@@ -4,6 +4,7 @@ import {
   accountBalance,
   billOccurrences,
   budgetProgress,
+  budgetScope,
   dayToDaySpend,
   moneyInOut,
   overdueBills,
@@ -131,6 +132,20 @@ describe('spending', () => {
     expect(g.rolledOver).toBe(500); // spent 500 of 1000 in September
     expect(g.limit).toBe(1500);
     expect(g.remaining).toBe(1500 - 2340);
+  });
+
+  it('counts only shared spending for a household budget', () => {
+    const budgets = [
+      { id: 'mine', categoryId: 'groceries', monthlyLimit: 1000 },
+      { id: 'ours', categoryId: 'groceries', monthlyLimit: 5000, spaceId: 'home' },
+    ];
+    const all = [...txs, tx({ amount: -700, categoryId: 'groceries', date: '2026-10-14', spaceId: 'home' })];
+    const mine = budgetScope({ budgets, transactions: all });
+    expect(mine.budgets.map((b) => b.id)).toEqual(['mine']);
+    expect(mine.transactions).toHaveLength(all.length);
+    const ours = budgetScope({ budgets, transactions: all }, 'home');
+    expect(ours.budgets.map((b) => b.id)).toEqual(['ours']);
+    expect(ours.transactions.map((t) => t.amount)).toEqual([-700]);
   });
 });
 

@@ -164,6 +164,21 @@ function spentIn(transactions: Transaction[], categoryId: string, from: ISODate,
 }
 
 /**
+ * The budgets in one scope, with the spending they count: your own budgets count everything you
+ * can see; a household's count only the transactions shared with that household.
+ */
+export function budgetScope(
+  data: Pick<FinanceData, 'budgets' | 'transactions'>,
+  spaceId?: string,
+): { budgets: Budget[]; transactions: Transaction[] } {
+  if (!spaceId) return { budgets: data.budgets.filter((b) => !b.spaceId), transactions: data.transactions };
+  return {
+    budgets: data.budgets.filter((b) => b.spaceId === spaceId),
+    transactions: data.transactions.filter((t) => t.spaceId === spaceId),
+  };
+}
+
+/**
  * Spending against each budget in a period. With `previous`, last period's unspent (or overspent)
  * amount is carried into this one.
  */

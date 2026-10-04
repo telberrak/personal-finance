@@ -11,7 +11,7 @@ import { forecastBalance } from './forecast';
 import { formatMoney } from './money';
 import { periodFor } from './periods';
 import { nextOccurrence, nextPayday } from './recurring';
-import { accountBalance, billOccurrences, budgetProgress, isTransfer } from './selectors';
+import { accountBalance, billOccurrences, budgetProgress, budgetScope, isTransfer } from './selectors';
 import { payeeKey } from './payees';
 
 export const ALERT_TYPES = [
@@ -183,19 +183,23 @@ export function computeAlerts(data: FinanceData, now: Date): Alert[] {
     });
   }
 
-  // Budgets at 80% and 100% of this period. Shown when it happens.
+  // Budgets at 80% and 100% of this period, your own and your households'. Shown when it happens.
   const period = periodFor(today, data.settings.budgetPeriod, data.settings.payday);
-  for (const p of budgetProgress(data.budgets, data.categories, data.transactions, period)) {
-    const level = p.ratio >= 1 ? 100 : p.ratio >= 0.8 ? 80 : 0;
-    if (!level) continue;
-    out.push({
-      id: `budget${level}:${p.category.id}:${period.from}`,
-      type: 'budget',
-      at: nowMs,
-      title: t(level === 100 ? 'alerts.budget.over' : 'alerts.budget.near', { name: p.category.name }),
-      body: t('alerts.budget.body', { spent: formatMoney(p.spent), limit: formatMoney(p.limit) }),
-      link: '/budgets',
-    });
+  const scopes = [undefined, ...new Set(data.budgets.flatMap((b) => (b.spaceId ? [b.spaceId] : [])))];
+  for (const spaceId of scopes) {
+    const scope = budgetScope(data, spaceId);
+    for (const p of budgetProgress(scope.budgets, data.categories, scope.transactions, period)) {
+      const level = p.ratio >= 1 ? 100 : p.ratio >= 0.8 ? 80 : 0;
+      if (!level) continue;
+      out.push({
+        id: `budget${level}:${spaceId ? spaceId + ':' : ''}${p.category.id}:${period.from}`,
+        type: 'budget',
+        at: nowMs,
+        title: t(level === 100 ? 'alerts.budget.over' : 'alerts.budget.near', { name: p.category.name }),
+        body: t('alerts.budget.body', { spent: formatMoney(p.spent), limit: formatMoney(p.limit) }),
+        link: spaceId ? `/budgets?household=${spaceId}` : '/budgets',
+      });
+    }
   }
 
   // Forecast below the warning level within a month.

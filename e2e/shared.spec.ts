@@ -48,6 +48,15 @@ test('a household shares chosen accounts between two people', async ({ page, bro
   await expect(page.getByLabel('Current account')).toBeChecked();
   await page.getByRole('button', { name: 'Invite someone' }).click();
   const link = (await page.locator('.recovery-key', { hasText: '/join#' }).textContent())!.trim();
+  // A household budget, set from the household's tab on Budgets.
+  await page.goto('/budgets');
+  await page.getByRole('tab', { name: 'Home' }).click();
+  await expect(page.getByText(/count only spending on shared accounts/)).toBeVisible();
+  await page.getByRole('button', { name: 'Edit' }).click();
+  await page.getByLabel('Groceries').fill('420');
+  await page.getByLabel('Groceries').press('Enter');
+  await expect(page.getByText('Groceries: £420.00 a month')).toBeVisible();
+  await page.getByRole('button', { name: 'Done' }).click();
   await page.goto('/settings/sync');
   await page.getByRole('button', { name: 'Sync now' }).click();
   await expect(page.getByText(/Up to date/)).toBeVisible({ timeout: 15_000 });
@@ -66,5 +75,8 @@ test('a household shares chosen accounts between two people', async ({ page, bro
   await expect(sam.getByText('Shared by someone else')).toBeVisible();
   await sam.goto('/activity');
   await expect(sam.getByText('Tesco').first()).toBeVisible({ timeout: 15_000 });
+  await sam.goto('/budgets');
+  await sam.getByRole('tab', { name: 'Home' }).click();
+  await expect(sam.getByText(/of £420\.00/)).toBeVisible();
   await sam.context().close();
 });

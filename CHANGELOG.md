@@ -2,6 +2,11 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.15.0 — P14: shared budgets and categories
+
+- Household budgets: a tab per household on Budgets, shared with its members and counting only spending on shared accounts, with alerts at 80% and 100%.
+- Custom categories used on shared transactions, bills and budgets are now shared with the household, so nobody sees "uncategorised" for them.
+
 ## 0.14.1 — Renamed to Mizan
 
 - The app is now called **Mizan** (ميزان, "balance") in every language, on the website, in emails and in the native apps (new app id `app.mizan.money`).

@@ -423,7 +423,10 @@
     "removed": "Budget {{name}} supprimé",
     "noBudget": "Pas de budget",
     "daysLeft_one": " · {{count}} jour restant",
-    "daysLeft_other": " · {{count}} jours restants"
+    "daysLeft_other": " · {{count}} jours restants",
+    "whose": "Budgets de qui",
+    "mine": "Les miens",
+    "householdNote": "Partagés avec votre foyer. Ces budgets ne comptent que les dépenses des comptes partagés, et chaque membre du foyer peut les modifier."
   },
   "billForm": {
     "notFound": "Facture introuvable",

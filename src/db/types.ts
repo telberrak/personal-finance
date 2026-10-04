@@ -143,6 +143,8 @@ export interface Budget {
   id: string;
   categoryId: string;
   monthlyLimit: Pence;
+  /** A household budget (P14): shared with that household, counting only its shared spending. */
+  spaceId?: string;
 }
 
 export type RuleMatch = 'contains' | 'startsWith' | 'exact';
