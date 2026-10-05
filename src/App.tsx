@@ -45,6 +45,7 @@ const Friends = page(() => import('./pages/Friends'), 'Friends');
 const Household = page(() => import('./pages/Household'), 'Household');
 const JoinHousehold = lazy(() => import('./pages/Household').then((m) => ({ default: m.JoinHousehold })));
 const About = page(() => import('./pages/Info'), 'About');
+const Help = page(() => import('./pages/Help'), 'Help');
 const ContentPage = lazy(() => import('./pages/Info').then((m) => ({ default: m.ContentPage })));
 
 export function App() {
@@ -102,7 +103,7 @@ function Unlocked() {
               <Route path="friends" element={<Friends data={data} />} />
               <Route path="settings/household" element={<Household data={data} />} />
               <Route path="join" element={<JoinHousehold />} />
-              <Route path="help" element={<ContentPage data={data} kind="help" />} />
+              <Route path="help" element={<Help data={data} />} />
               <Route path="privacy" element={<ContentPage data={data} kind="privacy" />} />
               <Route path="terms" element={<ContentPage data={data} kind="terms" />} />
               <Route path="settings/about" element={<About data={data} />} />

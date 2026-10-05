@@ -166,7 +166,8 @@
     "networth": "Net worth",
     "search": "Search",
     "calendar": "Calendar",
-    "friends": "Friends"
+    "friends": "Friends",
+    "help": "Help"
   },
   "app": {
     "name": "Mizan"
@@ -1360,5 +1361,11 @@
     "skip": "Skip",
     "next": "Next",
     "done": "Start"
+  },
+  "help": {
+    "title": "Help",
+    "search": "Search help",
+    "searchPlaceholder": "Search help, e.g. bills, PIN, import",
+    "noMatch": "No help topic matches. Try another word."
   }
 }

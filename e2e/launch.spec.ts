@@ -1,5 +1,34 @@
 import { expect, test } from './fixtures';
 
+test('help explains every feature, opens from the navigation and can be searched', async ({ page }, info) => {
+  // Desktop: the sidebar, right after Friends. Phone: the shortcuts on Home, after Friends.
+  const nav = info.project.name.startsWith('desktop') ? page.locator('.side-nav') : page.getByRole('navigation', { name: 'More' });
+  const links = await nav.getByRole('link').allTextContents();
+  expect(links.indexOf('Help')).toBe(links.indexOf('Friends') + 1);
+  await nav.getByRole('link', { name: 'Help' }).click();
+  await expect(page.getByRole('heading', { name: 'Help', level: 1 })).toBeVisible();
+
+  // Topics open on a tap, with numbered steps and examples.
+  const bills = page.locator('details#bills');
+  await bills.getByRole('heading', { name: 'Bills and recurring payments' }).click();
+  await expect(bills.locator('ol li').first()).toBeVisible();
+  await expect(bills.locator('.example').first()).toContainText('Council Tax');
+
+  // Search narrows the topics and opens what matches; nothing found says so.
+  await page.getByLabel('Search help').fill('recovery key');
+  await expect(page.locator('details#sync')).toHaveAttribute('open', '');
+  await expect(page.locator('details#budgets')).toHaveCount(0);
+  await page.getByLabel('Search help').fill('zebra crossing');
+  await expect(page.getByText('No help topic matches.')).toBeVisible();
+
+  // A link to a topic opens it; the French help reads in French.
+  await page.getByLabel('Search help').fill('');
+  await page.goto('/help#friends');
+  await expect(page.locator('details#friends')).toHaveAttribute('open', '');
+  await page.goto('/help?locale=fr');
+  await expect(page.getByRole('heading', { name: 'Factures et paiements réguliers' })).toBeVisible();
+});
+
 test('help, privacy policy and terms read in the chosen language', async ({ page }) => {
   await page.goto('/help');
   await expect(page.getByRole('heading', { name: 'Help', level: 1 })).toBeVisible();

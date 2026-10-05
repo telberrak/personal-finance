@@ -55,6 +55,8 @@ const DATA = [
   '[translate="no"]',
   // Help, privacy and terms are documents translated as a whole (checked in French and Arabic below).
   '.prose',
+  '.help-intro',
+  '.help-topic summary',
 ].join(', ');
 
 for (const path of SCREENS) {

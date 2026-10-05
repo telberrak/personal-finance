@@ -266,6 +266,10 @@ export function Home({ data }: { data?: FinanceData }) {
                 <Icon name="rules" size={22} />
                 {t('nav.friends')}
               </Link>
+              <Link to="/help" className="quick-link">
+                <Icon name="help" size={22} />
+                {t('nav.help')}
+              </Link>
               <Link to="/networth" className="quick-link">
                 <Icon name="wallet" size={22} />
                 {t('nav.networth')}

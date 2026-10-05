@@ -12,7 +12,7 @@ import { currentLanguage, t } from '../i18n';
 import { api } from '../sync/client';
 import changelog from '../../CHANGELOG.md?raw';
 
-/** Help, privacy policy or terms, in the interface language. */
+/** Privacy policy or terms, in the interface language. */
 export function ContentPage({ data, kind }: { data?: FinanceData; kind: ContentKind }) {
   // The language on screen (Settings, or a ?locale= link from the website).
   const language = data ? currentLanguage() : 'en';
@@ -28,8 +28,8 @@ export function ContentPage({ data, kind }: { data?: FinanceData; kind: ContentK
   if (!data || text?.key !== key) return <Loading />;
   return (
     <main className="screen screen--modal">
-      <Link to={kind === 'help' ? '/settings' : '/settings/about'} className="link-btn" style={{ alignSelf: 'flex-start', padding: 0 }}>
-        {kind === 'help' ? t('common.backToSettings') : t('about.back')}
+      <Link to="/settings/about" className="link-btn" style={{ alignSelf: 'flex-start', padding: 0 }}>
+        {t('about.back')}
       </Link>
       <Markdown source={text.body} />
     </main>

@@ -166,7 +166,8 @@
     "networth": "Patrimoine",
     "search": "Recherche",
     "calendar": "Calendrier",
-    "friends": "Amis"
+    "friends": "Amis",
+    "help": "Aide"
   },
   "app": {
     "name": "Mizan"
@@ -1360,5 +1361,11 @@
     "skip": "Passer",
     "next": "Suivant",
     "done": "Commencer"
+  },
+  "help": {
+    "title": "Aide",
+    "search": "Rechercher dans l’aide",
+    "searchPlaceholder": "Rechercher, par ex. factures, code, importer",
+    "noMatch": "Aucun sujet ne correspond. Essayez un autre mot."
   }
 }

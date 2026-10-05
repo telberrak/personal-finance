@@ -2023,3 +2023,64 @@ dialog::backdrop {
 .prose li {
   margin: 0;
 }
+.prose ol {
+  margin: 0;
+  padding-inline-start: 22px;
+}
+.prose ol li + li,
+.prose ul li + li {
+  margin-top: 4px;
+}
+/* "> **Example:** …" boxes in Help. */
+.prose .example {
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--accent-soft);
+  border-radius: var(--radius-md);
+  border-inline-start: 3px solid var(--accent);
+}
+
+/* Help: one expandable card per topic. */
+.help-topics {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.help-topic {
+  padding: 0;
+  scroll-margin-top: 16px;
+}
+.help-topic summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+.help-topic summary::-webkit-details-marker {
+  display: none;
+}
+.help-topic summary h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.help-topic summary svg {
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+.help-topic[open] summary svg {
+  transform: rotate(180deg);
+}
+.help-topic .prose {
+  padding: 0 18px 16px;
+}
+.help-topic summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--radius-lg);
+}

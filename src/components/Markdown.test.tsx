@@ -18,4 +18,16 @@ describe('Markdown', () => {
     expect(document.querySelector('script')).toBeNull();
     expect(screen.queryByRole('link', { name: 'bad' })).toBeNull(); // javascript: links stay plain text
   });
+
+  it('renders numbered steps, example boxes and heading anchors', () => {
+    const { container } = render(
+      <Markdown
+        source={'## Bills {#bills}\n\n1. Enter the amount.\n2. Choose how often.\n\n> **Example:** Council Tax, £148.\n\n- a bullet'}
+      />,
+    );
+    expect(screen.getByRole('heading', { level: 2, name: 'Bills' })).toHaveAttribute('id', 'bills');
+    expect(container.querySelector('ol')?.children).toHaveLength(2);
+    expect(container.querySelector('ul')?.children).toHaveLength(1);
+    expect(container.querySelector('blockquote.example')).toHaveTextContent('Example: Council Tax, £148.');
+  });
 });

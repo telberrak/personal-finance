@@ -2,6 +2,11 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.17.0 — Help
+
+- A Help section, right after Friends (in the sidebar on a computer, on Home on a phone): 26 topics explaining each feature step by step with examples, from accounts and bills to households, sync and security, in English, French and Arabic.
+- Search across help (ignoring case and accents), topics that open on a tap, and direct links to a topic such as /help#bills.
+
 ## 0.16.1 — Bills you add no longer seem to disappear
 
 - Bills → Upcoming lists everything due in the next 30 days, including early next month, not only the current month. A new bill due next month used to show only under All.

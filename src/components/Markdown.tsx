@@ -4,8 +4,9 @@ const EXTERNAL = { target: '_blank', rel: 'noopener noreferrer' } as const;
 
 /**
  * A small Markdown renderer for the app's own content (help, privacy, terms, changelog):
- * headings, paragraphs, bullet lists, **bold**, `code` and [links](https://…). It builds React
- * elements, never HTML strings, so content cannot inject markup.
+ * headings (with an optional `{#anchor}`), paragraphs, bullet and numbered lists, `>` example
+ * boxes, **bold**, `code` and [links](https://…). It builds React elements, never HTML strings,
+ * so content cannot inject markup.
  */
 function inline(text: string, key: string): ReactNode[] {
   const out: ReactNode[] = [];
@@ -30,37 +31,65 @@ function inline(text: string, key: string): ReactNode[] {
   return out;
 }
 
+/** A heading's text and its `{#anchor}`, if any: "Bills {#bills}" → ["Bills", "bills"]. */
+export function headingAnchor(text: string): [string, string | undefined] {
+  const m = text.match(/^(.*?)\s*\{#([\w-]+)\}$/);
+  return m ? [m[1], m[2]] : [text, undefined];
+}
+
 export function Markdown({ source }: { source: string }) {
   const blocks: ReactNode[] = [];
   const lines = source.replace(/\r\n/g, '\n').split('\n');
   let paragraph: string[] = [];
   let list: string[] = [];
+  let ordered = false;
+  let quote: string[] = [];
   const flush = () => {
     if (paragraph.length) blocks.push(<p key={`p${blocks.length}`}>{inline(paragraph.join(' '), `p${blocks.length}`)}</p>);
-    if (list.length)
+    if (list.length) {
+      const List = ordered ? 'ol' : 'ul';
       blocks.push(
-        <ul key={`u${blocks.length}`}>
+        <List key={`u${blocks.length}`}>
           {list.map((item, i) => (
             <li key={i}>{inline(item, `l${blocks.length}-${i}`)}</li>
           ))}
-        </ul>,
+        </List>,
+      );
+    }
+    if (quote.length)
+      blocks.push(
+        <blockquote key={`q${blocks.length}`} className="example">
+          {inline(quote.join(' '), `q${blocks.length}`)}
+        </blockquote>,
       );
     paragraph = [];
     list = [];
+    quote = [];
   };
   for (const raw of lines) {
     const line = raw.trimEnd();
     const heading = line.match(/^(#{1,3})\s+(.*)$/);
+    const item = line.match(/^(?:[-*]|(\d+)\.)\s+(.*)$/);
     if (heading) {
       flush();
       const Tag = (['h1', 'h2', 'h3'] as const)[heading[1].length - 1];
-      blocks.push(<Tag key={`h${blocks.length}`}>{inline(heading[2], `h${blocks.length}`)}</Tag>);
-    } else if (/^[-*]\s+/.test(line)) {
-      if (paragraph.length) flush();
-      list.push(line.replace(/^[-*]\s+/, ''));
+      const [text, id] = headingAnchor(heading[2]);
+      blocks.push(
+        <Tag key={`h${blocks.length}`} id={id}>
+          {inline(text, `h${blocks.length}`)}
+        </Tag>,
+      );
+    } else if (item) {
+      const isOrdered = item[1] !== undefined;
+      if (paragraph.length || quote.length || (list.length && ordered !== isOrdered)) flush();
+      ordered = isOrdered;
+      list.push(item[2]);
+    } else if (line.startsWith('>')) {
+      if (paragraph.length || list.length) flush();
+      quote.push(line.replace(/^>\s?/, ''));
     } else if (!line.trim()) flush();
     else {
-      if (list.length) flush();
+      if (list.length || quote.length) flush();
       paragraph.push(line.trim());
     }
   }
