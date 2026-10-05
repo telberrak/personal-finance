@@ -189,7 +189,7 @@ export async function openPglite(dataDir?: string): Promise<Sql> {
 }
 
 /**
- * With `ca` (the database's CA certificate, e.g. DigitalOcean's ${db.CA_CERT}), the connection is
+ * With `ca` (the database's CA certificate, for managed databases such as RDS), the connection is
  * TLS with the server's certificate verified against it. Without it, the URL's sslmode applies.
  */
 export async function openPostgres(url: string, { ca }: { ca?: string } = {}): Promise<Sql> {

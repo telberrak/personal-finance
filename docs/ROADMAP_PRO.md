@@ -88,12 +88,12 @@ Goal: the app looks exactly the same in English, but nothing in the code assumes
 
 ## P3 — Backend foundation — XL (decision needed: hosting, cost, data location)
 
-**Status (3 October 2026): done.** Decision: our own TypeScript API (Hono, Postgres; PGlite locally), deployed to Fly.io in London; moved to DigitalOcean App Platform in London on 4 October 2026. It covers:
+**Status (3 October 2026): done.** Decision: our own TypeScript API (Hono, Postgres; PGlite locally), deployed to Fly.io in London; now on a self-managed AWS EC2 instance in London (October 2026). It covers:
 
 - sign-in with an emailed code or a passkey, sessions per device;
 - end-to-end encrypted sync (sync key in a vault opened by the recovery key, HMAC record keys, outbox-based change tracking, per-record last-writer-wins that never overwrites unpushed local changes);
 - device list with remote sign-out, account deletion, recovery key;
-- Dockerfile, staging and production deploy configs (now `.do/`), health checks, privacy-safe logging, CHANGELOG and versions. Error reporting (Sentry) is documented but not enabled: it needs an account.
+- Dockerfile, deploy configs (now `deploy/ec2`), health checks, privacy-safe logging, CHANGELOG and versions. Error reporting (Sentry) is documented but not enabled: it needs an account.
 
 See [SERVER.md](SERVER.md).
 

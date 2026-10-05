@@ -48,68 +48,124 @@ jobs:
           path: playwright-report
           retention-days: 7
 
-  # The production image: built, started against a real Postgres, and checked from outside.
-  docker:
+  # The production stack exactly as it runs on EC2 (deploy/ec2): the image, PostgreSQL and Caddy,
+  # checked over HTTPS from outside. Also lints the server scripts.
+  stack:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports: ['5432:5432']
-        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
     steps:
       - uses: actions/checkout@v7
-      - run: docker build -t mizan .
-      - name: Start the container
-        run: docker run -d --name mizan --network host -e DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres mizan
-      - name: Check the API, the app and its security headers
+      - run: shellcheck deploy/ec2/*.sh
+      - run: docker build -t mizan:ci .
+      - name: Start Caddy, PostgreSQL and Mizan
+        working-directory: deploy/ec2
         run: |
-          for i in $(seq 1 30); do curl -fs localhost:8787/api/health && break; sleep 2; done
-          curl -fs localhost:8787/api/health | grep -q '"ok":true'
-          curl -fs localhost:8787/bills | grep -q '<title>Mizan</title>'
-          curl -fsI localhost:8787/ | grep -qi '^content-security-policy:'
-          curl -fs -o /dev/null localhost:8787/ocr/lang/eng.traineddata.gz
+          mkdir -p sites sites.d
+          printf 'MIZAN_DOMAIN=localhost\nPOSTGRES_PASSWORD=ci\nMIZAN_IMAGE=mizan\nMIZAN_TAG=ci\n' > .env
+          docker compose up -d --wait
+      - name: Check the API, the app, its security headers and the receipt-reading files over HTTPS
+        run: |
+          curl -fsk https://localhost/api/health | grep -q '"ok":true'
+          curl -fsk https://localhost/bills | grep -q '<title>Mizan</title>'
+          curl -fskI https://localhost/ | grep -qi '^content-security-policy:'
+          curl -fsk -o /dev/null https://localhost/ocr/lang/eng.traineddata.gz
+          curl -fsI http://localhost/ | grep -qi '^location: https://'
       - if: failure()
-        run: docker logs mizan
+        working-directory: deploy/ec2
+        run: docker compose logs
 
-  # Production deploy to DigitalOcean, only from main and only when every check passed. Turned on by
-  # the repository variable DO_DEPLOY=true once the secrets are set (docs/DEPLOY.md).
-  deploy:
-    needs: [check, e2e, docker]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DO_DEPLOY == 'true'
+  # The image for the server, for ARM (Graviton) and x86, published to GitHub's container registry.
+  image:
+    needs: [check, e2e, stack]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/mizan:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/mizan:latest
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          build-args: |
+            VITE_SUPPORT_EMAIL=${{ vars.SUPPORT_EMAIL }}
+            VITE_OPERATOR_NAME=${{ vars.OPERATOR_NAME }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Production deploy to the EC2 instance over SSH, only after every check passed. Turned on by the
+  # repository variable EC2_DEPLOY=true once the server is set up (docs/DEPLOY.md). If the new
+  # version does not become healthy, the previous one is started again.
+  deploy:
+    needs: image
+    if: vars.EC2_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: production
     concurrency:
       group: deploy-production
       cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
     env:
-      DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      MAIL_FROM: ${{ vars.MAIL_FROM }}
-      VITE_SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL || 'support@example.com' }}
-      VITE_OPERATOR_NAME: ${{ vars.OPERATOR_NAME || 'the Mizan team' }}
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      MIZAN_DOMAIN: ${{ vars.MIZAN_DOMAIN }}
     steps:
       - uses: actions/checkout@v7
-      - name: Check the deployment settings
-        run: |
-          missing=0
-          for name in DIGITALOCEAN_ACCESS_TOKEN RESEND_API_KEY MAIL_FROM; do
-            if [ -z "${!name}" ]; then echo "::error::$name is not set (docs/DEPLOY.md)"; missing=1; fi
-          done
-          exit $missing
-      - id: deploy
-        uses: digitalocean/app_action/deploy@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-          app_spec_location: .do/app.yaml
-          print_build_logs: true
-          print_deploy_logs: true
-      - name: Check the live app
+      - name: SSH key and known host
         env:
-          LIVE_URL: ${{ fromJson(steps.deploy.outputs.app).live_url }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
         run: |
-          echo "Live at $LIVE_URL"
-          curl -fs "$LIVE_URL/api/health"
+          for name in EC2_HOST EC2_SSH_KEY EC2_KNOWN_HOSTS MIZAN_DOMAIN; do
+            if [ -z "${!name}" ]; then echo "::error::$name is not set (docs/DEPLOY.md)"; exit 1; fi
+          done
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$EC2_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Copy the server configuration
+        run: scp deploy/ec2/compose.yml deploy/ec2/Caddyfile "deploy@$EC2_HOST:/srv/mizan/"
+      - name: Start the new version
+        env:
+          TAG: ${{ github.sha }}
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh "deploy@$EC2_HOST" TAG="$TAG" REGISTRY_USER="$REGISTRY_USER" REGISTRY_TOKEN="$REGISTRY_TOKEN" bash -s <<'EOF'
+          set -euo pipefail
+          cd /srv/mizan
+          previous="$(sed -n 's/^MIZAN_TAG=//p' .env)"
+          printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin >/dev/null
+          docker compose pull --quiet mizan || { docker logout ghcr.io >/dev/null; exit 1; }
+          sed -i "s/^MIZAN_TAG=.*/MIZAN_TAG=$TAG/" .env
+          docker compose pull --quiet caddy postgres
+          docker logout ghcr.io >/dev/null
+          if ! docker compose up -d --wait --wait-timeout 120 --remove-orphans; then
+            echo "New version unhealthy; going back to $previous" >&2
+            docker compose logs --tail 50 mizan >&2 || true
+            sed -i "s/^MIZAN_TAG=.*/MIZAN_TAG=$previous/" .env
+            docker compose up -d --wait --wait-timeout 120
+            exit 1
+          fi
+          docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+          docker image prune -f >/dev/null
+          echo "Running $TAG"
+          EOF
+      - name: Check the live app
+        run: curl -fsS "https://$MIZAN_DOMAIN/api/health"

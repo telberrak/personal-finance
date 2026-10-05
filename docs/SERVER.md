@@ -28,39 +28,23 @@ npm run server:dev
 
 Migrations run automatically at start-up ([`server/db.ts`](../server/db.ts)). Never edit a released migration: add a new one.
 
-## Deploy (DigitalOcean, London)
+## Deploy (AWS EC2, London)
 
-Production runs on [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform) in London (`lon`), so data stays in the UK. One container ([`Dockerfile`](../Dockerfile)) builds the web app and runs the API, which also serves the app (`WEB_DIR=dist`, [`server/web.ts`](../server/web.ts)). App and API share one origin, so the Content-Security-Policy stays `connect-src 'self'` and no CORS is needed. The specs are in [`.do/app.yaml`](../.do/app.yaml) (production) and [`.do/app.staging.yaml`](../.do/app.staging.yaml) (optional staging).
+Production runs on one EC2 instance in eu-west-2 (London) that you manage, so data stays in the UK. One container ([`Dockerfile`](../Dockerfile)) builds the web app and runs the API, which also serves the app (`WEB_DIR=dist`, [`server/web.ts`](../server/web.ts)): app and API share one origin, so the Content-Security-Policy stays `connect-src 'self'` and no CORS is needed. On the instance, Docker Compose ([`deploy/ec2/compose.yml`](../deploy/ec2/compose.yml)) runs it with PostgreSQL and Caddy, which provides HTTPS for Mizan and any other sites on the same server.
 
-### Costs (checked October 2026; see digitalocean.com/pricing)
+GitHub Actions deploys every push to `main` once all checks pass, and rolls back if the new version is not healthy. Setup, costs, backups and restore: [DEPLOY.md](DEPLOY.md).
 
-| Item                                | Plan                            | Per month     |
-| ----------------------------------- | ------------------------------- | ------------- |
-| App (web app and API)               | Shared 1 vCPU, 512 MB           | $5            |
-| Database                            | Managed PostgreSQL, 1 GB, 10 GB | $15.15        |
-| **Production total**                |                                 | **about $20** |
-| Staging (optional)                  | $5 container + $7 dev database  | $12           |
-| Static sites (e.g. a personal site) | First 3 free, then $3 each      | $0            |
+Rate limits use the first `X-Forwarded-For` address, which Caddy sets to the visitor's real address ([`server/client-ip.ts`](../server/client-ip.ts)). Behind any other proxy, make sure it does the same.
 
-The database cluster can hold databases for other projects too, at no extra cost until it needs a bigger plan. Upgrade the app to `apps-s-1vcpu-1gb-fixed` ($10) if memory alerts fire.
-
-### Setup and releases
-
-The step-by-step first deploy is in [DEPLOY.md](DEPLOY.md). In short: create the database cluster `mizan-db` in London, give GitHub a DigitalOcean token and the email settings, and set `DO_DEPLOY=true`. From then on GitHub Actions deploys every push to `main` once all checks pass, and the spec in `.do/app.yaml` is the single source of truth (settings changed only in the dashboard are replaced on the next deploy).
-
-The database connection is TLS, verified against the cluster's CA certificate (`DATABASE_CA_CERT`, bound from `${db.CA_CERT}`). Rate limits use the client address from DigitalOcean's `do-connecting-ip` header.
-
-### Other hosts
-
-The container runs anywhere Docker does (Render, Fly.io, a VPS) with `DATABASE_URL` set. To host only the web app on a static host instead, use [`netlify.toml`](../netlify.toml) or [`vercel.json`](../vercel.json) and forward `/api/*` to the API.
+The container runs anywhere Docker does (another cloud, a VPS, a managed container service) with `DATABASE_URL` set (and `DATABASE_CA_CERT` for a managed database with its own certificate authority). To host only the web app on a static host instead, use [`netlify.toml`](../netlify.toml) or [`vercel.json`](../vercel.json) and forward `/api/*` to the API.
 
 ## Operations
 
-- **Health and uptime:** `GET /api/health` returns `{ ok, version, environment }` after a database round trip. App Platform checks it every 30 seconds; point an external uptime monitor (e.g. UptimeRobot, Better Stack) at it too.
+- **Health and uptime:** `GET /api/health` returns `{ ok, version, environment }` after a database round trip. Docker checks it every 30 seconds and the deploy waits for it; point an external uptime monitor (e.g. UptimeRobot, Better Stack) at it too.
 - **Logs:** the server logs the method, route and error message only. Never log request bodies, email addresses or tokens. Records are ciphertext anyway, but metadata still matters.
 - **Error reporting:** to add Sentry, call `Sentry.init` in `server/main.ts` with `sendDefaultPii: false` and a `beforeSend` that drops request data. Do not add Sentry to the web app without updating the CSP and the privacy notice.
 - **Releases:** bump `version` in `package.json`, add an entry to [CHANGELOG.md](../CHANGELOG.md), tag `vX.Y.Z`, deploy staging, then production.
-- **Backups:** DigitalOcean managed databases keep daily backups with point-in-time recovery (7 days). Backups contain only ciphertext and account metadata.
+- **Backups:** nightly dumps on the server (optionally copied to S3) and daily EBS snapshots; see DEPLOY.md. Backups contain only ciphertext and account metadata.
 - **Account deletion:** `DELETE /api/account` removes the user, sessions, passkeys, vault and records (`ON DELETE CASCADE`).
 
 ## API

@@ -1,0 +1,59 @@
+# Mizan on one EC2 instance: Caddy (HTTPS for every domain), PostgreSQL and the Mizan container.
+# Lives in /srv/mizan on the server, where GitHub Actions copies it on every deploy. Values come
+# from /srv/mizan/.env, created by setup.sh (see docs/DEPLOY.md).
+name: mizan
+
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp' # HTTP/3
+    environment:
+      MIZAN_DOMAIN: ${MIZAN_DOMAIN:?set MIZAN_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Your other sites: one .caddy file each, and their static files. Deploys never touch these.
+      - ./sites.d:/etc/caddy/sites.d:ro
+      - ./sites:/srv/sites:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - mizan
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: mizan
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: mizan
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U mizan -d mizan']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mizan:
+    image: ${MIZAN_IMAGE:-ghcr.io/telberrak/mizan}:${MIZAN_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://mizan:${POSTGRES_PASSWORD}@postgres:5432/mizan
+      LEDGER_ENV: production
+      RP_ID: ${MIZAN_DOMAIN}
+      APP_ORIGINS: https://${MIZAN_DOMAIN},capacitor://localhost,https://localhost
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:
+  postgres:

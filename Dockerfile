@@ -1,10 +1,11 @@
-# Mizan: the sync API and the web app in one container (DigitalOcean App Platform, see docs/SERVER.md).
+# Mizan: the sync API and the web app in one container (see docs/SERVER.md and docs/DEPLOY.md).
 # Build: docker build -t mizan .   Run: docker run -p 8787:8787 -e DATABASE_URL=... mizan
 
-# 1. Build the web app.
-FROM node:24-slim AS web
+# 1. Build the web app. It is the same on every processor, so it is built once on the build machine
+#    even when the image is made for ARM (AWS Graviton) and x86 together.
+FROM --platform=$BUILDPLATFORM node:24-slim AS web
 WORKDIR /app
-# Build-time settings for the web app (App Platform passes BUILD_TIME variables as build arguments).
+# Build-time settings for the web app (GitHub Actions passes them from repository variables).
 ARG VITE_SUPPORT_EMAIL
 ARG VITE_OPERATOR_NAME
 COPY package.json package-lock.json ./

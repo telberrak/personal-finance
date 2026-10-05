@@ -2,6 +2,13 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.16.0 — Hosting on AWS EC2
+
+- Production runs on a self-managed EC2 instance in London: Docker Compose with Caddy (automatic HTTPS for Mizan and any other sites), PostgreSQL and the Mizan container (`deploy/ec2`).
+- One-time server setup script (Docker, automatic security updates, swap, key-only SSH, deploy user) and nightly database backups, optionally copied to S3.
+- GitHub Actions starts the whole stack and checks it over HTTPS, publishes the image for ARM and x86, deploys over SSH and rolls back if the new version is unhealthy. Guide: docs/DEPLOY.md.
+- Rate limits trust only the address set by the proxy; the DigitalOcean configuration is removed.
+
 ## 0.15.1 — Hosting on DigitalOcean
 
 - Production moves to DigitalOcean App Platform in London: one container serves the web app and the API on the same origin, with the same security headers. Specs in `.do/`, guide and costs in docs/SERVER.md.

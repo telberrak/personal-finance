@@ -3,9 +3,10 @@
  * from a fixed list: no user, device, IP address or content is stored with them.
  */
 import { randomUUID } from 'node:crypto';
-import type { Context, Hono } from 'hono';
+import type { Hono } from 'hono';
 import type { Sql } from './db.ts';
 import { RateLimiter } from './rate-limit.ts';
+import { clientIp } from './client-ip.ts';
 
 export const EVENTS = new Set([
   'app_open',
@@ -26,7 +27,7 @@ const MAX_MESSAGE = 4000;
 
 export function feedbackRoutes(app: Hono, sql: Sql) {
   const limiter = new RateLimiter();
-  const ip = (c: Context) => c.req.header('do-connecting-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0].trim() ?? 'local';
+  const ip = clientIp;
 
   app.post('/feedback', async (c) => {
     if (!limiter.take(`feedback:${ip(c)}`, 5, 3_600_000)) return c.json({ error: 'Too many messages. Try again later.' }, 429);

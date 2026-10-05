@@ -1,0 +1,10 @@
+# Caddy gets and renews an HTTPS certificate for every site below once its DNS points at this server.
+
+{$MIZAN_DOMAIN} {
+	encode zstd gzip
+	# Caddy replaces any X-Forwarded-For sent by visitors with their real address (used for rate limits).
+	reverse_proxy mizan:8787
+}
+
+# Your other sites and domains: one file each in /srv/mizan/sites.d (see docs/DEPLOY.md).
+import /etc/caddy/sites.d/*.caddy

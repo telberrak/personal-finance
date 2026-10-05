@@ -25,6 +25,7 @@ import { spaceRoutes } from './spaces.ts';
 import { rateRoutes } from './rates.ts';
 import { feedbackRoutes } from './feedback.ts';
 import { RateLimiter } from './rate-limit.ts';
+import { clientIp } from './client-ip.ts';
 
 export interface Config {
   /** WebAuthn relying party: the app's host name, e.g. 'mizan.example.com' or 'localhost'. */
@@ -74,7 +75,7 @@ export function createApp({
   const limiter = new RateLimiter();
   const lastCodes = new Map<string, string>();
 
-  const ip = (c: Context) => c.req.header('do-connecting-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0].trim() ?? 'local';
+  const ip = clientIp;
   const limit = (key: string, max: number, windowMs: number) => {
     if (!limiter.take(key, max, windowMs)) fail(429, 'Too many attempts. Wait a few minutes and try again.');
   };
