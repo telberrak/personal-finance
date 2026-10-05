@@ -9,7 +9,7 @@ import { deleteRecurring, saveRecurring, ValidationError } from '../db/repo';
 import type { FinanceData, PaymentMethod, Recurring } from '../db/types';
 import { formatDate, formatShort, today } from '../lib/dates';
 import { formatMoney, parseMoney } from '../lib/money';
-import type { Frequency } from '../lib/recurring';
+import { nextOccurrence, type Frequency } from '../lib/recurring';
 import { t } from '../i18n';
 
 /** /bills/new (optionally prefilled from a suggestion) and /bills/:id */
@@ -73,7 +73,14 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
         categoryId: categoryId!,
         active,
       });
-      toast({ message: existing ? t('billForm.updated') : t('billForm.added') });
+      const next = nextOccurrence({ startDate, frequency }, today());
+      toast({
+        message: existing
+          ? t('billForm.updated')
+          : next
+            ? t('billForm.addedNext', { name: name.trim(), date: formatShort(next) })
+            : t('billForm.added'),
+      });
       navigate('/bills');
     } catch (err) {
       toast({ message: err instanceof ValidationError ? err.message : t('billForm.saveFailed') });

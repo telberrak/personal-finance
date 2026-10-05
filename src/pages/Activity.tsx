@@ -2,17 +2,20 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { Icon } from '../components/Icon';
 import { Loading, MonthSwitcher, PageHeader } from '../components/Layout';
-import { TransactionRow } from '../components/rows';
+import { BillRow, methodLabel, TransactionRow } from '../components/rows';
 import { TransactionTable } from '../components/tables';
 import { useIsDesktop } from '../components/useMediaQuery';
 import type { FinanceData, Transaction } from '../db/types';
-import { dayHeading, endOfMonth, startOfMonth, today } from '../lib/dates';
+import { addDays, dayHeading, dueLabel, endOfMonth, formatShort, startOfMonth, today } from '../lib/dates';
 import { formatMoney } from '../lib/money';
-import { groupByDay, inRange, moneyInOut } from '../lib/selectors';
+import { billOccurrences, groupByDay, inRange, moneyInOut, overdueBills } from '../lib/selectors';
 import { t } from '../i18n';
 
 const FILTERS = ['All', 'Spending', 'Income', 'Bills', 'Transfers'] as const;
 type Filter = (typeof FILTERS)[number];
+
+/** Activity lists bills due this many days ahead (and overdue ones) above the transactions. */
+const COMING_UP_DAYS = 7;
 
 const MATCHES: Record<Filter, (t: Transaction) => boolean> = {
   All: () => true,
@@ -45,7 +48,16 @@ export function Activity({ data }: { data?: FinanceData }) {
         MATCHES[filter](t) && (!q || t.payee.toLowerCase().includes(q) || categories.get(t.categoryId)?.name.toLowerCase().includes(q)),
     );
     const { moneyIn, moneyOut } = moneyInOut(inMonth, from, to);
+    // Unpaid bills are not transactions (they change no balance or total); they are listed so none is missed.
+    const showComingUp = month === startOfMonth(ref) && (filter === 'All' || filter === 'Bills') && !q;
+    const comingUp = showComingUp
+      ? [
+          ...overdueBills(data, ref),
+          ...billOccurrences(data.recurring, data.transactions, ref, addDays(ref, COMING_UP_DAYS)).filter((o) => !o.paid),
+        ].filter((o) => accountFilter === 'all' || o.rule.accountId === accountFilter)
+      : [];
     return {
+      comingUp,
       categories,
       accounts: new Map(data.accounts.map((a) => [a.id, a])),
       moneyOut,
@@ -54,7 +66,7 @@ export function Activity({ data }: { data?: FinanceData }) {
       shownCount: shown.length,
       groups: groupByDay(shown),
     };
-  }, [data, month, filter, query, accountFilter]);
+  }, [data, month, filter, query, accountFilter, ref]);
 
   if (!view) return <Loading />;
 
@@ -100,6 +112,37 @@ export function Activity({ data }: { data?: FinanceData }) {
     </label>
   );
 
+  const comingUp = view.comingUp.length > 0 && (
+    <section className="section" aria-labelledby="coming-up">
+      <div className="section-head">
+        <h2 id="coming-up" className="section-label">
+          {t('activity.comingUp')}
+        </h2>
+        <Link to="/bills" className="link-btn small">
+          {t('activity.allBills')}
+        </Link>
+      </div>
+      <p className="small muted">{t('activity.comingUpNote')}</p>
+      <div className="list">
+        {view.comingUp.map((o) => (
+          <BillRow
+            key={o.rule.id + o.date}
+            rule={o.rule}
+            date={o.date}
+            to={`/bills/${o.rule.id}`}
+            meta={
+              o.date < ref ? (
+                <span className="text-warn">{t('bills.overdueOn', { date: formatShort(o.date) })}</span>
+              ) : (
+                `${methodLabel(o.rule.method)} · ${dueLabel(o.date, ref)}`
+              )
+            }
+          />
+        ))}
+      </div>
+    </section>
+  );
+
   const empty = view.groups.length === 0 && (
     <p className="empty">{filter === 'All' && !query.trim() ? t('activity.emptyMonth') : t('activity.noMatch')}</p>
   );
@@ -134,6 +177,7 @@ export function Activity({ data }: { data?: FinanceData }) {
             {chips}
             <span className="label toolbar-count">{t('activity.shown', { shown: view.shownCount, total: view.count })}</span>
           </div>
+          {comingUp}
           {empty || <TransactionTable groups={view.groups} categories={view.categories} accounts={view.accounts} refDate={ref} />}
         </>
       ) : (
@@ -151,6 +195,7 @@ export function Activity({ data }: { data?: FinanceData }) {
               <span className="value-md num text-pos">{formatMoney(view.moneyIn, { sign: true })}</span>
             </div>
           </div>
+          {comingUp}
           {empty}
           {view.groups.map((g) => (
             <section key={g.date} className="section">

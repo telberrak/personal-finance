@@ -256,7 +256,9 @@
     "noBills": "No bills yet.",
     "overdueOn": "Overdue · {{date}}",
     "nextOn": "next {{date}}",
-    "perYearShort": "{{amount}}/yr"
+    "perYearShort": "{{amount}}/yr",
+    "comingUp": "Due in the next 30 days",
+    "nothingSoon": "Nothing due in the next 30 days."
   },
   "activity": {
     "title": "Activity",
@@ -279,7 +281,10 @@
     "net": "Net",
     "count": "Transactions",
     "shown": "{{shown}} of {{total}} shown",
-    "advancedSearch": "Search and edit"
+    "advancedSearch": "Search and edit",
+    "comingUp": "Coming up",
+    "comingUpNote": "Bills due in the next 7 days. They join your activity once paid.",
+    "allBills": "All bills"
   },
   "columns": {
     "payee": "Payee",
@@ -457,7 +462,8 @@
     "wasUntil": "Was {{amount}} until {{date}}.",
     "recently": "recently",
     "recentPayments": "Recent payments",
-    "trialEnds": "Free trial ends"
+    "trialEnds": "Free trial ends",
+    "addedNext": "{{name}} added. Next payment {{date}}."
   },
   "fields": {
     "name": "Name",

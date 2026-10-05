@@ -272,7 +272,9 @@
     "suggestionWeekly_two": "{{amount}} كل أسبوع · رُصدت مرتين",
     "suggestionWeekly_few": "{{amount}} كل أسبوع · رُصدت {{count}} مرات",
     "suggestionWeekly_many": "{{amount}} كل أسبوع · رُصدت {{count}} مرة",
-    "suggestionWeekly_other": "{{amount}} كل أسبوع · رُصدت {{count}} مرة"
+    "suggestionWeekly_other": "{{amount}} كل أسبوع · رُصدت {{count}} مرة",
+    "comingUp": "مستحقة خلال الثلاثين يومًا القادمة",
+    "nothingSoon": "لا شيء مستحق خلال الثلاثين يومًا القادمة."
   },
   "activity": {
     "title": "النشاط",
@@ -295,7 +297,10 @@
     "net": "الصافي",
     "count": "المعاملات",
     "shown": "عرض {{shown}} من {{total}}",
-    "advancedSearch": "بحث وتعديل"
+    "advancedSearch": "بحث وتعديل",
+    "comingUp": "قادمة",
+    "comingUpNote": "فواتير مستحقة خلال الأيام السبعة القادمة. تظهر في نشاطك بعد دفعها.",
+    "allBills": "كل الفواتير"
   },
   "columns": {
     "payee": "المستفيد",
@@ -485,7 +490,8 @@
     "wasUntil": "كانت {{amount}} حتى {{date}}.",
     "recently": "مؤخرًا",
     "recentPayments": "الدفعات الأخيرة",
-    "trialEnds": "انتهاء الفترة التجريبية المجانية"
+    "trialEnds": "انتهاء الفترة التجريبية المجانية",
+    "addedNext": "تمت إضافة {{name}}. الدفعة القادمة في {{date}}."
   },
   "fields": {
     "name": "الاسم",

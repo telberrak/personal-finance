@@ -21,6 +21,9 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'subscriptions', label: 'bills.tabs.subscriptions' },
 ];
 
+/** Bills → Upcoming lists what is due this many days ahead. */
+const UPCOMING_DAYS = 30;
+
 const PER_YEAR: Record<Recurring['frequency'], number> = { weekly: 52, monthly: 12, yearly: 1 };
 const freqLabel = (f: Recurring['frequency']) => t(`bills.freq.${f}`);
 
@@ -63,7 +66,12 @@ export function Bills({ data }: { data?: FinanceData }) {
   const overdue = overdueBills(data, ref).filter((o) => o.date < startOfMonth(ref)); // earlier months; this month's are in `month`
   const committed = month.reduce((s, o) => s + o.rule.amount, 0);
   const paid = month.filter((o) => o.paid).reduce((s, o) => s + o.rule.amount, 0);
-  const due = [...overdue, ...month.filter((o) => !o.paid)];
+  // What is due: anything unpaid this month, and the next 30 days even when they run into next
+  // month, so a bill added for early next month shows straight away.
+  const horizon = addDays(ref, UPCOMING_DAYS);
+  const ahead = horizon > endOfMonth(ref) ? billOccurrences(data.recurring, data.transactions, addDays(endOfMonth(ref), 1), horizon) : [];
+  const due = [...overdue, ...month.filter((o) => !o.paid), ...ahead.filter((o) => !o.paid)];
+  const hasBills = data.recurring.some((r) => r.active);
   const done = month.filter((o) => o.paid);
   const priceRises = data.recurring.filter(
     (r) => r.active && !r.priceAlertDismissed && r.previousAmount !== undefined && r.amount > r.previousAmount,
@@ -238,7 +246,7 @@ export function Bills({ data }: { data?: FinanceData }) {
         {tab === 'upcoming' ? (
           <div className="table-card">
             <table className="table">
-              <caption className="visually-hidden">{t('bills.inMonth', { month: formatMonth(ref) })}</caption>
+              <caption className="visually-hidden">{t('bills.comingUp')}</caption>
               <thead>
                 <tr>
                   <th scope="col">{t('columns.due')}</th>
@@ -257,7 +265,7 @@ export function Bills({ data }: { data?: FinanceData }) {
                 {due.length + done.length === 0 && (
                   <tr>
                     <td colSpan={6} className="empty">
-                      {t('bills.noneThisMonth')} <Link to="/bills/new">{t('bills.addFirst')}</Link>
+                      {hasBills ? t('bills.nothingSoon') : t('bills.noneThisMonth')} <Link to="/bills/new">{t('bills.addFirst')}</Link>
                     </td>
                   </tr>
                 )}
@@ -354,10 +362,16 @@ export function Bills({ data }: { data?: FinanceData }) {
       {tab === 'upcoming' && (
         <>
           <section className="section">
-            <h2 className="section-label">{t('bills.dueThisMonth')}</h2>
+            <h2 className="section-label">{t('bills.comingUp')}</h2>
             <div className="list">
               {due.length === 0 && (
-                <p className="empty">{month.length ? t('bills.allPaidFor', { month: formatMonth(ref) }) : t('bills.noBills')}</p>
+                <p className="empty">
+                  {month.length
+                    ? t('bills.allPaidFor', { month: formatMonth(ref) })
+                    : hasBills
+                      ? t('bills.nothingSoon')
+                      : t('bills.noBills')}
+                </p>
               )}
               {due.map((o) => (
                 <BillRow

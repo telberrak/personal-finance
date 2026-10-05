@@ -1,4 +1,4 @@
-import { test as plain } from '@playwright/test';
+import { test as plain, type Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -52,10 +52,39 @@ test('a suggested regular payment can be added as a bill', async ({ page }) => {
   await expect(page.getByLabel('Name')).toHaveValue('Disney Plus');
   await expect(page.getByLabel('Amount', { exact: true })).toHaveValue('7.99');
   await page.getByRole('button', { name: 'Add bill' }).click();
-  await expect(page.getByText('Bill added')).toBeVisible();
+  await expect(page.getByText(/^Disney Plus added\. Next payment /)).toBeVisible();
   await expect(page.getByRole('region', { name: 'Suggested bills' })).toHaveCount(0);
   await page.getByRole('tab', { name: 'All' }).click();
   await expect(page.getByRole('link', { name: 'Disney Plus' })).toBeVisible();
+});
+
+/** A local date `days` from today, as the date inputs expect it. */
+function inDays(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+async function addBill(page: Page, name: string, amount: string, due: string) {
+  await page.goto('/bills/new');
+  await page.getByLabel('Amount', { exact: true }).fill(amount);
+  await page.getByLabel('Name').fill(name);
+  await page.getByLabel('Next due').fill(due);
+  await page.getByRole('button', { name: 'Add bill' }).click();
+  await expect(page.getByText(new RegExp(`^${name} added\\. Next payment `))).toBeVisible();
+}
+
+test('a new bill shows as coming up, even when it is due next month, and in Activity', async ({ page }) => {
+  // Due in 25 days: often next month, which the Upcoming list used to leave out.
+  await addBill(page, 'Gym membership', '30', inDays(25));
+  await expect(page.getByRole('link', { name: 'Gym membership' }).first()).toBeVisible();
+
+  // Due in 3 days: listed above the transactions in Activity, without changing its totals.
+  await addBill(page, 'Window cleaner', '15', inDays(3));
+  await page.goto('/activity');
+  const comingUp = page.getByRole('region', { name: 'Coming up' });
+  await expect(comingUp.getByRole('link', { name: /Window cleaner/ })).toBeVisible();
+  await expect(comingUp.getByRole('link', { name: /Gym membership/ })).toHaveCount(0); // more than a week away
 });
 
 test('reports, goals and backup', async ({ page }) => {

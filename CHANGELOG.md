@@ -2,6 +2,12 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.16.1 — Bills you add no longer seem to disappear
+
+- Bills → Upcoming lists everything due in the next 30 days, including early next month, not only the current month. A new bill due next month used to show only under All.
+- Adding a bill says when it is next due ("Gym membership added. Next payment 2 Nov.").
+- Activity shows bills coming up in the next 7 days, and overdue ones, above the transactions. They join the activity once paid, and never change its totals.
+
 ## 0.16.0 — Hosting on AWS EC2
 
 - Production runs on a self-managed EC2 instance in London: Docker Compose with Caddy (automatic HTTPS for Mizan and any other sites), PostgreSQL and the Mizan container (`deploy/ec2`).

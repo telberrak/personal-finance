@@ -256,7 +256,9 @@
     "suggestionMonthly_one": "{{amount}} chaque mois · vu {{count}} fois",
     "suggestionMonthly_other": "{{amount}} chaque mois · vu {{count}} fois",
     "suggestionWeekly_one": "{{amount}} chaque semaine · vu {{count}} fois",
-    "suggestionWeekly_other": "{{amount}} chaque semaine · vu {{count}} fois"
+    "suggestionWeekly_other": "{{amount}} chaque semaine · vu {{count}} fois",
+    "comingUp": "À payer dans les 30 prochains jours",
+    "nothingSoon": "Rien à payer dans les 30 prochains jours."
   },
   "activity": {
     "title": "Activité",
@@ -279,7 +281,10 @@
     "net": "Solde",
     "count": "Transactions",
     "shown": "{{shown}} sur {{total}} affichées",
-    "advancedSearch": "Rechercher et modifier"
+    "advancedSearch": "Rechercher et modifier",
+    "comingUp": "À venir",
+    "comingUpNote": "Factures dues dans les 7 prochains jours. Elles rejoignent votre activité une fois payées.",
+    "allBills": "Toutes les factures"
   },
   "columns": {
     "payee": "Bénéficiaire",
@@ -457,7 +462,8 @@
     "wasUntil": "Était de {{amount}} jusqu’au {{date}}.",
     "recently": "récemment",
     "recentPayments": "Paiements récents",
-    "trialEnds": "Fin de l’essai gratuit"
+    "trialEnds": "Fin de l’essai gratuit",
+    "addedNext": "{{name}} ajouté. Prochain paiement le {{date}}."
   },
   "fields": {
     "name": "Nom",
