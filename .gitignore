@@ -8,3 +8,10 @@ playwright-report
 test-results
 # Local sync API database (npm run server)
 .ledger-*data*/
+
+# SSH keys and other secrets: never commit
+*.pem
+*.key
+mizan-deploy
+mizan-deploy.pub
+.env
