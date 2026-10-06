@@ -1,6 +1,7 @@
 # Mizan on one EC2 instance: Caddy (HTTPS for every domain), PostgreSQL and the Mizan container.
 # Lives in /srv/mizan on the server, where GitHub Actions copies it on every deploy. Values come
-# from /srv/mizan/.env, created by setup.sh (see docs/DEPLOY.md).
+# from /srv/mizan/.env, which mizan-config writes from AWS Parameter Store (/mizan/*) on every
+# deploy (see docs/DEPLOY.md).
 name: mizan
 
 services:
@@ -59,6 +60,12 @@ services:
       RESEND_SEGMENT_ID: ${RESEND_SEGMENT_ID:-}
       # Links in emails (confirm, unsubscribe) point here.
       PUBLIC_URL: https://${MIZAN_DOMAIN}
+      # Shown in the app's help and legal pages.
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:-}
+      OPERATOR_NAME: ${OPERATOR_NAME:-}
+      # Open Banking (optional).
+      GOCARDLESS_SECRET_ID: ${GOCARDLESS_SECRET_ID:-}
+      GOCARDLESS_SECRET_KEY: ${GOCARDLESS_SECRET_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

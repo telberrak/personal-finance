@@ -44,6 +44,24 @@ async function signIn(email = 'Sam@Example.com', deviceName = 'Laptop'): Promise
   return res.json();
 }
 
+describe('public settings', () => {
+  it('publishes the support address and operator name, or null when unset', async () => {
+    expect(await (await call('GET', '/config')).json()).toEqual({ supportEmail: null, operator: null });
+    app = createApp({
+      sql,
+      mailer,
+      config: {
+        rpID: 'localhost',
+        rpName: 'Mizan',
+        origins: ['http://localhost:5173'],
+        supportEmail: 'help@example.com',
+        operatorName: 'Example Ltd',
+      },
+    });
+    expect(await (await call('GET', '/config')).json()).toEqual({ supportEmail: 'help@example.com', operator: 'Example Ltd' });
+  });
+});
+
 describe('email sign-in', () => {
   it('says plainly when the email cannot be sent', async () => {
     const failing: Mailer = {

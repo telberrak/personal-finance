@@ -36,41 +36,90 @@ Then:
 
 ## 2. Set up the server
 
-From the repository on your PC (replace the IP and domain):
+From the repository on your PC (replace the IP):
 
 ```bash
 scp -r deploy/ec2 ubuntu@203.0.113.10:
 ```
 
 ```bash
-ssh ubuntu@203.0.113.10 'sudo MIZAN_DOMAIN=mizan.example.com bash ec2/setup.sh'
+ssh ubuntu@203.0.113.10 'sudo bash ec2/setup.sh'
 ```
 
-[`setup.sh`](../deploy/ec2/setup.sh) installs Docker, automatic security updates (with a reboot at 04:00 UTC when needed), a 2 GB swap file, key-only SSH, a `deploy` user for GitHub Actions, `/srv/mizan` with a generated database password, and nightly database backups. It is safe to run again.
+[`setup.sh`](../deploy/ec2/setup.sh) installs Docker, the AWS CLI, automatic security updates (with a reboot at 04:00 UTC when needed), a 2 GB swap file, key-only SSH, a `deploy` user for GitHub Actions, `/srv/mizan`, `mizan-config`, and nightly database backups. It is safe to run again.
 
-## 3. Email for sign-in codes
+## 3. Settings: AWS Parameter Store
 
-Mizan sends email through **any SMTP server** or through **Resend's API**. Either way, verify your sending domain with the provider (it shows DNS records to add), then edit `/srv/mizan/.env` (`sudo -u deploy nano /srv/mizan/.env`) and restart (`cd /srv/mizan && docker compose up -d`). The log shows which one is used: `[mail] sending with …`.
+Every setting and secret lives in **AWS Systems Manager Parameter Store**, under `/mizan/`, as a SecureString (encrypted with KMS): `/mizan/RESEND_API_KEY` becomes the setting `RESEND_API_KEY`. Nothing is edited on the server: each deploy runs [`config.sh`](../deploy/ec2/config.sh) (`mizan-config`), which reads `/mizan/*` with the instance's IAM role and writes `/srv/mizan/.env` (readable only by `deploy`). Every read and change is logged in CloudTrail, and Parameter Store keeps each value's history.
 
-**Resend:** create an API key, then set `RESEND_API_KEY` and `MAIL_FROM` (e.g. `Mizan <mizan@mail.example.com>`).
+### Give the instance read access
 
-**SMTP** (used instead of Resend when `SMTP_HOST` is set):
+1. IAM → Policies → Create policy → JSON: paste [`iam-policy.json`](../deploy/ec2/iam-policy.json) (read `/mizan/*` and decrypt it through SSM only). Name it `mizan-read-settings`.
+2. IAM → Roles → Create role → AWS service, **EC2** → attach `mizan-read-settings` → name it `mizan-server`.
+3. EC2 → the instance → Actions → Security → **Modify IAM role** → `mizan-server`.
 
-| Setting                      | Meaning                                                                                  |
-| ---------------------------- | ---------------------------------------------------------------------------------------- |
-| `SMTP_HOST`                  | The provider's SMTP server                                                               |
-| `SMTP_PORT`                  | `587` (STARTTLS, the default and required) or `465` (TLS); `SMTP_SECURE=true` forces TLS |
-| `SMTP_USER`, `SMTP_PASSWORD` | The SMTP credentials the provider gives you                                              |
-| `MAIL_FROM`                  | A sender on your verified domain                                                         |
+For S3 backups, add `s3:PutObject` on your backup bucket to the same role.
 
-Examples:
+### The settings
 
-- **Amazon SES (London):** `SMTP_HOST=email-smtp.eu-west-2.amazonaws.com`, port 587, and the SMTP credentials from SES → SMTP settings → Create SMTP credentials (not your AWS access keys). New SES accounts start in the sandbox (only verified recipients): request production access in the SES console before inviting people.
-- **Brevo:** `SMTP_HOST=smtp-relay.brevo.com`, port 587, your Brevo login and SMTP key.
-- **Postmark:** `SMTP_HOST=smtp.postmarkapp.com`, port 587, the server API token as both user and password.
-- **Mailgun (EU):** `SMTP_HOST=smtp.eu.mailgun.org`, port 587, the domain's SMTP login and password.
+| Parameter (under `/mizan/`)                                           | Required  | Meaning                                                                  |
+| --------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------ |
+| `MIZAN_DOMAIN`                                                        | yes       | The app's domain, e.g. `mizan.example.com`                               |
+| `POSTGRES_PASSWORD`                                                   | yes       | The database password. Never change it here alone (see below)            |
+| `MAIL_FROM`                                                           | for email | A sender on your verified domain, e.g. `Mizan <mizan@mail.example.com>`  |
+| `RESEND_API_KEY`                                                      | for email | Resend's API key (used when `SMTP_HOST` is not set; also for Broadcasts) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` | for email | Any SMTP server instead of Resend (see below)                            |
+| `RESEND_SEGMENT_ID`                                                   | no        | The Resend segment news subscribers join                                 |
+| `SUPPORT_EMAIL`, `OPERATOR_NAME`                                      | no        | Shown in the app's help and legal pages                                  |
+| `BACKUP_S3_BUCKET`                                                    | no        | Copy nightly backups to this S3 bucket                                   |
+| `GOCARDLESS_SECRET_ID`, `GOCARDLESS_SECRET_KEY`                       | no        | Open Banking                                                             |
+
+Add or change one (from your PC, AWS CLI signed in, or in the console under Systems Manager → Parameter Store):
+
+```bash
+aws ssm put-parameter --region eu-west-2 --type SecureString --overwrite --name /mizan/SUPPORT_EMAIL --value "help@example.com"
+```
+
+Then apply it: GitHub → **Actions → Apply settings → Run workflow** (or the next deploy). It rewrites `.env` from Parameter Store and restarts Mizan with the same version; if Mizan is unhealthy with the new settings, the previous ones are put back.
+
+`mizan-config` stops without changing anything if `MIZAN_DOMAIN` or `POSTGRES_PASSWORD` is missing, or if `POSTGRES_PASSWORD` differs from the one in use. While you move to Parameter Store, a server that already has a `.env` keeps it (with a warning in the GitHub run) until the instance has its role and `/mizan/` has settings; from then on, Parameter Store wins.
+
+### Moving an existing server's settings
+
+Once, from the repository on your PC (AWS CLI signed in to the account, region eu-west-2):
+
+```bash
+ssh -i mizan.pem ubuntu@203.0.113.10 "sudo cat /srv/mizan/.env" | bash deploy/ec2/import-env.sh
+```
+
+It stores every non-empty setting (including the generated `POSTGRES_PASSWORD`) as `/mizan/<NAME>` and prints the names, never the values. Then add `SUPPORT_EMAIL` and `OPERATOR_NAME` if you had them in GitHub, and remove the old GitHub variables (`MIZAN_DOMAIN`, `SUPPORT_EMAIL`, `OPERATOR_NAME`).
+
+### Email providers
+
+Mizan sends email through **any SMTP server** or through **Resend's API**. Verify your sending domain with the provider first (it shows DNS records to add). The log shows which one is used: `docker compose logs mizan | grep "sending with"`.
+
+- **Resend:** set `RESEND_API_KEY` and `MAIL_FROM`.
+- **SMTP** (used instead of Resend when `SMTP_HOST` is set): `SMTP_HOST`, `SMTP_PORT` (`587` with STARTTLS, the default and required, or `465` with TLS; `SMTP_SECURE=true` forces TLS), `SMTP_USER`, `SMTP_PASSWORD`, and `MAIL_FROM`.
+  - **Amazon SES (London):** `email-smtp.eu-west-2.amazonaws.com`, port 587, SMTP credentials from SES → SMTP settings (not your AWS access keys). New SES accounts start in the sandbox: request production access before inviting people.
+  - **Brevo:** `smtp-relay.brevo.com`, port 587, your Brevo login and SMTP key.
+  - **Postmark:** `smtp.postmarkapp.com`, port 587, the server API token as both user and password.
+  - **Mailgun (EU):** `smtp.eu.mailgun.org`, port 587, the domain's SMTP login and password.
 
 Check each provider's current settings page: these are the usual values.
+
+### Changing the database password
+
+PostgreSQL keeps the password it was created with, so change it inside the database first, then in Parameter Store, then apply:
+
+```bash
+ssh -i mizan.pem ubuntu@203.0.113.10 "cd /srv/mizan && sudo -u deploy docker compose exec -T postgres psql -U mizan -d mizan -c \"ALTER USER mizan PASSWORD 'the-new-password'\""
+```
+
+```bash
+aws ssm put-parameter --region eu-west-2 --type SecureString --overwrite --name /mizan/POSTGRES_PASSWORD --value "the-new-password"
+```
+
+Then on the server run `cd /srv/mizan && MIZAN_ALLOW_PASSWORD_CHANGE=1 bash ./config.sh && docker compose up -d` (the one time `mizan-config` accepts a different password). Use a long random value, e.g. `openssl rand -hex 24`.
 
 ## 4. Let GitHub deploy
 
@@ -89,15 +138,12 @@ Check each provider's current settings page: these are the usual values.
 
 4. In GitHub: **Settings → Secrets and variables → Actions**.
 
-| Kind     | Name              | Value                                                        |
-| -------- | ----------------- | ------------------------------------------------------------ |
-| Secret   | `EC2_HOST`        | The Elastic IP                                               |
-| Secret   | `EC2_SSH_KEY`     | The contents of `mizan-deploy` (the private key)             |
-| Secret   | `EC2_KNOWN_HOSTS` | The `ssh-keyscan` output                                     |
-| Variable | `MIZAN_DOMAIN`    | e.g. `mizan.example.com`                                     |
-| Variable | `SUPPORT_EMAIL`   | Shown in help, privacy policy and terms                      |
-| Variable | `OPERATOR_NAME`   | Your name or company, as it should appear in the legal texts |
-| Variable | `EC2_DEPLOY`      | `true`: turns the deploy job on                              |
+| Kind     | Name              | Value                                            |
+| -------- | ----------------- | ------------------------------------------------ |
+| Secret   | `EC2_HOST`        | The Elastic IP                                   |
+| Secret   | `EC2_SSH_KEY`     | The contents of `mizan-deploy` (the private key) |
+| Secret   | `EC2_KNOWN_HOSTS` | The `ssh-keyscan` output                         |
+| Variable | `EC2_DEPLOY`      | `true`: turns the deploy job on                  |
 
 Then delete `mizan-deploy` from your PC (keep it only in GitHub).
 
@@ -114,7 +160,7 @@ People can ask for news on the website, in **Settings → News by email**, or wh
 
 To send news:
 
-- **Resend Broadcasts (recommended):** in Resend, create a segment (Audience → Segments), copy its id into `RESEND_SEGMENT_ID` in `/srv/mizan/.env`, and restart (`docker compose up -d`). Confirmed subscribers are added as contacts in that segment, and unsubscribes are mirrored. Write and send Broadcasts to the segment from the Resend dashboard; Resend adds its own unsubscribe link to each one.
+- **Resend Broadcasts (recommended):** in Resend, create a segment (Audience → Segments), store its id as `/mizan/RESEND_SEGMENT_ID` in Parameter Store, and run **Apply settings**. Confirmed subscribers are added as contacts in that segment, and unsubscribes are mirrored. Write and send Broadcasts to the segment from the Resend dashboard; Resend adds its own unsubscribe link to each one.
 - **Any other tool:** export a CSV of confirmed subscribers with their consent record, then delete the file once imported:
 
   ```bash
@@ -136,7 +182,7 @@ Projects with their own server can join the same Compose network and PostgreSQL 
 ## 6. Backups and restore
 
 - **Every night (03:30 UTC):** a compressed dump of every database in `/var/backups/mizan`, kept 14 days. Log: `/var/log/mizan-backup.log`.
-- **Off the server (recommended):** create a private S3 bucket in eu-west-2 (block public access on, default encryption on, a lifecycle rule deleting objects after 30 days), give the instance an IAM role allowing `s3:PutObject` on it, and set `BACKUP_S3_BUCKET` in `/srv/mizan/.env`.
+- **Off the server (recommended):** create a private S3 bucket in eu-west-2 (block public access on, default encryption on, a lifecycle rule deleting objects after 30 days), allow `s3:PutObject` on it in the instance role (`mizan-server`), and store the bucket name as `/mizan/BACKUP_S3_BUCKET`.
 - **Daily EBS snapshots** (section 1) cover the whole disk.
 
 Restore a dump. This replaces Mizan's current data, so stop the app first:

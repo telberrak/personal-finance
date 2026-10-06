@@ -1,0 +1,56 @@
+# Applies changed settings without a new release: after editing parameters under /mizan/ in AWS
+# Parameter Store, run this (Actions → Apply settings → Run workflow). The server rewrites its
+# .env from Parameter Store (mizan-config) and restarts the running version with the new values.
+name: Apply settings
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    if: vars.EC2_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: SSH key and known host
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$EC2_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Rewrite the settings and restart
+        run: |
+          scp deploy/ec2/config.sh "deploy@$EC2_HOST:/srv/mizan/"
+          ssh "deploy@$EC2_HOST" bash -s <<'EOF'
+          set -euo pipefail
+          cd /srv/mizan
+          cp .env .env.previous
+          bash ./config.sh
+          # Containers whose settings changed are recreated; the version running stays the same.
+          if ! docker compose up -d --wait --wait-timeout 120; then
+            echo "Unhealthy with the new settings; going back to the previous ones" >&2
+            docker compose logs --tail 50 mizan >&2 || true
+            mv .env.previous .env
+            docker compose up -d --wait --wait-timeout 120
+            exit 1
+          fi
+          rm -f .env.previous
+          EOF
+      - name: Check the live app
+        run: |
+          domain="$(ssh "deploy@$EC2_HOST" "sed -n 's/^MIZAN_DOMAIN=//p' /srv/mizan/.env" | tr -d "'\"")"
+          curl -fsS "https://$domain/api/health"

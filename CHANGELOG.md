@@ -2,6 +2,15 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.19.0 — Settings in AWS Parameter Store
+
+- Every server setting and secret lives in AWS Systems Manager Parameter Store under /mizan/ (encrypted, audited in CloudTrail, versioned). Each deploy writes the server's .env from it with mizan-config; nothing is edited on the server any more.
+- mizan-config stops if MIZAN_DOMAIN or POSTGRES_PASSWORD is missing, or if POSTGRES_PASSWORD differs from the one the database uses (with a documented way to change it).
+- A new "Apply settings" workflow re-applies changed settings without a release, and puts the previous ones back if Mizan is unhealthy.
+- The support address and operator name are read from the server at runtime (GET /api/config), so they change without a rebuild. GitHub now holds only how to reach the server.
+- A one-time script moves an existing server's settings into Parameter Store; an IAM policy grants the instance read-only access to /mizan/*.
+- Fixed: the deploy pulled the new image before switching to its tag.
+
 ## 0.18.1 — Email through any SMTP server
 
 - Email (sign-in codes and news) can now go through any SMTP server, such as Amazon SES, Brevo, Postmark or Mailgun, by setting SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASSWORD. Resend still works, and is used when SMTP_HOST is empty.

@@ -3,7 +3,7 @@
  */
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
-import { APP_NAME, APP_VERSION, SUPPORT_EMAIL } from '../brand';
+import { APP_NAME, APP_VERSION, supportEmail } from '../brand';
 import { Loading, PageHeader } from '../components/Layout';
 import { Markdown } from '../components/Markdown';
 import { Field } from '../components/ui/forms';
@@ -69,7 +69,7 @@ export function About({ data }: { data?: FinanceData }) {
       setEmail('');
       toast({ message: t('about.feedbackSent') });
     } catch {
-      toast({ message: t('about.feedbackFailed', { email: SUPPORT_EMAIL }) });
+      toast({ message: t('about.feedbackFailed', { email: supportEmail() }) });
     } finally {
       setSending(false);
     }
@@ -93,8 +93,8 @@ export function About({ data }: { data?: FinanceData }) {
           <Link className="list-row list-row--link" to="/terms">
             {t('about.terms')}
           </Link>
-          <a className="list-row list-row--link" href={`mailto:${SUPPORT_EMAIL}`}>
-            {t('about.contact', { email: SUPPORT_EMAIL })}
+          <a className="list-row list-row--link" href={`mailto:${supportEmail()}`}>
+            {t('about.contact', { email: supportEmail() })}
           </a>
         </div>
         <p className="small muted" role="status" style={{ padding: '0 4px' }}>

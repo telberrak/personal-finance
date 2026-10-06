@@ -46,6 +46,9 @@ export interface Config {
   environment?: string;
   /** Where the app lives, for links in emails. Defaults to the first web origin. */
   publicUrl?: string;
+  /** Shown in the app's help and legal pages (GET /api/config). */
+  supportEmail?: string;
+  operatorName?: string;
 }
 
 const CODE_TTL_MS = 10 * 60_000;
@@ -140,6 +143,9 @@ export function createApp({
 
   rateRoutes(app as unknown as Hono, fetchRates);
   feedbackRoutes(app as unknown as Hono, sql);
+
+  /** Public settings the app shows: the support address and the operator named in the legal pages. */
+  app.get('/config', (c) => c.json({ supportEmail: config.supportEmail ?? null, operator: config.operatorName ?? null }));
 
   app.get('/health', async (c) => {
     await sql.query('SELECT 1');

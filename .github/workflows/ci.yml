@@ -101,15 +101,13 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/mizan:${{ github.sha }}
             ghcr.io/${{ github.repository_owner }}/mizan:latest
           labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          build-args: |
-            VITE_SUPPORT_EMAIL=${{ vars.SUPPORT_EMAIL }}
-            VITE_OPERATOR_NAME=${{ vars.OPERATOR_NAME }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   # Production deploy to the EC2 instance over SSH, only after every check passed. Turned on by the
-  # repository variable EC2_DEPLOY=true once the server is set up (docs/DEPLOY.md). If the new
-  # version does not become healthy, the previous one is started again.
+  # repository variable EC2_DEPLOY=true once the server is set up (docs/DEPLOY.md). Settings come
+  # from AWS Parameter Store (/mizan/*) through mizan-config on the server; GitHub only holds how to
+  # reach the server. If the new version does not become healthy, the previous one is started again.
   deploy:
     needs: image
     if: vars.EC2_DEPLOY == 'true'
@@ -124,7 +122,6 @@ jobs:
       packages: read
     env:
       EC2_HOST: ${{ secrets.EC2_HOST }}
-      MIZAN_DOMAIN: ${{ vars.MIZAN_DOMAIN }}
     steps:
       - uses: actions/checkout@v7
       - name: SSH key and known host
@@ -132,7 +129,7 @@ jobs:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
           EC2_KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
         run: |
-          for name in EC2_HOST EC2_SSH_KEY EC2_KNOWN_HOSTS MIZAN_DOMAIN; do
+          for name in EC2_HOST EC2_SSH_KEY EC2_KNOWN_HOSTS; do
             if [ -z "${!name}" ]; then echo "::error::$name is not set (docs/DEPLOY.md)"; exit 1; fi
           done
           install -d -m 700 ~/.ssh
@@ -140,7 +137,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$EC2_KNOWN_HOSTS" > ~/.ssh/known_hosts
       - name: Copy the server configuration
-        run: scp deploy/ec2/compose.yml deploy/ec2/Caddyfile "deploy@$EC2_HOST:/srv/mizan/"
+        run: scp deploy/ec2/compose.yml deploy/ec2/Caddyfile deploy/ec2/config.sh "deploy@$EC2_HOST:/srv/mizan/"
       - name: Start the new version
         env:
           TAG: ${{ github.sha }}
@@ -150,10 +147,16 @@ jobs:
           ssh "deploy@$EC2_HOST" TAG="$TAG" REGISTRY_USER="$REGISTRY_USER" REGISTRY_TOKEN="$REGISTRY_TOKEN" bash -s <<'EOF'
           set -euo pipefail
           cd /srv/mizan
+          # Settings from AWS Parameter Store; stops here if one is missing or unsafe.
+          bash ./config.sh
           previous="$(sed -n 's/^MIZAN_TAG=//p' .env)"
-          printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin >/dev/null
-          docker compose pull --quiet mizan || { docker logout ghcr.io >/dev/null; exit 1; }
           sed -i "s/^MIZAN_TAG=.*/MIZAN_TAG=$TAG/" .env
+          printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin >/dev/null
+          if ! docker compose pull --quiet mizan; then
+            docker logout ghcr.io >/dev/null
+            sed -i "s/^MIZAN_TAG=.*/MIZAN_TAG=$previous/" .env
+            exit 1
+          fi
           docker compose pull --quiet caddy postgres
           docker logout ghcr.io >/dev/null
           if ! docker compose up -d --wait --wait-timeout 120 --remove-orphans; then
@@ -168,4 +171,6 @@ jobs:
           echo "Running $TAG"
           EOF
       - name: Check the live app
-        run: curl -fsS "https://$MIZAN_DOMAIN/api/health"
+        run: |
+          domain="$(ssh "deploy@$EC2_HOST" "sed -n 's/^MIZAN_DOMAIN=//p' /srv/mizan/.env" | tr -d "'\"")"
+          curl -fsS "https://$domain/api/health"

@@ -9,6 +9,7 @@
  *   RESEND_API_KEY: how email is sent (otherwise it is only logged). SMTP wins when both are set.
  * - RESEND_API_KEY with RESEND_SEGMENT_ID: news subscribers join that Resend segment (Broadcasts).
  * - PUBLIC_URL: where the app lives, for links in emails (default: the first of APP_ORIGINS).
+ * - SUPPORT_EMAIL, OPERATOR_NAME: shown in the app's help and legal pages (GET /api/config).
  * - WEB_DIR: also serve the built web app from this folder (e.g. dist), on the same origin.
  * - LEDGER_DEV=1: development helpers (never in production).
  *
@@ -84,6 +85,8 @@ const app = createApp({
     version: (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8')) as { version: string }).version,
     environment: env.LEDGER_ENV ?? (dev ? 'development' : 'production'),
     publicUrl: env.PUBLIC_URL || undefined,
+    supportEmail: env.SUPPORT_EMAIL || undefined,
+    operatorName: env.OPERATOR_NAME || undefined,
   },
 });
 

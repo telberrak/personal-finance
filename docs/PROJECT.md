@@ -317,7 +317,8 @@ Internet ──443/80──▶ Caddy ──▶ mizan:8787 (API + app) ──▶ 
 
 - **Docker Compose** ([`deploy/ec2/compose.yml`](../deploy/ec2/compose.yml)) runs Caddy, PostgreSQL 17 and Mizan; data in named volumes.
 - **Caddy** ([`Caddyfile`](../deploy/ec2/Caddyfile)) gets and renews Let's Encrypt certificates, redirects HTTP to HTTPS, compresses responses, serves HTTP/3, and sets the visitor address for rate limits. Other sites and domains are one file each in `sites.d`, never touched by deploys.
-- **Server setup** ([`setup.sh`](../deploy/ec2/setup.sh), once): Docker, automatic security updates with a 04:00 UTC reboot window, 2 GB swap, key-only SSH, a `deploy` user for GitHub, `/srv/mizan` with a generated database password, nightly backups.
+- **Server setup** ([`setup.sh`](../deploy/ec2/setup.sh), once): Docker, the AWS CLI, automatic security updates with a 04:00 UTC reboot window, 2 GB swap, key-only SSH, a `deploy` user for GitHub, `mizan-config`, nightly backups.
+- **Settings:** all in AWS Parameter Store under `/mizan/` (SecureStrings, CloudTrail-audited, versioned), read by the instance role `mizan-server` (read-only on `/mizan/*`, [`iam-policy.json`](../deploy/ec2/iam-policy.json)). Each deploy writes `.env` from it with [`config.sh`](../deploy/ec2/config.sh), which refuses a missing domain or password, or a database password different from the one in use.
 - **DNS:** an A record per domain pointing at the Elastic IP, **not proxied** by Cloudflare (otherwise every visitor would share Cloudflare's addresses and rate limits).
 - **Email:** Resend (or any SMTP server, such as Amazon SES), sending from a verified subdomain (`mail.tarikelberrak.com`).
 
@@ -330,7 +331,7 @@ Indicative monthly cost: instance ~$13.70, disk ~$2.80, public IPv4 ~$3.65, snap
 | Status          | `cd /srv/mizan && docker compose ps`                                                                                                                                                         |
 | Logs            | `docker compose logs -f mizan` (method, route and error only; email failures show the provider's reason)                                                                                     |
 | Health          | `https://<domain>/api/health`; add an uptime monitor and a CloudWatch status-check alarm                                                                                                     |
-| Change settings | edit `/srv/mizan/.env` (as `deploy`), then `docker compose up -d`                                                                                                                            |
+| Change settings | edit the parameter under `/mizan/` in AWS Parameter Store, then GitHub → Actions → **Apply settings**                                                                                        |
 | Roll back       | set `MIZAN_TAG` in `.env` to an earlier commit SHA, then `docker compose up -d`                                                                                                              |
 | Add a site      | a `.caddy` file in `sites.d`, files in `sites/`, DNS record, then `docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile`                                                     |
 | Backups         | nightly `pg_dumpall` at 03:30 UTC in `/var/backups/mizan` (14 days), optionally copied to S3 (`BACKUP_S3_BUCKET`); daily EBS snapshots via Data Lifecycle Manager (tag `Backup=mizan-daily`) |
@@ -341,12 +342,13 @@ GitHub's own outages (such as jobs not being picked up) block deploys but not th
 
 ## 17. Configuration reference
 
-**Server environment** (set in `/srv/mizan/.env` or by Compose):
+**Server environment.** In production every value comes from **AWS Parameter Store** (`/mizan/<NAME>`, SecureStrings): each deploy writes `/srv/mizan/.env` from it with `mizan-config` (never edited by hand), and **Apply settings** in GitHub Actions re-applies changes without a release.
 
 | Variable                                                                                             | Meaning                                                                                                                                 |
 | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `DATABASE_URL`, `DATABASE_CA_CERT`                                                                   | PostgreSQL connection; CA certificate for managed databases with their own CA                                                           |
 | `PORT`                                                                                               | Default 8787                                                                                                                            |
+| `SUPPORT_EMAIL`, `OPERATOR_NAME`                                                                     | Shown in the app's help and legal pages (`GET /api/config`)                                                                             |
 | `WEB_DIR`                                                                                            | Serve the built app from this folder (`dist` in the image)                                                                              |
 | `RP_ID`, `APP_ORIGINS`                                                                               | Passkey relying party (the domain) and allowed app origins (including `capacitor://localhost`, `https://localhost` for the native apps) |
 | `MAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `RESEND_API_KEY` | Sign-in and news emails, through any SMTP server (used when `SMTP_HOST` is set) or Resend; with neither, they are only logged           |
@@ -356,16 +358,14 @@ GitHub's own outages (such as jobs not being picked up) block deploys but not th
 | `LEDGER_ENV`, `LEDGER_DEV`, `LEDGER_DATA_DIR`                                                        | Environment name; development helpers (never in production); PGlite folder or `memory`                                                  |
 | `MIZAN_DOMAIN`, `POSTGRES_PASSWORD`, `MIZAN_TAG`, `MIZAN_IMAGE`, `BACKUP_S3_BUCKET`                  | Compose and backup settings on the server                                                                                               |
 
-**Build time:** `VITE_SUPPORT_EMAIL`, `VITE_OPERATOR_NAME`, `VITE_API_ORIGIN`.
+**Build time:** `VITE_API_ORIGIN` (native apps); `VITE_SUPPORT_EMAIL` and `VITE_OPERATOR_NAME` only as fallbacks (the app reads `SUPPORT_EMAIL` and `OPERATOR_NAME` from the server at runtime, `GET /api/config`).
 
-**GitHub (Settings → Secrets and variables → Actions):**
+**GitHub (Settings → Secrets and variables → Actions)** holds only how to reach the server:
 
-| Kind     | Name                                         | Purpose                                     |
-| -------- | -------------------------------------------- | ------------------------------------------- |
-| Secret   | `EC2_HOST`, `EC2_SSH_KEY`, `EC2_KNOWN_HOSTS` | Where and how the deploy job connects       |
-| Variable | `MIZAN_DOMAIN`                               | The live domain, for the final health check |
-| Variable | `SUPPORT_EMAIL`, `OPERATOR_NAME`             | Baked into the web app                      |
-| Variable | `EC2_DEPLOY`                                 | `true` turns deploys on                     |
+| Kind     | Name                                         | Purpose                               |
+| -------- | -------------------------------------------- | ------------------------------------- |
+| Secret   | `EC2_HOST`, `EC2_SSH_KEY`, `EC2_KNOWN_HOSTS` | Where and how the deploy job connects |
+| Variable | `EC2_DEPLOY`                                 | `true` turns deploys on               |
 
 ## 18. Native apps
 

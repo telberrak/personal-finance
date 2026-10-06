@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # One-time setup of a fresh Ubuntu LTS EC2 instance for Mizan (safe to run again). From your PC:
 #   scp -r deploy/ec2 ubuntu@<ip>:
-#   ssh ubuntu@<ip> 'sudo MIZAN_DOMAIN=mizan.example.com bash ec2/setup.sh'
-# Installs Docker, automatic security updates, a swap file, a "deploy" user for GitHub Actions,
-# /srv/mizan with its settings, and nightly database backups. See docs/DEPLOY.md.
+#   ssh ubuntu@<ip> 'sudo bash ec2/setup.sh'
+# Installs Docker, the AWS CLI, automatic security updates, a swap file, a "deploy" user for GitHub
+# Actions, /srv/mizan, mizan-config (settings from AWS Parameter Store) and nightly database backups.
+# Settings are never edited here: they live in Parameter Store under /mizan/. See docs/DEPLOY.md.
 set -euo pipefail
 
-: "${MIZAN_DOMAIN:?Set MIZAN_DOMAIN, e.g. sudo MIZAN_DOMAIN=mizan.example.com bash ec2/setup.sh}"
 [ "$(id -u)" -eq 0 ] || { echo "Run with sudo." >&2; exit 1; }
 here="$(cd "$(dirname "$0")" && pwd)"
 export DEBIAN_FRONTEND=noninteractive
@@ -16,7 +16,7 @@ apt-get update -q
 apt-get -y -q upgrade
 apt-get -y -q install docker.io docker-compose-v2 unattended-upgrades curl
 systemctl enable --now docker
-snap list aws-cli >/dev/null 2>&1 || snap install aws-cli --classic # for optional S3 backups
+snap list aws-cli >/dev/null 2>&1 || snap install aws-cli --classic # settings (Parameter Store) and S3 backups
 
 echo "== Automatic security updates (reboots at 04:00 UTC when needed)"
 cat >/etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
@@ -71,33 +71,9 @@ if [ ! -f /srv/mizan/sites.d/README.caddy ]; then
 EOF
   chown deploy:deploy /srv/mizan/sites.d/README.caddy
 fi
-if [ ! -f /srv/mizan/.env ]; then
-  (
-    umask 077
-    cat >/srv/mizan/.env <<EOF
-# Mizan settings. Restart after changes: cd /srv/mizan && docker compose up -d
-MIZAN_DOMAIN=$MIZAN_DOMAIN
-POSTGRES_PASSWORD=$(openssl rand -hex 24)
-# Set by each deploy:
-MIZAN_TAG=latest
-# Email (sign-in codes, news). A verified sender, then either an SMTP server or Resend.
-# Without either, codes only appear in: docker compose logs mizan
-MAIL_FROM=
-# Any SMTP server (Amazon SES, Brevo, Postmark, Mailgun…). Port 587 uses STARTTLS; 465 uses TLS.
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASSWORD=
-# Or Resend's API (used when SMTP_HOST is empty; also needed for Resend Broadcasts below).
-RESEND_API_KEY=
-# Optional: the Resend segment that news subscribers join (for Broadcasts).
-RESEND_SEGMENT_ID=
-# Optional: copy nightly backups to this S3 bucket (the instance role needs s3:PutObject on it).
-BACKUP_S3_BUCKET=
-EOF
-  )
-  chown deploy:deploy /srv/mizan/.env
-fi
+echo "== Settings from AWS Parameter Store (/mizan/*)"
+# Each deploy runs mizan-config to write /srv/mizan/.env; never edit that file by hand.
+install -m 755 "$here/config.sh" /usr/local/bin/mizan-config
 
 echo "== Nightly database backups (03:30 UTC, kept 14 days)"
 install -m 755 "$here/backup.sh" /usr/local/bin/mizan-backup
@@ -107,8 +83,8 @@ EOF
 
 cat <<EOF
 
-Done. Next:
-  1. Add GitHub's deploy key to /home/deploy/.ssh/authorized_keys (docs/DEPLOY.md, step 4).
-  2. Fill in RESEND_API_KEY and MAIL_FROM in /srv/mizan/.env.
-  3. Point $MIZAN_DOMAIN at this server, then deploy from GitHub.
+Done. Next (docs/DEPLOY.md):
+  1. Attach the IAM role that can read /mizan/* (deploy/ec2/iam-policy.json) to this instance.
+  2. Put the settings in Parameter Store under /mizan/ (at least MIZAN_DOMAIN and POSTGRES_PASSWORD).
+  3. Add GitHub's deploy key to /home/deploy/.ssh/authorized_keys, then deploy from GitHub.
 EOF
