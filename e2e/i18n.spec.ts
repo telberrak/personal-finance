@@ -4,6 +4,9 @@ import { expect, test } from './fixtures';
  * Pseudo-locales catch text that bypasses translation (it shows up without the ⟦…⟧ marks) and
  * layouts that break with longer text or right-to-left direction.
  */
+/** A screen's address with a ?locale= added, whether or not it already has a query. */
+const withLocale = (path: string, locale: string) => `${path}${path.includes('?') ? '&' : '?'}locale=${locale}`;
+
 const SCREENS = [
   '/',
   '/activity',
@@ -27,6 +30,7 @@ const SCREENS = [
   '/friends',
   '/settings/household',
   '/help',
+  '/updates?status=confirmed',
   '/privacy',
   '/settings/about',
 ];
@@ -62,7 +66,7 @@ const DATA = [
 for (const path of SCREENS) {
   test(`every visible text on ${path} is translated`, async ({ page }, info) => {
     test.skip(info.project.name.endsWith('-dark'), 'one theme is enough');
-    await page.goto(path + '?locale=en-XA');
+    await page.goto(withLocale(path, 'en-XA'));
     await page.locator('main').first().waitFor();
     await page.waitForTimeout(300);
     const untranslated = await page.evaluate((dataSelector) => {
@@ -100,7 +104,7 @@ test('right-to-left layout mirrors without breaking', async ({ page }, info) => 
   test.skip(info.project.name.endsWith('-dark'), 'one theme is enough');
   const desktop = info.project.name.startsWith('desktop');
   for (const path of SCREENS) {
-    await page.goto(path + '?locale=ar-XB');
+    await page.goto(withLocale(path, 'ar-XB'));
     await page.locator('main').first().waitFor();
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -131,7 +135,7 @@ for (const lang of ['fr', 'ar'] as const) {
     test.skip(info.project.name.endsWith('-dark'), 'one theme is enough');
     test.setTimeout(90_000);
     for (const path of SCREENS) {
-      await page.goto(`${path}?locale=${lang}`);
+      await page.goto(withLocale(path, lang));
       await page.locator('main').first().waitFor();
       await expect(page.locator('html')).toHaveAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
       const problems = await page.evaluate(

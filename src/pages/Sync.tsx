@@ -31,6 +31,7 @@ import {
 import { SyncApiError } from '../sync/client';
 import { syncNow, useSyncStatus } from '../sync/engine';
 import { WrongRecoveryKey } from '../sync/keys';
+import { setAccountUpdates } from '../sync/updates';
 
 const passkeysAvailable = () => typeof window !== 'undefined' && !!window.PublicKeyCredential && window.isSecureContext;
 
@@ -96,6 +97,7 @@ export function SyncPanel() {
 function SignIn({ signedOutEmail, onSignedIn }: { signedOutEmail?: string; onSignedIn: (r: SignInResult) => void }) {
   const [email, setEmail] = useState(signedOutEmail ?? '');
   const [code, setCode] = useState('');
+  const [news, setNews] = useState(false);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -121,7 +123,12 @@ function SignIn({ signedOutEmail, onSignedIn }: { signedOutEmail?: string; onSig
   };
   const verify = (e: FormEvent) => {
     e.preventDefault();
-    void run(async () => onSignedIn(await verifyCode(email.trim(), code)), 'sync.codeWrong');
+    void run(async () => {
+      const result = await verifyCode(email.trim(), code);
+      // The opt-in is unticked by default; the address is proven by the code, so no confirmation email.
+      if (news) await setAccountUpdates(true, 'signup').catch(() => undefined);
+      onSignedIn(result);
+    }, 'sync.codeWrong');
   };
 
   return (
@@ -142,6 +149,10 @@ function SignIn({ signedOutEmail, onSignedIn }: { signedOutEmail?: string; onSig
               )}
             </Field>
           </div>
+          <label className="check-row">
+            <input type="checkbox" checked={news} onChange={(e) => setNews(e.target.checked)} />
+            <span className="small">{t('updates.consent')}</span>
+          </label>
           <button type="submit" className="btn btn--solid" disabled={busy || !email.includes('@')}>
             {t('sync.sendCode')}
           </button>

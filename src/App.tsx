@@ -27,6 +27,7 @@ import { Budgets } from './pages/Budgets';
 import { Home } from './pages/Home';
 import { Settings } from './pages/Settings';
 import { TransactionForm } from './pages/TransactionForm';
+import { Updates } from './pages/Updates';
 import { Welcome } from './pages/Welcome';
 
 // Less-used screens load on first visit, keeping the start-up bundle small on phones.
@@ -54,7 +55,12 @@ const ContentPage = lazy(() => import('./pages/Info').then((m) => ({ default: m.
 
 /** The root component. */
 export function App() {
-  // While locked nothing can be decrypted, so the screens (and their data queries) are not mounted.
+  // Links in news emails work for anyone: not set up, locked, or on another device.
+  return window.location.pathname === '/updates' ? <Updates /> : <Main />;
+}
+
+/** The app itself. While locked nothing can be decrypted, so the screens (and their data queries) are not mounted. */
+function Main() {
   const locked = useSecurityMode() === 'locked';
   return (
     <ToastProvider>

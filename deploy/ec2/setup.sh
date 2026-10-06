@@ -83,6 +83,8 @@ MIZAN_TAG=latest
 # Sign-in emails (resend.com). Without them, codes only appear in: docker compose logs mizan
 RESEND_API_KEY=
 MAIL_FROM=
+# Optional: the Resend segment that news subscribers join (for Broadcasts).
+RESEND_SEGMENT_ID=
 # Optional: copy nightly backups to this S3 bucket (the instance role needs s3:PutObject on it).
 BACKUP_S3_BUCKET=
 EOF

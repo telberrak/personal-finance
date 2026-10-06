@@ -89,6 +89,21 @@ Then delete `mizan-deploy` from your PC (keep it only in GitHub).
 
 Passkeys are tied to the domain, so choose Mizan's final domain before inviting people.
 
+## News by email
+
+People can ask for news on the website, in **Settings → News by email**, or when turning on sync (always opt-in). The server keeps them in the `subscribers` table with their consent (where, when, the wording, the language), confirms new addresses by email (double opt-in), and adds one-click unsubscribe links and headers. See [`server/subscribers.ts`](../server/subscribers.ts).
+
+To send news:
+
+- **Resend Broadcasts (recommended):** in Resend, create a segment (Audience → Segments), copy its id into `RESEND_SEGMENT_ID` in `/srv/mizan/.env`, and restart (`docker compose up -d`). Confirmed subscribers are added as contacts in that segment, and unsubscribes are mirrored. Write and send Broadcasts to the segment from the Resend dashboard; Resend adds its own unsubscribe link to each one.
+- **Any other tool:** export a CSV of confirmed subscribers with their consent record, then delete the file once imported:
+
+  ```bash
+  cd /srv/mizan && docker compose exec -T mizan node server/export-subscribers.ts > subscribers.csv
+  ```
+
+People who unsubscribe through a Resend Broadcast are unsubscribed in Resend; keep using Broadcasts (or re-export) so they are never emailed again.
+
 ## Other sites and domains
 
 Each site is one file in `/srv/mizan/sites.d` (see the `README.caddy` there) with its files in `/srv/mizan/sites/<name>`, plus DNS records pointing at the Elastic IP. Reload Caddy afterwards:

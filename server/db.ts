@@ -155,6 +155,23 @@ const MIGRATIONS: string[] = [
     PRIMARY KEY (day, name)
   );
   `,
+  // 6: news by email. Separate from sync accounts; consent is recorded with its wording.
+  `
+  CREATE TABLE subscribers (
+    email text PRIMARY KEY,
+    language text NOT NULL,
+    -- Where they said yes: site, app, signup or settings.
+    source text NOT NULL,
+    consent_text text NOT NULL,
+    consented_at timestamptz NOT NULL,
+    -- Double opt-in: set when the emailed link is clicked (or straight away for a signed-in account).
+    confirm_token_hash text UNIQUE,
+    confirm_expires_at timestamptz,
+    confirmed_at timestamptz,
+    unsubscribed_at timestamptz,
+    unsubscribe_token text NOT NULL UNIQUE
+  );
+  `,
 ];
 
 /** Applies the migrations not yet recorded in schema_migrations, each in its own transaction. */

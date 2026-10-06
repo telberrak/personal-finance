@@ -3,7 +3,7 @@ import { expect, test } from './fixtures';
 
 /** Signs in on the Sync page with the emailed code (read from the e2e API's development helper). */
 async function signIn(page: Page, email: string) {
-  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByRole('button', { name: 'Email me a sign-in code' }).click();
   await expect(page.getByLabel('Code')).toBeVisible();
   const res = await page.request.get(`/api/dev/last-code?email=${encodeURIComponent(email)}`);

@@ -31,7 +31,7 @@
             Mizan suit vos dépenses du quotidien, vos prélèvements et vos budgets, et vous dit ce que vous pouvez dépenser jusqu’à la paie.
             Sans compte, sans publicité, sans pistage.
           </p>
-          <a class="cta" href="https://app.example.com/?locale=fr">Ouvrir Mizan, gratuitement</a>
+          <a class="cta" href="https://mizan.tarikelberrak.com/?locale=fr">Ouvrir Mizan, gratuitement</a>
         </section>
 
         <section class="grid" aria-label="Fonctionnalités">
@@ -73,13 +73,44 @@
             <li>Pas de publicité, pas de pistage, pas de cookies.</li>
           </ul>
         </section>
+
+        <section class="news" id="news" aria-labelledby="news-title">
+          <h2 id="news-title">Nouvelles et accès anticipé</h2>
+          <p>Quelques e-mails par an sur les nouveautés et des conseils. Aucune publicité, et votre adresse n’est jamais partagée.</p>
+          <!-- A plain form (no script): the server records the consent and emails a link to confirm the address. -->
+          <form method="post" action="https://mizan.tarikelberrak.com/api/subscribe">
+            <input type="hidden" name="language" value="fr" />
+            <input type="hidden" name="source" value="site" />
+            <label for="news-email">E-mail</label>
+            <div class="news-row">
+              <input id="news-email" name="email" type="email" autocomplete="email" required />
+              <button type="submit">S’abonner</button>
+            </div>
+            <label class="news-consent">
+              <input
+                type="checkbox"
+                name="consent"
+                value="Envoyez-moi les nouvelles de Mizan par e-mail : nouveautés et conseils, quelques fois par an. Je peux me désabonner à tout moment."
+                required
+              />
+              <span
+                >Envoyez-moi les nouvelles de Mizan par e-mail : nouveautés et conseils, quelques fois par an. Je peux me désabonner à tout
+                moment.</span
+              >
+            </label>
+            <p class="news-note">
+              Nous vous enverrons un lien pour confirmer votre adresse. Voir notre
+              <a href="https://mizan.tarikelberrak.com/privacy?locale=fr">politique de confidentialité</a>.
+            </p>
+          </form>
+        </section>
       </main>
 
       <footer>
         <span>© 2026 Mizan</span>
         <span
-          ><a href="https://app.example.com/privacy?locale=fr">Confidentialité</a> ·
-          <a href="https://app.example.com/terms?locale=fr">Conditions</a> · <a href="mailto:support@example.com">Contact</a></span
+          ><a href="https://mizan.tarikelberrak.com/privacy?locale=fr">Confidentialité</a> ·
+          <a href="https://mizan.tarikelberrak.com/terms?locale=fr">Conditions</a> · <a href="mailto:support@example.com">Contact</a></span
         >
       </footer>
     </div>

@@ -672,7 +672,8 @@
     "help": "Help",
     "helpDetail": "Answers to common questions",
     "about": "About",
-    "aboutDetail": "Version, privacy, feedback"
+    "aboutDetail": "Version, privacy, feedback",
+    "newsByEmail": "News by email"
   },
   "colors": {
     "groceries": "Blue",
@@ -1368,5 +1369,25 @@
     "search": "Search help",
     "searchPlaceholder": "Search help, e.g. bills, PIN, import",
     "noMatch": "No help topic matches. Try another word."
+  },
+  "updates": {
+    "title": "News from Mizan",
+    "intro": "A few emails a year about new features and tips. Never adverts for others, and your address is never shared.",
+    "consent": "Email me news about Mizan: new features and tips, a few times a year. I can unsubscribe at any time.",
+    "email": "Email",
+    "subscribe": "Subscribe",
+    "checkEmail": "Check your inbox: we sent a link to confirm your address.",
+    "on": "You will get news from Mizan.",
+    "off": "No more news emails.",
+    "failed": "Something went wrong. Try again.",
+    "unsubscribeQuestion": "Stop getting news from Mizan by email?",
+    "unsubscribe": "Unsubscribe",
+    "openApp": "Open Mizan",
+    "status": {
+      "check-email": "Almost done: check your inbox and click the link to confirm your address.",
+      "confirmed": "Thank you, your address is confirmed. You will get news from Mizan a few times a year.",
+      "invalid": "This link has expired or was already used. You can subscribe again from Settings → News by email.",
+      "unsubscribed": "You are unsubscribed. You will not get any more news emails."
+    }
   }
 }

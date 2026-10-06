@@ -44,27 +44,28 @@ Internal identifiers still carry the working name **Ledger** (the IndexedDB name
 
 ## 2. Features
 
-| Area             | What it does                                                                                                                                | Code                                                      |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Safe to spend    | Everyday balance minus bills due before payday minus savings, per day until payday                                                          | `lib/selectors.ts`, `pages/Home.tsx`                      |
-| Accounts         | Current, savings, cash, credit cards, loans, mortgages, investments, pensions, property; per-account currency                               | `pages/Accounts.tsx`                                      |
-| Transactions     | Expenses, income, transfers, splits, tags, notes, receipts, foreign amounts                                                                 | `pages/TransactionForm.tsx`, `db/repo.ts`                 |
-| Categorisation   | Rules, payee renames, a UK merchant directory, learning from corrections                                                                    | `lib/rules.ts`, `lib/merchants.ts`, `lib/learn.ts`        |
-| Bills            | Weekly, monthly, yearly; direct debits, standing orders, card subscriptions; matching payments, price-rise alerts, suggestions, free trials | `pages/Bills.tsx`, `lib/matching.ts`, `lib/recurring.ts`  |
-| Budgets          | Monthly or payday-to-payday, rollover, alerts; household budgets                                                                            | `pages/Budgets.tsx`                                       |
-| Goals            | Savings targets with dates and monthly amounts                                                                                              | `pages/Goals.tsx`                                         |
-| Reports          | By category, by month, top payees, forecast, comparisons, trends, Year in review, tax helper (UK, France)                                   | `lib/reports.ts`, `lib/forecast.ts`, `lib/tax.ts`         |
-| Calendar         | Bills, paydays and expected balance day by day                                                                                              | `lib/calendar.ts`                                         |
-| Net worth        | Assets and debts with history; debt payoff planner (avalanche, snowball)                                                                    | `lib/networth.ts`, `lib/debt.ts`                          |
-| Import           | CSV from most UK and French banks, column mapping, duplicate detection, undo                                                                | `lib/importer.ts`, `lib/importPrep.ts`                    |
-| Bank connections | Open Banking through GoCardless (or a sandbox bank), 90-day consent                                                                         | `banks/`, `server/banks.ts`                               |
-| Receipts         | Photos and PDFs, on-device OCR (Tesseract), return-by and warranty reminders                                                                | `components/Receipts.tsx`, `lib/ocr.ts`, `lib/receipt.ts` |
-| Search           | Advanced filters, saved searches, bulk edit                                                                                                 | `lib/search.ts`, `pages/Search.tsx`                       |
-| Notifications    | 11 alert types, quiet hours, Web Push and native notifications                                                                              | `lib/alerts.ts`, `notify/`, `server/push.ts`              |
-| Sharing          | Households (shared accounts, bills, budgets, categories); splitting costs with friends                                                      | `sync/household.ts`, `lib/friends.ts`                     |
-| Security         | App lock (PIN, passkey, biometrics), encryption at rest, encrypted backups, hide amounts                                                    | `db/crypto.ts`, `db/encryption.ts`, `db/security.ts`      |
-| Languages        | English, French, Arabic (right to left), Latin or Arabic-Indic digits, multi-currency with ECB rates                                        | `i18n/`, `locales/`, `lib/format.ts`, `lib/fx.ts`         |
-| Help             | 26 searchable topics with examples, in three languages                                                                                      | `pages/Help.tsx`, `content/help.*.md`                     |
+| Area             | What it does                                                                                                                                 | Code                                                                       |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Safe to spend    | Everyday balance minus bills due before payday minus savings, per day until payday                                                           | `lib/selectors.ts`, `pages/Home.tsx`                                       |
+| Accounts         | Current, savings, cash, credit cards, loans, mortgages, investments, pensions, property; per-account currency                                | `pages/Accounts.tsx`                                                       |
+| Transactions     | Expenses, income, transfers, splits, tags, notes, receipts, foreign amounts                                                                  | `pages/TransactionForm.tsx`, `db/repo.ts`                                  |
+| Categorisation   | Rules, payee renames, a UK merchant directory, learning from corrections                                                                     | `lib/rules.ts`, `lib/merchants.ts`, `lib/learn.ts`                         |
+| Bills            | Weekly, monthly, yearly; direct debits, standing orders, card subscriptions; matching payments, price-rise alerts, suggestions, free trials  | `pages/Bills.tsx`, `lib/matching.ts`, `lib/recurring.ts`                   |
+| Budgets          | Monthly or payday-to-payday, rollover, alerts; household budgets                                                                             | `pages/Budgets.tsx`                                                        |
+| Goals            | Savings targets with dates and monthly amounts                                                                                               | `pages/Goals.tsx`                                                          |
+| Reports          | By category, by month, top payees, forecast, comparisons, trends, Year in review, tax helper (UK, France)                                    | `lib/reports.ts`, `lib/forecast.ts`, `lib/tax.ts`                          |
+| Calendar         | Bills, paydays and expected balance day by day                                                                                               | `lib/calendar.ts`                                                          |
+| Net worth        | Assets and debts with history; debt payoff planner (avalanche, snowball)                                                                     | `lib/networth.ts`, `lib/debt.ts`                                           |
+| Import           | CSV from most UK and French banks, column mapping, duplicate detection, undo                                                                 | `lib/importer.ts`, `lib/importPrep.ts`                                     |
+| Bank connections | Open Banking through GoCardless (or a sandbox bank), 90-day consent                                                                          | `banks/`, `server/banks.ts`                                                |
+| Receipts         | Photos and PDFs, on-device OCR (Tesseract), return-by and warranty reminders                                                                 | `components/Receipts.tsx`, `lib/ocr.ts`, `lib/receipt.ts`                  |
+| Search           | Advanced filters, saved searches, bulk edit                                                                                                  | `lib/search.ts`, `pages/Search.tsx`                                        |
+| Notifications    | 11 alert types, quiet hours, Web Push and native notifications                                                                               | `lib/alerts.ts`, `notify/`, `server/push.ts`                               |
+| Sharing          | Households (shared accounts, bills, budgets, categories); splitting costs with friends                                                       | `sync/household.ts`, `lib/friends.ts`                                      |
+| Security         | App lock (PIN, passkey, biometrics), encryption at rest, encrypted backups, hide amounts                                                     | `db/crypto.ts`, `db/encryption.ts`, `db/security.ts`                       |
+| Languages        | English, French, Arabic (right to left), Latin or Arabic-Indic digits, multi-currency with ECB rates                                         | `i18n/`, `locales/`, `lib/format.ts`, `lib/fx.ts`                          |
+| Help             | 27 searchable topics with examples, in three languages                                                                                       | `pages/Help.tsx`, `content/help.*.md`                                      |
+| News by email    | Opt-in on the website, in Settings and at sync sign-up; consent records, double opt-in, one-click unsubscribe, Resend Broadcasts, CSV export | `server/subscribers.ts`, `components/NewsByEmail.tsx`, `pages/Updates.tsx` |
 
 The phase-by-phase history is in [ROADMAP_PRO.md](ROADMAP_PRO.md) (P1–P14).
 
@@ -198,6 +199,7 @@ The full threat model is in [SECURITY.md](SECURITY.md). In short:
 - **Sync encryption:** see section 9. The server never sees readable data or keys.
 - **Backups:** optional password encryption (PBKDF2 + AES-256-GCM).
 - **Web hardening:** a strict Content-Security-Policy (no third-party scripts, styles or connections), HSTS, frame denial, no referrer, a restrictive permissions policy. Defined once in [`security-headers.ts`](../security-headers.ts) and applied by the server, `vite preview`, Netlify and Vercel configs (a test checks they match).
+- **News by email:** opt-in only (never pre-ticked), consent recorded with its wording, double opt-in for typed addresses, one-click unsubscribe (RFC 8058 headers), mirrored to Resend for Broadcasts; deleted with the sync account.
 - **Privacy:** no ads, no trackers, no cookies. Opt-in anonymous usage counts are daily totals per event name only. Server logs never contain request bodies, emails or tokens.
 - **Server:** rate limits on sign-in (20 code requests per address per hour, 5 per email per 15 minutes; codes expire after 10 minutes and allow 5 tries), the visitor address taken only from Caddy's `X-Forwarded-For`, one-use household invites.
 
@@ -219,22 +221,23 @@ Sync runs on start-up, shortly after any change (when the outbox fills), every m
 
 Code in [`server/`](../server); types shared with the app in [`shared/api.ts`](../shared/api.ts). Entry point `server/main.ts` reads the environment, opens the database (Postgres with `DATABASE_URL`, otherwise PGlite on disk or in memory), runs migrations, and serves the API (and the built app when `WEB_DIR` is set).
 
-| Routes                                                            | Purpose                                              |
-| ----------------------------------------------------------------- | ---------------------------------------------------- |
-| `GET /api/health`                                                 | Database round trip; returns version and environment |
-| `POST /api/auth/email/start`, `/verify`                           | Sign in with an emailed 6-digit code                 |
-| `POST /api/auth/passkey/options`, `/verify`                       | Sign in with a passkey                               |
-| `GET /api/me`, `DELETE /api/devices/:id`, `POST /api/auth/logout` | Account, devices, sign out                           |
-| `GET/PUT /api/vault`                                              | The wrapped sync key                                 |
-| `POST /api/sync/push`, `GET /api/sync/pull?since=N`               | Encrypted records, ordered per account               |
-| `/api/spaces/…`                                                   | Households: create, invite, join, leave, push, pull  |
-| `/api/push/…`                                                     | Web Push key, subscription, reminders                |
-| `/api/banks/…`                                                    | Bank connections (GoCardless or sandbox)             |
-| `GET /api/rates`                                                  | ECB euro reference rates (cached 6 hours)            |
-| `POST /api/feedback`, `/api/events`                               | Feedback messages, opt-in usage counts               |
-| `DELETE /api/account`                                             | Delete the account and everything stored for it      |
+| Routes                                                                                                      | Purpose                                                                               |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `GET /api/health`                                                                                           | Database round trip; returns version and environment                                  |
+| `POST /api/auth/email/start`, `/verify`                                                                     | Sign in with an emailed 6-digit code                                                  |
+| `POST /api/auth/passkey/options`, `/verify`                                                                 | Sign in with a passkey                                                                |
+| `GET /api/me`, `DELETE /api/devices/:id`, `POST /api/auth/logout`                                           | Account, devices, sign out                                                            |
+| `GET/PUT /api/vault`                                                                                        | The wrapped sync key                                                                  |
+| `POST /api/sync/push`, `GET /api/sync/pull?since=N`                                                         | Encrypted records, ordered per account                                                |
+| `/api/spaces/…`                                                                                             | Households: create, invite, join, leave, push, pull                                   |
+| `/api/push/…`                                                                                               | Web Push key, subscription, reminders                                                 |
+| `/api/banks/…`                                                                                              | Bank connections (GoCardless or sandbox)                                              |
+| `GET /api/rates`                                                                                            | ECB euro reference rates (cached 6 hours)                                             |
+| `POST /api/feedback`, `/api/events`                                                                         | Feedback messages, opt-in usage counts                                                |
+| `POST /api/subscribe`, `GET /api/subscribe/confirm`, `GET/POST /api/unsubscribe`, `GET/PUT /api/me/updates` | News by email: opt-in, confirmation link, one-click unsubscribe, the account's choice |
+| `DELETE /api/account`                                                                                       | Delete the account and everything stored for it                                       |
 
-**Database** (`server/db.ts`): migrations in order, recorded in `schema_migrations`: 1 core (users, sessions, email codes, passkeys, challenges, vaults, records), 2 push, 3 bank links, 4 households, 5 feedback and usage counts. Never edit a released migration; add one.
+**Database** (`server/db.ts`): migrations in order, recorded in `schema_migrations`: 1 core (users, sessions, email codes, passkeys, challenges, vaults, records), 2 push, 3 bank links, 4 households, 5 feedback and usage counts, 6 news subscribers (kept apart from accounts, with their consent record). Never edit a released migration; add one.
 
 **Background work:** due push reminders are sent every minute.
 
@@ -346,7 +349,8 @@ GitHub's own outages (such as jobs not being picked up) block deploys but not th
 | `PORT`                                                                              | Default 8787                                                                                                                            |
 | `WEB_DIR`                                                                           | Serve the built app from this folder (`dist` in the image)                                                                              |
 | `RP_ID`, `APP_ORIGINS`                                                              | Passkey relying party (the domain) and allowed app origins (including `capacitor://localhost`, `https://localhost` for the native apps) |
-| `RESEND_API_KEY`, `MAIL_FROM`                                                       | Sign-in emails; without a key, codes are only logged                                                                                    |
+| `RESEND_API_KEY`, `MAIL_FROM`                                                       | Sign-in and news emails; without a key, they are only logged                                                                            |
+| `RESEND_SEGMENT_ID`, `PUBLIC_URL`                                                   | Resend segment for news subscribers (Broadcasts); where links in emails point                                                           |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`                            | Web Push; generated once and stored if absent                                                                                           |
 | `GOCARDLESS_SECRET_ID`, `GOCARDLESS_SECRET_KEY`, `BANKS_SANDBOX`                    | Open Banking                                                                                                                            |
 | `LEDGER_ENV`, `LEDGER_DEV`, `LEDGER_DATA_DIR`                                       | Environment name; development helpers (never in production); PGlite folder or `memory`                                                  |

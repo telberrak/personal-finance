@@ -118,6 +118,64 @@ header.top {
   margin: 12px 0 0;
   padding-inline-start: 22px;
 }
+/* News by email: a plain form posting to the Mizan API. */
+.news {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  margin-bottom: 48px;
+}
+.news h2 {
+  margin: 0 0 8px;
+}
+.news > p {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+.news label {
+  font-weight: 600;
+}
+.news-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+.news-row input {
+  flex: 1 1 220px;
+  min-width: 0;
+  font: inherit;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg, #fff);
+  color: inherit;
+}
+.news-row button {
+  font: inherit;
+  font-weight: 600;
+  padding: 12px 22px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.news-consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-weight: 400 !important;
+}
+.news-consent input {
+  margin-top: 4px;
+}
+.news-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+}
 footer {
   border-top: 1px solid var(--border);
   padding: 24px 0 40px;

@@ -3,7 +3,7 @@ import { expect, test } from './fixtures';
 
 async function signIn(page: Page, email: string) {
   await page.goto('/settings/sync');
-  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Email', { exact: true }).fill(email);
   await page.getByRole('button', { name: 'Email me a sign-in code' }).click();
   const { code } = (await (await page.request.get(`/api/dev/last-code?email=${encodeURIComponent(email)}`)).json()) as { code: string };
   await page.getByLabel('Code').fill(code);

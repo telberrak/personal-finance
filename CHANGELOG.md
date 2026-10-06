@@ -2,6 +2,14 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.18.0 — News by email
+
+- Ask for news on the website, in Settings → News by email, or with a box when turning on sync. The box is never ticked for you.
+- Addresses typed on the website or in the app are confirmed by an emailed link (double opt-in); a sync account's address is already proven by its sign-in code.
+- Every email has a one-click unsubscribe link and the List-Unsubscribe headers mail apps use; the link opens a page with a button, so link scanners cannot unsubscribe anyone.
+- The server records consent (where, when, the exact wording, the language) apart from sync accounts, mirrors confirmed subscribers to Resend for Broadcasts (RESEND_SEGMENT_ID), and can export them as CSV. Deleting the sync account deletes the subscription too.
+- Privacy policy and Help updated in English, French and Arabic.
+
 ## 0.17.1 — Documentation
 
 - One document for the whole project: docs/PROJECT.md (architecture, data model, security, sync, server, build, tests, CI/CD, deployment, operations, configuration).

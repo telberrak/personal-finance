@@ -49,6 +49,10 @@ services:
       APP_ORIGINS: https://${MIZAN_DOMAIN},capacitor://localhost,https://localhost
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-}
+      # News by email: confirmed subscribers join this Resend segment, for Broadcasts.
+      RESEND_SEGMENT_ID: ${RESEND_SEGMENT_ID:-}
+      # Links in emails (confirm, unsubscribe) point here.
+      PUBLIC_URL: https://${MIZAN_DOMAIN}
     depends_on:
       postgres:
         condition: service_healthy

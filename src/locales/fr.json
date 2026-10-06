@@ -672,7 +672,8 @@
     "help": "Aide",
     "helpDetail": "Réponses aux questions fréquentes",
     "about": "À propos",
-    "aboutDetail": "Version, confidentialité, retours"
+    "aboutDetail": "Version, confidentialité, retours",
+    "newsByEmail": "Nouvelles par e-mail"
   },
   "colors": {
     "groceries": "Bleu",
@@ -1368,5 +1369,25 @@
     "search": "Rechercher dans l’aide",
     "searchPlaceholder": "Rechercher, par ex. factures, code, importer",
     "noMatch": "Aucun sujet ne correspond. Essayez un autre mot."
+  },
+  "updates": {
+    "title": "Les nouvelles de Mizan",
+    "intro": "Quelques e-mails par an sur les nouveautés et des conseils. Jamais de publicité pour d’autres, et votre adresse n’est jamais partagée.",
+    "consent": "Envoyez-moi les nouvelles de Mizan par e-mail : nouveautés et conseils, quelques fois par an. Je peux me désabonner à tout moment.",
+    "email": "E-mail",
+    "subscribe": "S’abonner",
+    "checkEmail": "Consultez votre boîte de réception : nous avons envoyé un lien pour confirmer votre adresse.",
+    "on": "Vous recevrez les nouvelles de Mizan.",
+    "off": "Plus d’e-mails de nouvelles.",
+    "failed": "Un problème est survenu. Réessayez.",
+    "unsubscribeQuestion": "Ne plus recevoir les nouvelles de Mizan par e-mail ?",
+    "unsubscribe": "Se désabonner",
+    "openApp": "Ouvrir Mizan",
+    "status": {
+      "check-email": "Presque terminé : consultez votre boîte de réception et cliquez sur le lien pour confirmer votre adresse.",
+      "confirmed": "Merci, votre adresse est confirmée. Vous recevrez les nouvelles de Mizan quelques fois par an.",
+      "invalid": "Ce lien a expiré ou a déjà été utilisé. Vous pouvez vous réabonner dans Réglages → Nouvelles par e-mail.",
+      "unsubscribed": "Vous êtes désabonné. Vous ne recevrez plus d’e-mails de nouvelles."
+    }
   }
 }

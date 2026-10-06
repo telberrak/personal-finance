@@ -31,7 +31,7 @@
             Mizan tracks your everyday spending, direct debits and budgets, and tells you what you can spend until payday. No account
             needed, no adverts, no tracking.
           </p>
-          <a class="cta" href="https://app.example.com/">Open Mizan, free</a>
+          <a class="cta" href="https://mizan.tarikelberrak.com/">Open Mizan, free</a>
         </section>
 
         <section class="grid" aria-label="Features">
@@ -70,12 +70,40 @@
             <li>No adverts, no tracking, no cookies.</li>
           </ul>
         </section>
+
+        <section class="news" id="news" aria-labelledby="news-title">
+          <h2 id="news-title">News and early access</h2>
+          <p>A few emails a year about new features and tips. No adverts, and your address is never shared.</p>
+          <!-- A plain form (no script): the server records the consent and emails a link to confirm the address. -->
+          <form method="post" action="https://mizan.tarikelberrak.com/api/subscribe">
+            <input type="hidden" name="language" value="en" />
+            <input type="hidden" name="source" value="site" />
+            <label for="news-email">Email</label>
+            <div class="news-row">
+              <input id="news-email" name="email" type="email" autocomplete="email" required />
+              <button type="submit">Subscribe</button>
+            </div>
+            <label class="news-consent">
+              <input
+                type="checkbox"
+                name="consent"
+                value="Email me news about Mizan: new features and tips, a few times a year. I can unsubscribe at any time."
+                required
+              />
+              <span>Email me news about Mizan: new features and tips, a few times a year. I can unsubscribe at any time.</span>
+            </label>
+            <p class="news-note">
+              We will email you a link to confirm your address. See our
+              <a href="https://mizan.tarikelberrak.com/privacy">privacy policy</a>.
+            </p>
+          </form>
+        </section>
       </main>
 
       <footer>
         <span>© 2026 Mizan</span>
         <span
-          ><a href="https://app.example.com/privacy">Privacy</a> · <a href="https://app.example.com/terms">Terms</a> ·
+          ><a href="https://mizan.tarikelberrak.com/privacy">Privacy</a> · <a href="https://mizan.tarikelberrak.com/terms">Terms</a> ·
           <a href="mailto:support@example.com">Contact</a></span
         >
       </footer>

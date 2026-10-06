@@ -1,6 +1,6 @@
 # Politique de confidentialité
 
-Projet, mis à jour le 3 octobre 2026. Mizan est fourni par {{operator}}. Questions : {{email}}.
+Projet, mis à jour le 6 octobre 2026. Mizan est fourni par {{operator}}. Questions : {{email}}.
 
 ## En bref
 
@@ -29,6 +29,10 @@ Si vous connectez une banque, un prestataire agréé de services d’information
 
 Si vous activez « Partager des statistiques d’usage anonymes », l’application envoie des événements comme « application ouverte » ou « transaction ajoutée ». Nous ne stockons que des totaux par jour, sans identifiant, adresse IP ni contenu.
 
+## Nouvelles par e-mail (facultatif)
+
+Uniquement si vous le demandez, sur notre site, dans l’application ou en activant la synchronisation (la case n’est jamais cochée à votre place). Nous conservons votre adresse e-mail, votre langue, où et quand vous avez accepté, le texte exact accepté, et la date de confirmation. Une adresse saisie sur le site ou dans l’application n’est utilisée qu’après un clic sur le lien de confirmation que nous envoyons. Chaque message contient un lien de désabonnement en un clic, et vous pouvez arrêter à tout moment dans **Réglages → Nouvelles par e-mail**. Nous envoyons quelques e-mails par an sur Mizan, jamais de publicité pour d’autres, et ne partageons jamais votre adresse.
+
 ## Retours
 
 Quand vous envoyez un retour, nous recevons votre message, la version de l’application et, si vous l’indiquez, votre adresse e-mail.
@@ -36,16 +40,18 @@ Quand vous envoyez un retour, nous recevons votre message, la version de l’app
 ## Bases légales (RGPD)
 
 - Synchronisation et compte : **exécution du contrat**.
-- Connexions bancaires, notifications et statistiques d’usage : votre **consentement**, que vous pouvez retirer à tout moment dans les réglages.
+- Connexions bancaires, notifications, statistiques d’usage et nouvelles par e-mail : votre **consentement**, que vous pouvez retirer à tout moment dans les réglages (ou, pour les nouvelles, avec le lien présent dans chaque e-mail).
 - Sécurité du service (limitation des tentatives, journaux d’erreurs) : notre **intérêt légitime**.
 
 ## Lieu de stockage et sous-traitants
 
-Nos serveurs sont à Londres, au Royaume-Uni (pays bénéficiant d’une décision d’adéquation de l’UE). Sous-traitants : nos hébergeurs et fournisseurs de base de données, Resend (e-mails de connexion), GoCardless (connexions bancaires). Ils ne traitent les données que sur nos instructions.
+Nos serveurs sont à Londres, au Royaume-Uni (pays bénéficiant d’une décision d’adéquation de l’UE). Sous-traitants : nos hébergeurs et fournisseurs de base de données, Resend (e-mails de connexion et nouvelles par e-mail), GoCardless (connexions bancaires). Ils ne traitent les données que sur nos instructions.
 
 ## Durée de conservation
 
 Jusqu’à la suppression de votre compte de synchronisation (Réglages → Synchronisation et appareils → Supprimer le compte), qui efface immédiatement tout sur nos serveurs. Les codes de connexion expirent après 10 minutes. Les journaux d’erreurs sont gardés 30 jours et ne contiennent aucune donnée financière.
+
+Nouvelles par e-mail : jusqu’à votre désabonnement ou la suppression de votre compte de synchronisation. Les adresses non confirmées ne sont pas utilisées, et les liens de confirmation expirent après 7 jours.
 
 ## Vos droits
 

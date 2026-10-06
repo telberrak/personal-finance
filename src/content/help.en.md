@@ -207,6 +207,17 @@ Shared accounts, their transactions and their bills appear for both of you, end-
 
 Set **Quiet from** and **Quiet until** so nothing arrives at night, and **Send a test notification** to check. All alerts also appear in the bell on **Home**.
 
+## News by email {#news}
+
+Want to hear about new features? Go to **Settings → News by email**. You can also tick the box when you turn on sync, or subscribe on our website. The box is never ticked for you.
+
+- **Signed in to sync:** switch news on or off; your address is already confirmed.
+- **Not signed in:** enter your email and tap **Subscribe**, then click the link we email you to confirm it.
+
+Every email has an unsubscribe link: one click and you are off the list. You can also switch news off in Settings at any time.
+
+> **Example:** you tick "Email me news about Mizan" when you turn on sync. A few times a year you get an email about what is new; one day you tap **Unsubscribe** at the bottom, confirm, and that is the last one.
+
 ## Sync and devices {#sync}
 
 Mizan works without an account: your data stays on your device. To use it on your phone and your computer, turn on **Settings → Sync and devices**.

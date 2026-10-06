@@ -47,6 +47,7 @@ import { currencyName, formatMoney, parseMoney } from '../lib/money';
 import { weekdayName } from '../lib/format';
 import { isValidPin, pinSupported } from '../lib/pin';
 import { CURRENCIES, LANGUAGES, t } from '../i18n';
+import { NewsByEmail } from '../components/NewsByEmail';
 
 const THEMES: { id: ThemePreference; label: string }[] = [
   { id: 'system', label: 'settings.theme.system' },
@@ -387,6 +388,10 @@ export function Settings({ data }: { data?: FinanceData }) {
             }}
           />
         </div>
+      </Section>
+
+      <Section title={t('settings.newsByEmail')} id="news">
+        <NewsByEmail />
       </Section>
 
       <Section title={t('settings.data')}>

@@ -26,6 +26,7 @@ const SCREENS = [
   '/friends',
   '/settings/household',
   '/help',
+  '/updates?status=confirmed',
   '/privacy',
   '/settings/about',
 ];

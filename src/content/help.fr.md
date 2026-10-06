@@ -207,6 +207,17 @@ Les comptes partagés, leurs transactions et leurs factures apparaissent pour vo
 
 Réglez **Calme à partir de** et **Calme jusqu’à** pour ne rien recevoir la nuit, et **Envoyer une notification de test** pour vérifier. Toutes les alertes apparaissent aussi sous la cloche de l’**Accueil**.
 
+## Nouvelles par e-mail {#news}
+
+Envie d’être informé des nouveautés ? Allez dans **Réglages → Nouvelles par e-mail**. Vous pouvez aussi cocher la case en activant la synchronisation, ou vous abonner sur notre site. La case n’est jamais cochée à votre place.
+
+- **Connecté à la synchronisation :** activez ou désactivez les nouvelles ; votre adresse est déjà confirmée.
+- **Non connecté :** saisissez votre e-mail et touchez **S’abonner**, puis cliquez sur le lien de confirmation reçu par e-mail.
+
+Chaque e-mail contient un lien de désabonnement : un clic et vous êtes retiré de la liste. Vous pouvez aussi désactiver les nouvelles dans les réglages à tout moment.
+
+> **Exemple :** vous cochez « Envoyez-moi les nouvelles de Mizan » en activant la synchronisation. Quelques fois par an, un e-mail présente les nouveautés ; un jour, vous touchez **Se désabonner** en bas, confirmez, et c’est le dernier.
+
 ## Synchronisation et appareils {#sync}
 
 Mizan fonctionne sans compte : vos données restent sur votre appareil. Pour l’utiliser sur téléphone et ordinateur, activez **Réglages → Synchronisation et appareils**.

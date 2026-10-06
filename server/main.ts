@@ -5,7 +5,9 @@
  * - DATABASE_URL: Postgres, with DATABASE_CA_CERT to verify its TLS certificate. Without it, data is kept in PGlite under LEDGER_DATA_DIR
  *   (default .ledger-api-data), or in memory with LEDGER_DATA_DIR=memory.
  * - RP_ID and APP_ORIGINS (comma-separated): where the app is served, for passkeys.
- * - RESEND_API_KEY and MAIL_FROM: sends sign-in codes by email (otherwise they are logged).
+ * - RESEND_API_KEY and MAIL_FROM: sends sign-in codes and other email (otherwise they are logged);
+ *   with RESEND_SEGMENT_ID, news subscribers join that Resend segment.
+ * - PUBLIC_URL: where the app lives, for links in emails (default: the first of APP_ORIGINS).
  * - WEB_DIR: also serve the built web app from this folder (e.g. dist), on the same origin.
  * - LEDGER_DEV=1: development helpers (never in production).
  *
@@ -15,7 +17,7 @@ import { readFileSync, renameSync } from 'node:fs';
 import { serve } from '@hono/node-server';
 import { createApp } from './app.ts';
 import { openPglite, openPostgres, type Sql } from './db.ts';
-import { consoleMailer, resendMailer } from './mailer.ts';
+import { consoleMailer, resendContacts, resendMailer } from './mailer.ts';
 import { sendDueReminders, webPushSender } from './push.ts';
 import { goCardlessProvider, sandboxProvider } from './banks.ts';
 import { withWebApp } from './web.ts';
@@ -47,6 +49,7 @@ const sql = env.DATABASE_URL ? await openPostgres(env.DATABASE_URL, { ca: env.DA
 const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, env.MAIL_FROM || 'Mizan <login@example.com>') : consoleMailer;
 if (!env.RESEND_API_KEY && !dev) console.warn('RESEND_API_KEY is not set: sign-in codes are only printed to this log.');
 
+const contacts = env.RESEND_API_KEY ? resendContacts(env.RESEND_API_KEY, env.RESEND_SEGMENT_ID || undefined) : undefined;
 const push = await webPushSender(sql, env);
 // Open Banking: GoCardless when its keys are set; the sandbox bank in development or when asked for.
 const banks =
@@ -61,6 +64,7 @@ const app = createApp({
   mailer,
   push,
   banks,
+  contacts,
   config: {
     rpID: env.RP_ID ?? 'localhost',
     rpName: 'Mizan',
@@ -73,6 +77,7 @@ const app = createApp({
     dev,
     version: (JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8')) as { version: string }).version,
     environment: env.LEDGER_ENV ?? (dev ? 'development' : 'production'),
+    publicUrl: env.PUBLIC_URL || undefined,
   },
 });
 

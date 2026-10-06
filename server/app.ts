@@ -18,12 +18,13 @@ import {
 } from '@simplewebauthn/server';
 import { LIMITS, type Change, type Me, type PullResponse, type PushResponse, type Session } from '../shared/api.ts';
 import type { Sql } from './db.ts';
-import type { Mailer } from './mailer.ts';
+import type { ContactList, Mailer, MailMessage } from './mailer.ts';
 import { bankRoutes, type BankProvider } from './banks.ts';
 import { pushRoutes, type PushSender } from './push.ts';
 import { spaceRoutes } from './spaces.ts';
 import { rateRoutes } from './rates.ts';
 import { feedbackRoutes } from './feedback.ts';
+import { subscriberRoutes } from './subscribers.ts';
 import { RateLimiter } from './rate-limit.ts';
 import { clientIp } from './client-ip.ts';
 
@@ -43,6 +44,8 @@ export interface Config {
   version?: string;
   /** 'production', 'staging' or 'development'. */
   environment?: string;
+  /** Where the app lives, for links in emails. Defaults to the first web origin. */
+  publicUrl?: string;
 }
 
 const CODE_TTL_MS = 10 * 60_000;
@@ -69,10 +72,13 @@ export function createApp({
   config,
   push,
   banks,
+  contacts,
   fetchRates,
 }: {
   sql: Sql;
   mailer: Mailer;
+  /** The mailing list for news by email (Resend Contacts), if configured. */
+  contacts?: ContactList;
   config: Config;
   push?: PushSender;
   banks?: BankProvider;
@@ -82,6 +88,7 @@ export function createApp({
   const app = new Hono<Env>().basePath('/api');
   const limiter = new RateLimiter();
   const lastCodes = new Map<string, string>();
+  const lastEmails = new Map<string, MailMessage>();
 
   const ip = clientIp;
   const limit = (key: string, max: number, windowMs: number) => {
@@ -191,6 +198,7 @@ export function createApp({
   });
 
   if (config.dev) app.get('/dev/last-code', (c) => c.json({ code: lastCodes.get(c.req.query('email') ?? '') ?? null }));
+  if (config.dev) app.get('/dev/last-email', (c) => c.json(lastEmails.get(c.req.query('email') ?? '') ?? null));
 
   // ------------------------------------------------------------ passkey sign-in
 
@@ -305,6 +313,8 @@ export function createApp({
 
   /** Deletes the account and everything stored for it. */
   authed.delete('/account', async (c) => {
+    // News by email goes too: deleting the account means deleting what we hold about you.
+    await sql.query('DELETE FROM subscribers WHERE email = (SELECT email FROM users WHERE id = $1)', [c.get('userId')]);
     await sql.query('DELETE FROM users WHERE id = $1', [c.get('userId')]);
     return c.json({ ok: true });
   });
@@ -425,6 +435,13 @@ export function createApp({
   pushRoutes(authed, sql, push);
   bankRoutes(authed, sql, banks, config.origins);
   spaceRoutes(authed, sql);
+  subscriberRoutes(app as unknown as Hono, authed, {
+    sql,
+    mailer,
+    contacts,
+    publicUrl: (config.publicUrl ?? config.origins.find((o) => o.startsWith('http')) ?? '').replace(/\/$/, ''),
+    lastEmails: config.dev ? lastEmails : undefined,
+  });
 
   app.route('/', authed);
   app.notFound((c) => c.json({ error: 'Not found.' }, 404));

@@ -1,6 +1,6 @@
 # Privacy policy
 
-Draft, last updated 3 October 2026. Mizan is provided by {{operator}}. Questions: {{email}}.
+Draft, last updated 6 October 2026. Mizan is provided by {{operator}}. Questions: {{email}}.
 
 ## In short
 
@@ -29,6 +29,10 @@ If you connect a bank, an authorised account information provider (GoCardless Ba
 
 If you turn on "Share anonymous usage counts", the app sends events such as "app opened" or "transaction added". We store daily totals only, with no identifier, IP address or content.
 
+## News by email (optional)
+
+Only if you ask for it, on our website, in the app or when turning on sync (the box is never ticked for you). We keep your email address, your language, where and when you agreed, the exact wording you agreed to, and when you confirmed. An address typed on the website or in the app is used only after you click the link we email to confirm it. Every message has a one-click unsubscribe link, and you can turn news off at any time in **Settings → News by email**. We send a few emails a year about Mizan, never adverts for others, and never share your address.
+
 ## Feedback
 
 When you send feedback we receive your message, the app version and, if you give it, your email address.
@@ -36,16 +40,18 @@ When you send feedback we receive your message, the app version and, if you give
 ## Legal bases (UK and EU GDPR)
 
 - Providing sync and your account: **contract**.
-- Bank connections, notifications and usage counts: your **consent**, which you can withdraw in Settings at any time.
+- Bank connections, notifications, usage counts and news by email: your **consent**, which you can withdraw at any time in Settings (or, for news, with the link in every email).
 - Keeping the service secure (for example rate limits and error logs): our **legitimate interests**.
 
 ## Where data is kept and who helps us
 
-Our servers are in London, United Kingdom. Processors: our hosting and database providers, Resend (sign-in emails), GoCardless (bank connections). They process data only on our instructions.
+Our servers are in London, United Kingdom. Processors: our hosting and database providers, Resend (sign-in emails and news by email), GoCardless (bank connections). They process data only on our instructions.
 
 ## How long we keep it
 
 Until you delete your sync account (Settings → Sync and devices → Delete sync account), which removes everything on our servers at once. Sign-in codes expire after 10 minutes. Error logs are kept for 30 days and contain no financial data.
+
+News by email: until you unsubscribe or delete your sync account. Unconfirmed addresses are not used, and confirmation links expire after 7 days.
 
 ## Your rights
 

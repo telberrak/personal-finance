@@ -31,7 +31,7 @@
             يتابع Mizan مصروفاتك اليومية وخصوماتك المباشرة وميزانياتك، ويخبرك بما يمكنك إنفاقه حتى يوم الراتب. دون حساب، ودون إعلانات، ودون
             تتبّع.
           </p>
-          <a class="cta" href="https://app.example.com/?locale=ar">افتح Mizan مجانًا</a>
+          <a class="cta" href="https://mizan.tarikelberrak.com/?locale=ar">افتح Mizan مجانًا</a>
         </section>
 
         <section class="grid" aria-label="الميزات">
@@ -70,13 +70,42 @@
             <li>لا إعلانات، ولا تتبّع، ولا ملفات تعريف ارتباط.</li>
           </ul>
         </section>
+
+        <section class="news" id="news" aria-labelledby="news-title">
+          <h2 id="news-title">الأخبار والوصول المبكر</h2>
+          <p>بضع رسائل في السنة عن الميزات الجديدة ونصائح. لا إعلانات، ولا نشارك عنوانك مع أحد.</p>
+          <!-- A plain form (no script): the server records the consent and emails a link to confirm the address. -->
+          <form method="post" action="https://mizan.tarikelberrak.com/api/subscribe">
+            <input type="hidden" name="language" value="ar" />
+            <input type="hidden" name="source" value="site" />
+            <label for="news-email">البريد الإلكتروني</label>
+            <div class="news-row">
+              <input id="news-email" name="email" type="email" autocomplete="email" required />
+              <button type="submit">اشتراك</button>
+            </div>
+            <label class="news-consent">
+              <input
+                type="checkbox"
+                name="consent"
+                value="أرسلوا إليّ أخبار Mizan بالبريد الإلكتروني: ميزات جديدة ونصائح، بضع مرات في السنة. يمكنني إلغاء الاشتراك في أي وقت."
+                required
+              />
+              <span
+                >أرسلوا إليّ أخبار Mizan بالبريد الإلكتروني: ميزات جديدة ونصائح، بضع مرات في السنة. يمكنني إلغاء الاشتراك في أي وقت.</span
+              >
+            </label>
+            <p class="news-note">
+              سنرسل إليك رابطًا لتأكيد عنوانك. راجع <a href="https://mizan.tarikelberrak.com/privacy?locale=ar">سياسة الخصوصية</a>.
+            </p>
+          </form>
+        </section>
       </main>
 
       <footer>
         <span>© 2026 Mizan</span>
         <span
-          ><a href="https://app.example.com/privacy?locale=ar">الخصوصية</a> · <a href="https://app.example.com/terms?locale=ar">الشروط</a> ·
-          <a href="mailto:support@example.com">اتصل بنا</a></span
+          ><a href="https://mizan.tarikelberrak.com/privacy?locale=ar">الخصوصية</a> ·
+          <a href="https://mizan.tarikelberrak.com/terms?locale=ar">الشروط</a> · <a href="mailto:support@example.com">اتصل بنا</a></span
         >
       </footer>
     </div>
