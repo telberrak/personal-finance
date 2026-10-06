@@ -14,18 +14,19 @@ npm run server:dev
 
 ## Configuration
 
-| Variable                                                         | Meaning                                                                                                                         |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `PORT`                                                           | Default 8787                                                                                                                    |
-| `DATABASE_URL`                                                   | Postgres connection string. Without it, PGlite in `LEDGER_DATA_DIR`                                                             |
-| `LEDGER_DATA_DIR`                                                | PGlite folder (default `.ledger-api-data`), or `memory`                                                                         |
-| `RP_ID`                                                          | The app's host name, for passkeys, e.g. `mizan.example.com`                                                                     |
-| `APP_ORIGINS`                                                    | Comma-separated origins the app is served from, e.g. `https://mizan.example.com`                                                |
-| `RESEND_SEGMENT_ID`, `PUBLIC_URL`                                | News by email: the Resend segment confirmed subscribers join; where links in emails point (default: the first of `APP_ORIGINS`) |
-| `RESEND_API_KEY`, `MAIL_FROM`                                    | Send sign-in codes with [Resend](https://resend.com). `MAIL_FROM` must be verified                                              |
-| `LEDGER_ENV`                                                     | `production` or `staging`; reported by `/api/health`                                                                            |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`         | Web Push keys (`npx web-push generate-vapid-keys`). Without them, keys are generated once and kept in the database              |
-| `GOCARDLESS_SECRET_ID`, `GOCARDLESS_SECRET_KEY`, `BANKS_SANDBOX` | Open Banking, see [OPEN_BANKING.md](OPEN_BANKING.md)                                                                            |
+| Variable                                                              | Meaning                                                                                                                         |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                                                                | Default 8787                                                                                                                    |
+| `DATABASE_URL`                                                        | Postgres connection string. Without it, PGlite in `LEDGER_DATA_DIR`                                                             |
+| `LEDGER_DATA_DIR`                                                     | PGlite folder (default `.ledger-api-data`), or `memory`                                                                         |
+| `RP_ID`                                                               | The app's host name, for passkeys, e.g. `mizan.example.com`                                                                     |
+| `APP_ORIGINS`                                                         | Comma-separated origins the app is served from, e.g. `https://mizan.example.com`                                                |
+| `RESEND_SEGMENT_ID`, `PUBLIC_URL`                                     | News by email: the Resend segment confirmed subscribers join; where links in emails point (default: the first of `APP_ORIGINS`) |
+| `RESEND_API_KEY`, `MAIL_FROM`                                         | Send sign-in codes with [Resend](https://resend.com). `MAIL_FROM` must be verified                                              |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD` | Send email through any SMTP server instead of Resend (Amazon SES, Brevo, Postmark…). Port 587 requires STARTTLS; 465 uses TLS   |
+| `LEDGER_ENV`                                                          | `production` or `staging`; reported by `/api/health`                                                                            |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`              | Web Push keys (`npx web-push generate-vapid-keys`). Without them, keys are generated once and kept in the database              |
+| `GOCARDLESS_SECRET_ID`, `GOCARDLESS_SECRET_KEY`, `BANKS_SANDBOX`      | Open Banking, see [OPEN_BANKING.md](OPEN_BANKING.md)                                                                            |
 
 Migrations run automatically at start-up ([`server/db.ts`](../server/db.ts)). Never edit a released migration: add a new one.
 

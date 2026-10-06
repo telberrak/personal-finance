@@ -47,8 +47,14 @@ services:
       LEDGER_ENV: production
       RP_ID: ${MIZAN_DOMAIN}
       APP_ORIGINS: https://${MIZAN_DOMAIN},capacitor://localhost,https://localhost
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-}
+      # Email through any SMTP server (Amazon SES, Brevo, Postmark…); used instead of Resend when set.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURE: ${SMTP_SECURE:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
       # News by email: confirmed subscribers join this Resend segment, for Broadcasts.
       RESEND_SEGMENT_ID: ${RESEND_SEGMENT_ID:-}
       # Links in emails (confirm, unsubscribe) point here.

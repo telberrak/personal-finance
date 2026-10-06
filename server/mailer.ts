@@ -1,8 +1,10 @@
 /**
- * Sends email: sign-in codes, and confirmations for news by email. Production uses Resend's HTTP
- * API (RESEND_API_KEY); without a key, messages are printed to the console, which is enough for
- * local development.
+ * Sends email: sign-in codes, and confirmations for news by email. Production uses either any SMTP
+ * server (SMTP_HOST: Amazon SES, Brevo, Postmark, Mailgun…) or Resend's HTTP API (RESEND_API_KEY);
+ * with neither, messages are printed to the console, which is enough for local development.
  */
+import nodemailer from 'nodemailer';
+
 export interface Mailer {
   sendCode(email: string, code: string): Promise<void>;
   /** Any other message. Optional so test doubles only need what they use. */
@@ -16,6 +18,13 @@ export interface MailMessage {
   text: string;
   headers?: Record<string, string>;
 }
+
+/** The sign-in code email, the same whichever provider sends it. */
+export const codeMessage = (email: string, code: string): MailMessage => ({
+  to: email,
+  subject: `Your Mizan code: ${code}`,
+  text: `Your Mizan sign-in code is ${code}. It expires in 10 minutes.\n\nIf you did not ask for it, you can ignore this email.`,
+});
 
 /** Development: prints messages instead of sending them. */
 export const consoleMailer: Mailer = {
@@ -46,14 +55,61 @@ export function resendMailer(apiKey: string, from: string, fetchImpl: typeof fet
     });
     if (!res.ok) throw await resendError(res);
   }
+  return { send, sendCode: (email, code) => send(codeMessage(email, code)) };
+}
+
+/** Where and how to reach an SMTP server. */
+export interface SmtpSettings {
+  host: string;
+  /** 587 (STARTTLS, the default) or 465 (TLS from the start). */
+  port: number;
+  /** True for port 465; with 587 the connection is upgraded with STARTTLS, which is required. */
+  secure: boolean;
+  user?: string;
+  password?: string;
+}
+
+/** The part of a Nodemailer transport the mailer uses, so tests can pass a fake. */
+export interface SmtpTransport {
+  sendMail(message: { from: string; to: string; subject: string; text: string; headers?: Record<string, string> }): Promise<unknown>;
+}
+
+/**
+ * Production: sends through any SMTP server from a verified sender (MAIL_FROM). Port 587 must
+ * offer STARTTLS: the connection is never sent in clear text.
+ */
+export function smtpMailer(settings: SmtpSettings, from: string, transport?: SmtpTransport): Mailer {
+  const smtp: SmtpTransport =
+    transport ??
+    nodemailer.createTransport({
+      host: settings.host,
+      port: settings.port,
+      secure: settings.secure,
+      requireTLS: !settings.secure,
+      auth: settings.user ? { user: settings.user, pass: settings.password ?? '' } : undefined,
+    });
+  async function send({ to, subject, text, headers }: MailMessage) {
+    try {
+      await smtp.sendMail({ from, to, subject, text, ...(headers ? { headers } : {}) });
+    } catch (err) {
+      // SMTP errors can quote the recipient: logs never hold addresses.
+      const reason = err instanceof Error ? err.message.replace(/\S+@\S+/g, '[email]') : 'error';
+      throw new Error(`SMTP server refused the message: ${reason}`);
+    }
+  }
+  return { send, sendCode: (email, code) => send(codeMessage(email, code)) };
+}
+
+/** SMTP settings from the environment, or undefined without SMTP_HOST. */
+export function smtpSettingsFrom(env: Record<string, string | undefined>): SmtpSettings | undefined {
+  if (!env.SMTP_HOST) return undefined;
+  const port = Number(env.SMTP_PORT || 587);
   return {
-    send,
-    sendCode: (email, code) =>
-      send({
-        to: email,
-        subject: `Your Mizan code: ${code}`,
-        text: `Your Mizan sign-in code is ${code}. It expires in 10 minutes.\n\nIf you did not ask for it, you can ignore this email.`,
-      }),
+    host: env.SMTP_HOST,
+    port,
+    secure: env.SMTP_SECURE ? env.SMTP_SECURE === 'true' : port === 465,
+    user: env.SMTP_USER || undefined,
+    password: env.SMTP_PASSWORD || undefined,
   };
 }
 

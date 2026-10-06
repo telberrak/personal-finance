@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { resendContacts, resendMailer } from './mailer.ts';
+import { codeMessage, resendContacts, resendMailer, smtpMailer, smtpSettingsFrom } from './mailer.ts';
 
 type Call = { url: string; method: string; body: unknown; headers: Record<string, string> };
 
@@ -44,5 +44,47 @@ describe('Resend', () => {
       method: 'PATCH',
       body: { unsubscribed: true },
     });
+  });
+});
+
+describe('SMTP', () => {
+  it('sends with the sender, headers and the shared sign-in wording', async () => {
+    const sent: unknown[] = [];
+    const mailer = smtpMailer({ host: 'smtp.example.com', port: 587, secure: false }, 'Mizan <mizan@mail.example.com>', {
+      sendMail: async (m) => void sent.push(m),
+    });
+    await mailer.send!({ to: 'a@example.com', subject: 'Hi', text: 'Hello', headers: { 'List-Unsubscribe': '<https://x>' } });
+    await mailer.sendCode('a@example.com', '123456');
+    expect(sent).toEqual([
+      {
+        from: 'Mizan <mizan@mail.example.com>',
+        to: 'a@example.com',
+        subject: 'Hi',
+        text: 'Hello',
+        headers: { 'List-Unsubscribe': '<https://x>' },
+      },
+      { from: 'Mizan <mizan@mail.example.com>', ...codeMessage('a@example.com', '123456') },
+    ]);
+  });
+
+  it('reports refusals without email addresses', async () => {
+    const mailer = smtpMailer({ host: 'smtp.example.com', port: 587, secure: false }, 'Mizan <m@example.com>', {
+      sendMail: async () => {
+        throw new Error('550 Mailbox a@example.com unavailable');
+      },
+    });
+    await expect(mailer.sendCode('a@example.com', '1')).rejects.toThrow('SMTP server refused the message: 550 Mailbox [email] unavailable');
+  });
+
+  it('reads its settings from the environment: STARTTLS on 587 by default, TLS on 465', () => {
+    expect(smtpSettingsFrom({})).toBeUndefined();
+    expect(smtpSettingsFrom({ SMTP_HOST: 'email-smtp.eu-west-2.amazonaws.com', SMTP_USER: 'AKIA', SMTP_PASSWORD: 'secret' })).toEqual({
+      host: 'email-smtp.eu-west-2.amazonaws.com',
+      port: 587,
+      secure: false,
+      user: 'AKIA',
+      password: 'secret',
+    });
+    expect(smtpSettingsFrom({ SMTP_HOST: 'smtp.example.com', SMTP_PORT: '465' })).toMatchObject({ port: 465, secure: true });
   });
 });

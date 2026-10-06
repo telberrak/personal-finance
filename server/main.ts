@@ -5,8 +5,9 @@
  * - DATABASE_URL: Postgres, with DATABASE_CA_CERT to verify its TLS certificate. Without it, data is kept in PGlite under LEDGER_DATA_DIR
  *   (default .ledger-api-data), or in memory with LEDGER_DATA_DIR=memory.
  * - RP_ID and APP_ORIGINS (comma-separated): where the app is served, for passkeys.
- * - RESEND_API_KEY and MAIL_FROM: sends sign-in codes and other email (otherwise they are logged);
- *   with RESEND_SEGMENT_ID, news subscribers join that Resend segment.
+ * - MAIL_FROM, and either SMTP_HOST (with SMTP_PORT, SMTP_SECURE, SMTP_USER, SMTP_PASSWORD) or
+ *   RESEND_API_KEY: how email is sent (otherwise it is only logged). SMTP wins when both are set.
+ * - RESEND_API_KEY with RESEND_SEGMENT_ID: news subscribers join that Resend segment (Broadcasts).
  * - PUBLIC_URL: where the app lives, for links in emails (default: the first of APP_ORIGINS).
  * - WEB_DIR: also serve the built web app from this folder (e.g. dist), on the same origin.
  * - LEDGER_DEV=1: development helpers (never in production).
@@ -17,7 +18,7 @@ import { readFileSync, renameSync } from 'node:fs';
 import { serve } from '@hono/node-server';
 import { createApp } from './app.ts';
 import { openPglite, openPostgres, type Sql } from './db.ts';
-import { consoleMailer, resendContacts, resendMailer } from './mailer.ts';
+import { consoleMailer, resendContacts, resendMailer, smtpMailer, smtpSettingsFrom } from './mailer.ts';
 import { sendDueReminders, webPushSender } from './push.ts';
 import { goCardlessProvider, sandboxProvider } from './banks.ts';
 import { withWebApp } from './web.ts';
@@ -46,8 +47,13 @@ async function openLocal(): Promise<Sql> {
 }
 
 const sql = env.DATABASE_URL ? await openPostgres(env.DATABASE_URL, { ca: env.DATABASE_CA_CERT }) : await openLocal();
-const mailer = env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, env.MAIL_FROM || 'Mizan <login@example.com>') : consoleMailer;
-if (!env.RESEND_API_KEY && !dev) console.warn('RESEND_API_KEY is not set: sign-in codes are only printed to this log.');
+// Email: any SMTP server, or Resend's API, or (development) the log.
+const from = env.MAIL_FROM || 'Mizan <login@example.com>';
+const smtp = smtpSettingsFrom(env);
+const mailer = smtp ? smtpMailer(smtp, from) : env.RESEND_API_KEY ? resendMailer(env.RESEND_API_KEY, from) : consoleMailer;
+if (!smtp && !env.RESEND_API_KEY && !dev)
+  console.warn('No email provider (SMTP_HOST or RESEND_API_KEY): emails are only printed to this log.');
+console.log(`[mail] sending with ${smtp ? `SMTP (${smtp.host}:${smtp.port})` : env.RESEND_API_KEY ? 'Resend' : 'the console'}`);
 
 const contacts = env.RESEND_API_KEY ? resendContacts(env.RESEND_API_KEY, env.RESEND_SEGMENT_ID || undefined) : undefined;
 const push = await webPushSender(sql, env);

@@ -319,7 +319,7 @@ Internet ──443/80──▶ Caddy ──▶ mizan:8787 (API + app) ──▶ 
 - **Caddy** ([`Caddyfile`](../deploy/ec2/Caddyfile)) gets and renews Let's Encrypt certificates, redirects HTTP to HTTPS, compresses responses, serves HTTP/3, and sets the visitor address for rate limits. Other sites and domains are one file each in `sites.d`, never touched by deploys.
 - **Server setup** ([`setup.sh`](../deploy/ec2/setup.sh), once): Docker, automatic security updates with a 04:00 UTC reboot window, 2 GB swap, key-only SSH, a `deploy` user for GitHub, `/srv/mizan` with a generated database password, nightly backups.
 - **DNS:** an A record per domain pointing at the Elastic IP, **not proxied** by Cloudflare (otherwise every visitor would share Cloudflare's addresses and rate limits).
-- **Email:** Resend, sending from a verified subdomain (`mail.tarikelberrak.com`).
+- **Email:** Resend (or any SMTP server, such as Amazon SES), sending from a verified subdomain (`mail.tarikelberrak.com`).
 
 Indicative monthly cost: instance ~$13.70, disk ~$2.80, public IPv4 ~$3.65, snapshots ~$1–2.
 
@@ -343,18 +343,18 @@ GitHub's own outages (such as jobs not being picked up) block deploys but not th
 
 **Server environment** (set in `/srv/mizan/.env` or by Compose):
 
-| Variable                                                                            | Meaning                                                                                                                                 |
-| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`, `DATABASE_CA_CERT`                                                  | PostgreSQL connection; CA certificate for managed databases with their own CA                                                           |
-| `PORT`                                                                              | Default 8787                                                                                                                            |
-| `WEB_DIR`                                                                           | Serve the built app from this folder (`dist` in the image)                                                                              |
-| `RP_ID`, `APP_ORIGINS`                                                              | Passkey relying party (the domain) and allowed app origins (including `capacitor://localhost`, `https://localhost` for the native apps) |
-| `RESEND_API_KEY`, `MAIL_FROM`                                                       | Sign-in and news emails; without a key, they are only logged                                                                            |
-| `RESEND_SEGMENT_ID`, `PUBLIC_URL`                                                   | Resend segment for news subscribers (Broadcasts); where links in emails point                                                           |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`                            | Web Push; generated once and stored if absent                                                                                           |
-| `GOCARDLESS_SECRET_ID`, `GOCARDLESS_SECRET_KEY`, `BANKS_SANDBOX`                    | Open Banking                                                                                                                            |
-| `LEDGER_ENV`, `LEDGER_DEV`, `LEDGER_DATA_DIR`                                       | Environment name; development helpers (never in production); PGlite folder or `memory`                                                  |
-| `MIZAN_DOMAIN`, `POSTGRES_PASSWORD`, `MIZAN_TAG`, `MIZAN_IMAGE`, `BACKUP_S3_BUCKET` | Compose and backup settings on the server                                                                                               |
+| Variable                                                                                             | Meaning                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`, `DATABASE_CA_CERT`                                                                   | PostgreSQL connection; CA certificate for managed databases with their own CA                                                           |
+| `PORT`                                                                                               | Default 8787                                                                                                                            |
+| `WEB_DIR`                                                                                            | Serve the built app from this folder (`dist` in the image)                                                                              |
+| `RP_ID`, `APP_ORIGINS`                                                                               | Passkey relying party (the domain) and allowed app origins (including `capacitor://localhost`, `https://localhost` for the native apps) |
+| `MAIL_FROM`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `RESEND_API_KEY` | Sign-in and news emails, through any SMTP server (used when `SMTP_HOST` is set) or Resend; with neither, they are only logged           |
+| `RESEND_SEGMENT_ID`, `PUBLIC_URL`                                                                    | Resend segment for news subscribers (Broadcasts); where links in emails point                                                           |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`                                             | Web Push; generated once and stored if absent                                                                                           |
+| `GOCARDLESS_SECRET_ID`, `GOCARDLESS_SECRET_KEY`, `BANKS_SANDBOX`                                     | Open Banking                                                                                                                            |
+| `LEDGER_ENV`, `LEDGER_DEV`, `LEDGER_DATA_DIR`                                                        | Environment name; development helpers (never in production); PGlite folder or `memory`                                                  |
+| `MIZAN_DOMAIN`, `POSTGRES_PASSWORD`, `MIZAN_TAG`, `MIZAN_IMAGE`, `BACKUP_S3_BUCKET`                  | Compose and backup settings on the server                                                                                               |
 
 **Build time:** `VITE_SUPPORT_EMAIL`, `VITE_OPERATOR_NAME`, `VITE_API_ORIGIN`.
 

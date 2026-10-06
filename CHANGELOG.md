@@ -2,6 +2,11 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.18.1 — Email through any SMTP server
+
+- Email (sign-in codes and news) can now go through any SMTP server, such as Amazon SES, Brevo, Postmark or Mailgun, by setting SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASSWORD. Resend still works, and is used when SMTP_HOST is empty.
+- Port 587 requires STARTTLS, so mail is never sent in clear text; SMTP errors are logged without email addresses.
+
 ## 0.18.0 — News by email
 
 - Ask for news on the website, in Settings → News by email, or with a box when turning on sync. The box is never ticked for you.

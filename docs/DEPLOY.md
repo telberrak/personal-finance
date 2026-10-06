@@ -50,8 +50,27 @@ ssh ubuntu@203.0.113.10 'sudo MIZAN_DOMAIN=mizan.example.com bash ec2/setup.sh'
 
 ## 3. Email for sign-in codes
 
-1. Create an account at [resend.com](https://resend.com), verify your sending domain (it shows the DNS records to add), and create an API key.
-2. On the server, edit `/srv/mizan/.env` (`sudo -u deploy nano /srv/mizan/.env`): set `RESEND_API_KEY` and `MAIL_FROM` (e.g. `Mizan <login@mizan.example.com>`).
+Mizan sends email through **any SMTP server** or through **Resend's API**. Either way, verify your sending domain with the provider (it shows DNS records to add), then edit `/srv/mizan/.env` (`sudo -u deploy nano /srv/mizan/.env`) and restart (`cd /srv/mizan && docker compose up -d`). The log shows which one is used: `[mail] sending with …`.
+
+**Resend:** create an API key, then set `RESEND_API_KEY` and `MAIL_FROM` (e.g. `Mizan <mizan@mail.example.com>`).
+
+**SMTP** (used instead of Resend when `SMTP_HOST` is set):
+
+| Setting                      | Meaning                                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------------------- |
+| `SMTP_HOST`                  | The provider's SMTP server                                                               |
+| `SMTP_PORT`                  | `587` (STARTTLS, the default and required) or `465` (TLS); `SMTP_SECURE=true` forces TLS |
+| `SMTP_USER`, `SMTP_PASSWORD` | The SMTP credentials the provider gives you                                              |
+| `MAIL_FROM`                  | A sender on your verified domain                                                         |
+
+Examples:
+
+- **Amazon SES (London):** `SMTP_HOST=email-smtp.eu-west-2.amazonaws.com`, port 587, and the SMTP credentials from SES → SMTP settings → Create SMTP credentials (not your AWS access keys). New SES accounts start in the sandbox (only verified recipients): request production access in the SES console before inviting people.
+- **Brevo:** `SMTP_HOST=smtp-relay.brevo.com`, port 587, your Brevo login and SMTP key.
+- **Postmark:** `SMTP_HOST=smtp.postmarkapp.com`, port 587, the server API token as both user and password.
+- **Mailgun (EU):** `SMTP_HOST=smtp.eu.mailgun.org`, port 587, the domain's SMTP login and password.
+
+Check each provider's current settings page: these are the usual values.
 
 ## 4. Let GitHub deploy
 

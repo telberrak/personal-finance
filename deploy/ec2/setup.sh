@@ -80,9 +80,16 @@ MIZAN_DOMAIN=$MIZAN_DOMAIN
 POSTGRES_PASSWORD=$(openssl rand -hex 24)
 # Set by each deploy:
 MIZAN_TAG=latest
-# Sign-in emails (resend.com). Without them, codes only appear in: docker compose logs mizan
-RESEND_API_KEY=
+# Email (sign-in codes, news). A verified sender, then either an SMTP server or Resend.
+# Without either, codes only appear in: docker compose logs mizan
 MAIL_FROM=
+# Any SMTP server (Amazon SES, Brevo, Postmark, Mailgun…). Port 587 uses STARTTLS; 465 uses TLS.
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+# Or Resend's API (used when SMTP_HOST is empty; also needed for Resend Broadcasts below).
+RESEND_API_KEY=
 # Optional: the Resend segment that news subscribers join (for Broadcasts).
 RESEND_SEGMENT_ID=
 # Optional: copy nightly backups to this S3 bucket (the instance role needs s3:PutObject on it).
