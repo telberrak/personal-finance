@@ -38,6 +38,7 @@ function errorMessage(err: unknown, unauthorised = 'sync.failed'): string {
   if (err.status === 0) return t('sync.unreachable');
   if (err.status === 429) return t('sync.tooMany');
   if (err.status === 401) return t(unauthorised);
+  if (err.status === 502) return t('sync.emailFailed');
   return t('sync.failed');
 }
 

@@ -931,7 +931,8 @@
     "deleteTitle": "Delete your sync account?",
     "deleteBody": "Your account and all synced data will be deleted from the server. Data on your devices stays.",
     "delete": "Delete",
-    "deleted": "Sync account deleted"
+    "deleted": "Sync account deleted",
+    "emailFailed": "We could not send the email. Try again in a few minutes."
   },
   "alerts": {
     "billDue": {

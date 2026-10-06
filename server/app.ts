@@ -49,7 +49,7 @@ const RKEY = /^[A-Za-z0-9_-]{16,128}$/;
 
 const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 const sameHash = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
-const fail = (status: 400 | 401 | 403 | 404 | 409 | 413 | 429, error: string): never => {
+const fail = (status: 400 | 401 | 403 | 404 | 409 | 413 | 429 | 502, error: string): never => {
   throw new HTTPException(status, { res: Response.json({ error }, { status }) });
 };
 
@@ -148,7 +148,13 @@ export function createApp({
       [email, sha256(`${email}:${code}`), new Date(Date.now() + CODE_TTL_MS)],
     );
     if (config.dev) lastCodes.set(email, code);
-    await mailer.sendCode(email, code);
+    try {
+      await mailer.sendCode(email, code);
+    } catch (err) {
+      // The app says the email could not be sent; the reason (often the email settings) is logged.
+      console.error('[mail]', err instanceof Error ? err.message : 'error');
+      fail(502, 'We could not send the email. Try again in a few minutes.');
+    }
     return c.json({ ok: true });
   });
 

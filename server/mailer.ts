@@ -25,7 +25,15 @@ export function resendMailer(apiKey: string, from: string): Mailer {
           text: `Your Mizan sign-in code is ${code}. It expires in 10 minutes.\n\nIf you did not ask for it, you can ignore this email.`,
         }),
       });
-      if (!res.ok) throw new Error(`Email provider returned ${res.status}`);
+      if (!res.ok) {
+        // Resend explains what is wrong (an unverified domain, a bad key). Email addresses are
+        // taken out: logs never hold them.
+        const detail = await res
+          .json()
+          .then((body) => (body as { message?: string }).message ?? '')
+          .catch(() => '');
+        throw new Error(`Email provider returned ${res.status}${detail ? `: ${detail.replace(/\S+@\S+/g, '[email]')}` : ''}`);
+      }
     },
   };
 }

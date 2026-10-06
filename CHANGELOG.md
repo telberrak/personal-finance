@@ -6,6 +6,7 @@ All notable changes. Versions follow [semantic versioning](https://semver.org); 
 
 - A Help section, right after Friends (in the sidebar on a computer, on Home on a phone): 26 topics explaining each feature step by step with examples, from accounts and bills to households, sync and security, in English, French and Arabic.
 - Search across help (ignoring case and accents), topics that open on a tap, and direct links to a topic such as /help#bills.
+- When the sign-in email cannot be sent, the app says so ("We could not send the email") instead of "Something went wrong", and the server logs the email provider's reason (such as an unverified domain).
 
 ## 0.16.1 — Bills you add no longer seem to disappear
 

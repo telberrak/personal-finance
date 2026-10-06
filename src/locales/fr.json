@@ -931,7 +931,8 @@
     "delete": "Supprimer",
     "deleted": "Compte de synchronisation supprimé",
     "pending_one": "{{count}} modification en attente de synchronisation",
-    "pending_other": "{{count}} modifications en attente de synchronisation"
+    "pending_other": "{{count}} modifications en attente de synchronisation",
+    "emailFailed": "Impossible d’envoyer l’e-mail. Réessayez dans quelques minutes."
   },
   "alerts": {
     "billDue": {

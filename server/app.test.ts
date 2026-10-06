@@ -45,6 +45,18 @@ async function signIn(email = 'Sam@Example.com', deviceName = 'Laptop'): Promise
 }
 
 describe('email sign-in', () => {
+  it('says plainly when the email cannot be sent', async () => {
+    const failing: Mailer = {
+      sendCode: async () => {
+        throw new Error('Email provider returned 403: The domain is not verified');
+      },
+    };
+    app = createApp({ sql, mailer: failing, config: { rpID: 'localhost', rpName: 'Mizan', origins: ['http://localhost:5173'] } });
+    const res = await call('POST', '/auth/email/start', { email: 'sam@example.com' });
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ error: 'We could not send the email. Try again in a few minutes.' });
+  });
+
   it('signs in with the emailed code and creates the account once', async () => {
     const first = await signIn();
     expect(first.user.email).toBe('sam@example.com');
