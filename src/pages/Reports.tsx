@@ -1,3 +1,7 @@
+/**
+ * Reports: spending by category, income and spending by month, top payees, savings rate, balance forecast,
+ * comparison with the previous period and category trends, for a chosen period.
+ */
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { BalanceLine, Donut, GroupedBars, Sparkline } from '../components/charts';
@@ -38,6 +42,7 @@ function rangeDates(range: Range, ref: string, custom: { from: string; to: strin
   }
 }
 
+/** The Reports screen. */
 export function Reports({ data }: { data?: FinanceData }) {
   const [range, setRange] = useState<Range>('this');
   const ref = today();

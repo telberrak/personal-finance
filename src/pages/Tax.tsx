@@ -1,3 +1,7 @@
+/**
+ * Tax helper: income and expenses marked with a tax heading, totalled per tax year (UK or France), with a CSV
+ * export for an accountant.
+ */
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { Loading, PageHeader } from '../components/Layout';
@@ -11,6 +15,7 @@ import { regionName } from '../lib/format';
 import { formatMoney } from '../lib/money';
 import { TAX_SYSTEMS, taxSummary, taxSystem, taxYearOf, taxYearRange } from '../lib/tax';
 
+/** The Tax helper screen. */
 export function Tax({ data }: { data?: FinanceData }) {
   const system = taxSystem(data?.settings.taxCountry);
   const current = taxYearOf(system, today());

@@ -12,6 +12,10 @@ import { HTTPException } from 'hono/http-exception';
 import type { BankAccount, BankLink, BankTransaction, Institution } from '../shared/api.ts';
 import type { Sql } from './db.ts';
 
+/**
+ * An Open Banking aggregator (GoCardless, or the sandbox bank): institutions, consent links, accounts and
+ * transactions.
+ */
 export interface BankProvider {
   name: string;
   institutions(country: string): Promise<Institution[]>;
@@ -99,6 +103,10 @@ interface GcTransaction {
   debtorName?: string;
 }
 
+/**
+ * GoCardless Bank Account Data: short-lived access tokens are fetched and refreshed as needed; responses are
+ * mapped to our shapes.
+ */
 export function goCardlessProvider(secretId: string, secretKey: string, fetchImpl: typeof fetch = fetch): BankProvider {
   let token: { value: string; until: number } | undefined;
 
@@ -198,6 +206,10 @@ export function goCardlessProvider(secretId: string, secretKey: string, fetchImp
 
 type Env = { Variables: { userId: string; sessionId: string } };
 
+/**
+ * Bank connection routes for signed-in users. Only link ids and consent state are stored; transactions go
+ * straight to the device.
+ */
 export function bankRoutes(authed: Hono<Env>, sql: Sql, provider: BankProvider | undefined, origins: string[]) {
   const need = () => provider ?? fail(404, 'Bank connections are not available on this server.');
 

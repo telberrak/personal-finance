@@ -1,3 +1,7 @@
+/**
+ * Settings → Categories: add, rename, recolour, reorder, archive (moving everything to another category) and
+ * restore categories.
+ */
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon';
@@ -14,6 +18,7 @@ const KINDS = ['expense', 'income'] as const;
 
 type Editing = { category?: Category; kind: 'expense' | 'income' };
 
+/** Settings → Categories. */
 export function Categories({ data }: { data?: FinanceData }) {
   const [editing, setEditing] = useState<Editing>();
   const [archiving, setArchiving] = useState<Category>();

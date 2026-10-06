@@ -1,3 +1,7 @@
+/**
+ * Adding and editing a bill (/bills/new, /bills/:id), optionally prefilled from a suggested regular payment,
+ * with its recent payments listed.
+ */
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Icon } from '../components/Icon';

@@ -1,3 +1,7 @@
+/**
+ * The notification centre (alerts, newest first) and notification settings: which alerts notify, quiet hours,
+ * and Web Push or native notifications.
+ */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon';
@@ -46,6 +50,7 @@ function when(ms: number): string {
   return `${formatShort(toISO(d))} · ${dateFormat({ hour: '2-digit', minute: '2-digit' }).format(d)}`;
 }
 
+/** The notification centre and its settings. */
 export function Notifications({ data }: { data?: FinanceData }) {
   const { due, seen } = useAlerts(data);
   // Opening the centre marks everything shown as read (after this render, so new ones still stand out).

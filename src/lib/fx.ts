@@ -9,6 +9,7 @@ import type { Account, FinanceData, Transaction } from '../db/types';
 import type { ISODate } from './dates';
 import type { Pence } from './money';
 
+/** The rate for one currency: home-currency units per unit, its date, and whether it was typed in. */
 export interface FxRate {
   /** Home-currency units for one unit of the currency, e.g. 0.86 GBP per EUR. */
   rate: number;
@@ -16,6 +17,7 @@ export interface FxRate {
   /** Typed in by you rather than fetched. */
   manual?: boolean;
 }
+/** Rates by currency code. */
 export type FxRates = Record<string, FxRate>;
 
 /** Original values of a converted record (view only, never stored). */
@@ -28,6 +30,7 @@ export interface Native {
   monthlyPayment?: Pence;
 }
 
+/** An amount in another currency, in the home currency. Unknown rates leave the amount unchanged. */
 export function convert(amount: Pence, from: string, home: string, rates: FxRates | undefined): Pence {
   if (from === home) return amount;
   const rate = rates?.[from]?.rate;

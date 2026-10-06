@@ -31,6 +31,7 @@ import type { KeyEntry, Settings } from './types';
 
 export { LockedError };
 
+/** A failed unlock or PIN change. The message is already translated. */
 export class SecurityError extends Error {
   name = 'SecurityError';
 }
@@ -54,6 +55,7 @@ export async function initSecurity(): Promise<void> {
   setLocked(!!settings?.pinHash);
 }
 
+/** Locks the app straight away: the data key is forgotten until the next unlock. */
 export const lockNow = () => {
   if (securityMode() === 'unlocked') setLocked(true);
 };
@@ -230,6 +232,7 @@ export async function addPasskey(): Promise<void> {
   });
 }
 
+/** Unlocks with a passkey whose PRF output unwraps the data key. */
 export async function unlockWithPasskey(): Promise<void> {
   const entries = (await db.keyring.toArray()).filter((e) => e.kind === 'passkey' && e.credentialId);
   if (!entries.length) throw new SecurityError(t('security.passkeyNone'));
@@ -244,6 +247,7 @@ export async function unlockWithPasskey(): Promise<void> {
   }
 }
 
+/** Removes a passkey from the app lock (the PIN still works). */
 export async function removePasskey(id: string): Promise<void> {
   await db.keyring.delete(id);
 }
@@ -251,6 +255,7 @@ export async function removePasskey(id: string): Promise<void> {
 // ---------------------------------------------------------------- backups
 
 const ENCRYPTED_BACKUP = 'ledger-backup-encrypted';
+/** Shortest password accepted for an encrypted backup. */
 export const MIN_BACKUP_PASSWORD = 8;
 
 interface EncryptedBackup {
@@ -262,6 +267,7 @@ interface EncryptedBackup {
   data: string;
 }
 
+/** Encrypts a backup with a password (PBKDF2 + AES-256-GCM) into a self-describing JSON envelope. */
 export async function encryptBackup(json: string, password: string): Promise<string> {
   if (password.length < MIN_BACKUP_PASSWORD) throw new SecurityError(t('security.passwordShort', { count: MIN_BACKUP_PASSWORD }));
   const salt = randomBytes(16);
@@ -277,6 +283,7 @@ export async function encryptBackup(json: string, password: string): Promise<str
   return JSON.stringify(out);
 }
 
+/** Whether a backup file is password-protected. */
 export function isEncryptedBackup(text: string): boolean {
   try {
     return JSON.parse(text)?.format === ENCRYPTED_BACKUP;

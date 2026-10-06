@@ -14,9 +14,12 @@ import { computeAlerts, DEFAULT_NOTIFICATIONS, deliverable, genericText, SCHEDUL
 import { isNative, scheduleNative, showNativeNow } from '../native/native';
 import { api } from '../sync/client';
 
+/** Whether this browser or app can show notifications at all. */
 export const notificationsSupported = () => isNative() || (typeof window !== 'undefined' && 'Notification' in window);
+/** Whether reminders can arrive while the app is closed (Web Push). */
 export const pushSupported = () => notificationsSupported() && 'serviceWorker' in navigator && 'PushManager' in window;
 
+/** This device's notification settings, with defaults. */
 export const notificationSettings = (data: FinanceData): NotificationSettings => ({
   ...DEFAULT_NOTIFICATIONS,
   ...data.settings.notifications,
@@ -33,6 +36,7 @@ function useMinute(): number {
   return minute;
 }
 
+/** Alerts due in the last week (re-worked out every minute), newest first, and how many are unread. */
 export function useAlerts(data: FinanceData | undefined) {
   const minute = useMinute();
   const alerts = useMemo(
@@ -46,11 +50,13 @@ export function useAlerts(data: FinanceData | undefined) {
   return { due, unread: due.filter((a) => !seen.has(a.id)).length, seen };
 }
 
+/** Marks alerts as seen in the notification centre. */
 export async function markSeen(ids: string[]): Promise<void> {
   const existing = new Map((await db.notices.bulkGet(ids)).filter(Boolean).map((n) => [n!.id, n!]));
   await db.notices.bulkPut(ids.map((id) => ({ ...existing.get(id), id, seenAt: existing.get(id)?.seenAt ?? Date.now() })));
 }
 
+/** Shows a notification natively or through the service worker, if permission was granted. */
 export async function showNotification(title: string, options: NotificationOptions & { data?: { url: string } }): Promise<void> {
   if (isNative()) return showNativeNow(title, options.body ?? '', options.tag ?? title, options.data?.url);
   if (!notificationsSupported() || Notification.permission !== 'granted') return;
@@ -140,6 +146,7 @@ export async function enablePush(): Promise<boolean> {
   return true;
 }
 
+/** Unsubscribes this device from Web Push and removes its subscription from the server. */
 export async function disablePush(): Promise<void> {
   const reg = pushSupported() ? await navigator.serviceWorker.getRegistration() : undefined;
   await (await reg?.pushManager.getSubscription())?.unsubscribe();

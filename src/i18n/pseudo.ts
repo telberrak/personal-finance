@@ -1,3 +1,7 @@
+/**
+ * Pseudo-locales for testing translations: en-XA (accented, longer text) and ar-XB (right to left). Each
+ * string is wrapped in ⟦ ⟧ so untranslated text stands out in screenshots and tests.
+ */
 const ACCENTS: Record<string, string> = {
   a: 'à',
   b: 'ƀ',
@@ -55,6 +59,7 @@ const ACCENTS: Record<string, string> = {
 
 /** Marks the start and end of every translated string, so untranslated text stands out in tests. */
 export const PSEUDO_OPEN = '⟦';
+/** Marks the end of a translated string in pseudo-locales, so tests can spot text that was not translated. */
 export const PSEUDO_CLOSE = '⟧';
 
 /** "Save {{name}}" → "⟦Šàṽé {{name}} ~~~⟧": accented, about 40% longer, placeholders untouched. */

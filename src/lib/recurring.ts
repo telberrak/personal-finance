@@ -1,7 +1,9 @@
 import { addDays, clampedDate, dayOfMonth, fromISO, type ISODate } from './dates';
 
+/** How often a bill repeats. */
 export type Frequency = 'weekly' | 'monthly' | 'yearly';
 
+/** When a bill is paid. */
 export interface Schedule {
   /** First payment date; also the anchor day for monthly and yearly schedules. */
   startDate: ISODate;

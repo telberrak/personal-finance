@@ -22,10 +22,12 @@ async function session() {
   return s;
 }
 
+/** The households this account belongs to, with their members. */
 export async function listHouseholds(): Promise<Space[]> {
   return api<Space[]>('/spaces', { token: (await session()).token });
 }
 
+/** Creates a household and its key on this device. Returns its id. */
 export async function createHousehold(name: string): Promise<string> {
   const { token } = await session();
   const { id } = await api<{ id: string }>('/spaces', { body: {}, token });
@@ -42,6 +44,7 @@ export async function inviteLink(spaceId: string): Promise<string> {
   return `${window.location.origin}/join#${[spaceId, invite.token, b64url(space.key), encodeURIComponent(space.name)].join('.')}`;
 }
 
+/** What an invite link carries: the household, a one-use token, its key and its name. */
 export interface Invitation {
   spaceId: string;
   token: string;
@@ -49,6 +52,7 @@ export interface Invitation {
   name: string;
 }
 
+/** Reads an invite link's #fragment, or null if it is not a valid invitation. */
 export function parseInvitation(fragment: string): Invitation | null {
   const [spaceId, token, key, name] = fragment.replace(/^#/, '').split('.');
   if (!spaceId || !token || !key || !/^[0-9a-f-]{36}$/.test(spaceId)) return null;
@@ -61,6 +65,7 @@ export function parseInvitation(fragment: string): Invitation | null {
   }
 }
 
+/** Joins a household from an invitation, keeps its key, and syncs its shared records. */
 export async function joinHousehold(inv: Invitation): Promise<void> {
   const { token } = await session();
   const { id } = await api<{ id: string }>('/spaces/join', { body: { token: inv.token }, token });
@@ -69,6 +74,7 @@ export async function joinHousehold(inv: Invitation): Promise<void> {
   await syncNow();
 }
 
+/** Leaves a household: your shared accounts become private, the others' are removed from this device. */
 export async function leaveHousehold(spaceId: string): Promise<void> {
   const s = await session();
   await api(`/spaces/${spaceId}/membership`, { method: 'DELETE', token: s.token }).catch((err) => {

@@ -6,17 +6,20 @@ import type { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { Sql } from './db.ts';
 
+/** A browser's Web Push subscription, as PushSubscription.toJSON() returns it. */
 export interface PushSubscriptionJSON {
   endpoint: string;
   keys: { p256dh: string; auth: string };
 }
 
+/** Sends Web Push messages; the VAPID public key is given to browsers when they subscribe. */
 export interface PushSender {
   publicKey: string;
   /** 'gone' when the subscription no longer exists (the browser unsubscribed). */
   send(subscription: PushSubscriptionJSON, payload: string): Promise<'ok' | 'gone'>;
 }
 
+/** Upper limit on scheduled reminders per user, so one account cannot fill the table. */
 export const MAX_REMINDERS = 100;
 const MAX_TEXT = 200;
 const HORIZON_MS = 60 * 24 * 60 * 60_000;
@@ -27,6 +30,10 @@ const bad = (error: string): never => {
 
 type Env = { Variables: { userId: string; sessionId: string } };
 
+/**
+ * Push subscription and reminder routes. Reminders hold only a time and a generic sentence, never amounts or
+ * payees.
+ */
 export function pushRoutes(authed: Hono<Env>, sql: Sql, push: PushSender | undefined) {
   authed.get('/push/key', (c) => (push ? c.json({ publicKey: push.publicKey }) : c.json({ error: 'Push is not set up.' }, 404)));
 

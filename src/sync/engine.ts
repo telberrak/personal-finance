@@ -23,7 +23,9 @@ import { syncKeys, type SyncedRecord, type SyncKeys } from './keys';
 /** Settings that belong to one device and are never synced. */
 export const DEVICE_SETTINGS = ['theme', 'lockAfterMinutes', 'hideAmounts', 'notifications', 'lastBackupAt', 'pinHash', 'pinSalt'] as const;
 
+/** What sync is doing, shown in Settings and the sidebar. */
 export type SyncPhase = 'off' | 'needsKey' | 'idle' | 'syncing' | 'offline' | 'signedOut' | 'error';
+/** The sync phase and when the last sync finished. */
 export interface SyncStatus {
   phase: SyncPhase;
   lastSyncAt?: number;
@@ -35,6 +37,7 @@ function setStatus(next: SyncStatus) {
   status = next;
   listeners.forEach((l) => l());
 }
+/** The current sync status, re-rendering when it changes. */
 export const useSyncStatus = () =>
   useSyncExternalStore(
     (l) => {

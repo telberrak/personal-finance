@@ -1,3 +1,6 @@
+/**
+ * About (version, service status, what's new, feedback, usage counts) and the privacy policy and terms pages.
+ */
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { APP_NAME, APP_VERSION, SUPPORT_EMAIL } from '../brand';

@@ -14,6 +14,7 @@ import { nextOccurrence, nextPayday } from './recurring';
 import { accountBalance, billOccurrences, budgetProgress, budgetScope, isTransfer } from './selectors';
 import { payeeKey } from './payees';
 
+/** Every kind of alert, in the order they are listed in notification settings. */
 export const ALERT_TYPES = [
   'billDue',
   'payday',
@@ -27,6 +28,7 @@ export const ALERT_TYPES = [
   'warranty',
   'bankConsent',
 ] as const;
+/** One kind of alert. */
 export type AlertType = (typeof ALERT_TYPES)[number];
 
 /** Types that can be scheduled ahead and pushed while the app is closed. */
@@ -41,6 +43,7 @@ export const SCHEDULED_TYPES = new Set<AlertType>([
   'bankConsent',
 ]);
 
+/** Something worth telling the user, shown in the notification centre and possibly as a notification. */
 export interface Alert {
   /** Stable: the same event always has the same id, so it is shown and notified once. */
   id: string;
@@ -53,6 +56,7 @@ export interface Alert {
   link: string;
 }
 
+/** Notifications start off, with quiet hours overnight. */
 export const DEFAULT_NOTIFICATIONS: NotificationSettings = { enabled: false, off: [], quietStart: '22:00', quietEnd: '07:30' };
 
 /** A local date and time ("HH:MM") as ms. */

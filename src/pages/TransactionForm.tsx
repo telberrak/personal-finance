@@ -1,3 +1,7 @@
+/**
+ * Adding and editing an expense, income or transfer (/add, /transactions/:id): suggested categories, splits,
+ * foreign currency, tags, receipts, tax heading, and splitting with friends.
+ */
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Icon } from '../components/Icon';

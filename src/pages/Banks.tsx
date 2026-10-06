@@ -1,3 +1,7 @@
+/**
+ * Settings → Bank connections: connect a bank through the aggregator, map its accounts, fetch new
+ * transactions, and renew or end the consent.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -32,6 +36,7 @@ function errorText(err: unknown): string {
   return t('banks.failed');
 }
 
+/** Settings → Bank connections. */
 export function Banks({ data }: { data?: FinanceData }) {
   const toast = useToast();
   const confirm = useConfirm();

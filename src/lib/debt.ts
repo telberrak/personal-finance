@@ -5,6 +5,7 @@
  */
 import type { Pence } from './money';
 
+/** A card or loan for the payoff planner: balance, interest rate and minimum payment. */
 export interface Debt {
   id: string;
   name: string;
@@ -16,6 +17,7 @@ export interface Debt {
   payment: Pence;
 }
 
+/** How long a debt takes to pay off at a given payment, and the interest paid. */
 export interface Amortisation {
   /** Months until paid off; Infinity when the payment does not cover the interest. */
   months: number;
@@ -25,6 +27,7 @@ export interface Amortisation {
 
 const MAX_MONTHS = 600; // 50 years
 
+/** One month's interest on a balance at an annual rate (APR %). */
 export const monthlyInterest = (balance: Pence, apr: number): Pence => Math.round((balance * apr) / 1200);
 
 /** How a single debt pays off at a fixed monthly payment (plus an optional extra). */
@@ -43,8 +46,10 @@ export function amortise(balance: Pence, apr: number, payment: Pence, extra: Pen
   return { months: left > 0 ? Infinity : schedule.length, totalInterest, schedule };
 }
 
+/** Which debt extra money goes to first: highest interest (avalanche) or smallest balance (snowball). */
 export type Strategy = 'avalanche' | 'snowball';
 
+/** When each debt is cleared under a strategy, and the total interest paid. */
 export interface PayoffPlan {
   feasible: boolean;
   months: number;

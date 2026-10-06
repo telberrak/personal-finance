@@ -37,6 +37,7 @@ export function headingAnchor(text: string): [string, string | undefined] {
   return m ? [m[1], m[2]] : [text, undefined];
 }
 
+/** Renders the app's own Markdown content (see the comment at the top of this file). */
 export function Markdown({ source }: { source: string }) {
   const blocks: ReactNode[] = [];
   const lines = source.replace(/\r\n/g, '\n').split('\n');

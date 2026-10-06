@@ -1,3 +1,7 @@
+/**
+ * The app shell: bottom tab bar on phones, sidebar on computers, and shared page pieces (header, month
+ * switcher, loading state).
+ */
 import type { ReactNode } from 'react';
 import { useSyncStatus } from '../sync/engine';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
@@ -107,6 +111,7 @@ export function AppShell() {
   );
 }
 
+/** The title row of a screen, with an optional small subtitle above and actions on the right. */
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
   return (
     <header className="screen-header page-header">
@@ -146,6 +151,7 @@ export function MonthSwitcher({ month, onChange, current }: { month: ISODate; on
   );
 }
 
+/** Shown while a screen's data or code loads; announced to screen readers. */
 export function Loading() {
   return (
     <main className="screen" aria-busy="true">

@@ -10,6 +10,10 @@ import { findMerchant } from '../lib/merchants';
 /** Inline style that sets the category colour variable used by .tile, .dot, .chip--cat and .bar. */
 export const catVar = (color: CategoryColor | undefined): CSSProperties => ({ '--c': `var(--cat-${color ?? 'fun'})` }) as CSSProperties;
 
+/**
+ * A transaction in a phone list: category tile, payee, category or account, time and amount. Links to its
+ * edit screen.
+ */
 export function TransactionRow({ tx, category, accountName }: { tx: Transaction; category?: Category; accountName?: string }) {
   const meta = [tx.transferId ? accountName : (category?.name ?? t('common.uncategorised')), tx.time].filter(Boolean).join(' · ');
   return (
@@ -54,8 +58,13 @@ export function TransactionRow({ tx, category, accountName }: { tx: Transaction;
   );
 }
 
+/** The translated name of a bill's payment method. */
 export const methodLabel = (m: Recurring['method']) => t(`bills.method.${m}`);
 
+/**
+ * A bill occurrence in a list: date tile, name, a caller-supplied line of details, and the amount (or custom
+ * trailing content).
+ */
 export function BillRow({
   rule,
   date,

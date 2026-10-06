@@ -4,6 +4,8 @@ A personal finance app for everyday money: daily spending, direct debits and bil
 It is a mobile-first progressive web app (PWA). It runs in any browser and can be installed on a phone's home screen.
 All data stays on the device, in IndexedDB.
 
+**Full project documentation** (architecture, data model, security, sync, server, build, tests, CI/CD, deployment, operations): [docs/PROJECT.md](docs/PROJECT.md).
+
 It has two layouts from one codebase, chosen by window width:
 
 - **Phone and tablet (under 1024 px):** bottom tab bar, single column, lists.

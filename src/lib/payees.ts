@@ -1,3 +1,7 @@
+/**
+ * Payee names: cleaning bank descriptions ("CARD PAYMENT TO TESCO STORES 2041") into readable names, and
+ * applying the user's renames.
+ */
 import type { PayeeAlias } from '../db/types';
 
 const PREFIXES =
@@ -37,6 +41,7 @@ export function payeeKey(s: string): string {
     .trim();
 }
 
+/** The payee's display name: the user's rename if one matches, otherwise the cleaned name. */
 export function applyAlias(payee: string, aliases: PayeeAlias[]): string {
   const key = payeeKey(payee);
   return aliases.find((a) => a.from === key)?.to ?? payee;

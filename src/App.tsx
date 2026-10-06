@@ -1,3 +1,7 @@
+/**
+ * The app's root: providers (toasts, confirmations), the lock screen when locked, and every route. Rarely
+ * used screens are loaded on first visit so the start-up bundle stays small.
+ */
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router';
 import { AppShell, Loading } from './components/Layout';
@@ -48,6 +52,7 @@ const About = page(() => import('./pages/Info'), 'About');
 const Help = page(() => import('./pages/Help'), 'Help');
 const ContentPage = lazy(() => import('./pages/Info').then((m) => ({ default: m.ContentPage })));
 
+/** The root component. */
 export function App() {
   // While locked nothing can be decrypted, so the screens (and their data queries) are not mounted.
   const locked = useSecurityMode() === 'locked';

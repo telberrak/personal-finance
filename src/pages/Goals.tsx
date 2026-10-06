@@ -1,3 +1,7 @@
+/**
+ * Goals: savings goals with a target and optional date, progress, money added or taken out, and how much to
+ * set aside each month.
+ */
 import { useState, type FormEvent } from 'react';
 import { Icon } from '../components/Icon';
 import { Loading, PageHeader } from '../components/Layout';
@@ -17,11 +21,15 @@ function monthsUntil(deadline: string): number {
   return Math.max(1, (d.getFullYear() - now.getFullYear()) * 12 + (d.getMonth() - now.getMonth()));
 }
 
+/**
+ * How much to set aside each month to reach a goal by its date (0 when there is no date or it is reached).
+ */
 export function monthlyNeeded(goal: Goal): number | undefined {
   if (!goal.deadline || goal.saved >= goal.target) return undefined;
   return Math.ceil((goal.target - goal.saved) / monthsUntil(goal.deadline));
 }
 
+/** The Goals screen. */
 export function Goals({ data }: { data?: FinanceData }) {
   const [editing, setEditing] = useState<Goal | 'new'>();
   const [adding, setAdding] = useState<Goal>();

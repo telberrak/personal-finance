@@ -49,6 +49,7 @@ export function MoneyInput({
   );
 }
 
+/** The muted message shown when a list has nothing in it. */
 export function EmptyState({ children }: { children: ReactNode }) {
   return <p className="empty">{children}</p>;
 }

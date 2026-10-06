@@ -1,6 +1,7 @@
 import type { BudgetPeriod } from '../db/types';
 import { addDays, clampedDate, endOfMonth, formatMonthYear, formatShort, fromISO, startOfMonth, type ISODate } from './dates';
 
+/** A budget period: its first and last day and its label. */
 export interface Period {
   from: ISODate;
   to: ISODate;

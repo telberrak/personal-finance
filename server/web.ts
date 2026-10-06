@@ -12,6 +12,10 @@ import { HSTS, SECURITY_HEADERS } from '../security-headers.ts';
 
 type Fetch = (request: Request, env?: unknown) => Response | Promise<Response>;
 
+/**
+ * Wraps the API so the same server also serves the built app from `root`, with SPA fallback and the app's
+ * headers.
+ */
 export function withWebApp(api: { fetch: Fetch }, root: string, { https = true }: { https?: boolean } = {}): Hono {
   const app = new Hono();
   app.use('*', async (c, next) => {

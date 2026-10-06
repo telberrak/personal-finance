@@ -1,9 +1,14 @@
+/**
+ * Report calculations (pure functions of the data): spending by category and month, top payees, comparisons
+ * with the previous period, category trends and Year in review.
+ */
 import type { Category, Transaction } from '../db/types';
 import { addDays, daysBetween, endOfMonth, shiftMonth, startOfMonth, type ISODate } from './dates';
 import type { Pence } from './money';
 import { payeeKey } from './payees';
 import { inRange, isTransfer } from './selectors';
 
+/** Spending in one category over a period. */
 export interface CategoryTotal {
   category: Category;
   total: Pence;
@@ -25,6 +30,7 @@ export function spendByCategory(transactions: Transaction[], categories: Categor
   return rows.map((r) => ({ ...r, share: sum ? r.total / sum : 0 })).sort((a, b) => b.total - a.total);
 }
 
+/** Money in and out in one month. */
 export interface MonthTotal {
   month: ISODate;
   income: Pence;
@@ -49,12 +55,14 @@ export function monthlyTotals(transactions: Transaction[], ref: ISODate, months 
   return out;
 }
 
+/** Spending with one payee over a period. */
 export interface PayeeTotal {
   payee: string;
   total: Pence;
   count: number;
 }
 
+/** The payees with the most spending in a period. */
 export function topPayees(transactions: Transaction[], from: ISODate, to: ISODate, limit = 5): PayeeTotal[] {
   const map = new Map<string, PayeeTotal>();
   for (const t of transactions) {
@@ -68,6 +76,7 @@ export function topPayees(transactions: Transaction[], from: ISODate, to: ISODat
   return [...map.values()].sort((a, b) => b.total - a.total).slice(0, limit);
 }
 
+/** Spending in a category this period and the period before. */
 export interface CategoryComparison {
   category: Category;
   current: Pence;
@@ -100,6 +109,7 @@ export function previousPeriod(from: ISODate, to: ISODate): { from: ISODate; to:
   return { from: addDays(from, -length), to: addDays(from, -1) };
 }
 
+/** A category's spending month by month and its monthly average. */
 export interface CategoryTrend {
   category: Category;
   /** Oldest first, one per month. */
@@ -121,6 +131,7 @@ export function categoryTrends(transactions: Transaction[], categories: Category
   return rows.filter((r) => r.average > 0).sort((a, b) => b.average - a.average);
 }
 
+/** A year in numbers, for Year in review. */
 export interface YearReview {
   year: number;
   income: Pence;
@@ -134,6 +145,7 @@ export interface YearReview {
   bills: Pence;
 }
 
+/** Totals, highlights and top categories for a calendar year. */
 export function yearReview(transactions: Transaction[], categories: Category[], year: number): YearReview {
   const from = `${year}-01-01`;
   const to = `${year}-12-31`;

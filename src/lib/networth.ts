@@ -5,8 +5,10 @@ import type { Debt } from './debt';
 import type { Pence } from './money';
 import { accountBalance } from './selectors';
 
+/** Whether an account is a debt (its balance counts against net worth). */
 export const isLiability = (a: Account) => LIABILITY_TYPES.includes(a.type);
 
+/** Assets, debts and their difference on a date. */
 export interface NetWorth {
   assets: Pence;
   liabilities: Pence;
@@ -14,6 +16,7 @@ export interface NetWorth {
   rows: { account: Account; balance: Pence; liability: boolean }[];
 }
 
+/** Net worth on a date (today by default), from every account that is not archived. */
 export function netWorth(data: Pick<FinanceData, 'accounts' | 'transactions'>, date?: ISODate): NetWorth {
   const rows = data.accounts
     .filter((a) => !a.archived)

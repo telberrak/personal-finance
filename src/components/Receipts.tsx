@@ -1,3 +1,7 @@
+/**
+ * Receipts and documents on a transaction: add photos or PDFs (resized and encrypted like other data), read a
+ * receipt on the device (OCR), and set return-by and warranty dates.
+ */
 import { useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';

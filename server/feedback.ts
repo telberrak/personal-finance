@@ -8,6 +8,7 @@ import type { Sql } from './db.ts';
 import { RateLimiter } from './rate-limit.ts';
 import { clientIp } from './client-ip.ts';
 
+/** The only usage events counted. Anything else sent to /events is ignored. */
 export const EVENTS = new Set([
   'app_open',
   'transaction_added',
@@ -25,6 +26,7 @@ export const EVENTS = new Set([
 
 const MAX_MESSAGE = 4000;
 
+/** Feedback messages and opt-in usage counts. Both are rate-limited per address; neither needs an account. */
 export function feedbackRoutes(app: Hono, sql: Sql) {
   const limiter = new RateLimiter();
   const ip = clientIp;

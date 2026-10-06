@@ -6,12 +6,14 @@ export interface Mailer {
   sendCode(email: string, code: string): Promise<void>;
 }
 
+/** Development: prints the code instead of emailing it. */
 export const consoleMailer: Mailer = {
   async sendCode(email, code) {
     console.log(`[mail] sign-in code for ${email}: ${code}`);
   },
 };
 
+/** Production: sends the code through Resend's HTTP API from a verified sender (MAIL_FROM). */
 export function resendMailer(apiKey: string, from: string): Mailer {
   return {
     async sendCode(email, code) {

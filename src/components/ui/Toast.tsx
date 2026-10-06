@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
+/** A short message at the bottom of the screen, optionally with one action such as Undo. */
 export interface ToastOptions {
   message: string;
   /** e.g. { label: 'Undo', onClick: restore } */
@@ -17,6 +18,7 @@ const ToastContext = createContext<(options: ToastOptions) => void>(() => {});
 /** Shows a short message above the tab bar. Call it with an action to offer Undo. */
 export const useToast = () => useContext(ToastContext);
 
+/** Provides useToast(). Messages are announced politely to screen readers. */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastState>();
   const nextId = useRef(1);

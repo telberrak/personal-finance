@@ -6,6 +6,7 @@ import type { Pence } from './money';
 import { nextPayday } from './recurring';
 import { accountBalance, billOccurrences, isTransfer, type BillOccurrence } from './selectors';
 
+/** One day in the calendar: its bills, whether it is payday, money in and out, and the end-of-day balance. */
 export interface CalendarDay {
   date: ISODate;
   inMonth: boolean;

@@ -9,8 +9,10 @@ import type { DBCore, DBCoreMutateRequest, DBCoreTable, Middleware } from 'dexie
 
 /** Tables that are never synced. */
 export const LOCAL_TABLES = new Set(['keyring', 'outbox', 'syncState', 'notices']);
+/** Whether changes to a table are synced (everything except device-only tables). */
 export const isSynced = (table: string) => !LOCAL_TABLES.has(table);
 
+/** The outbox key for a record, so repeated changes to one record collapse into one entry. */
 export const outboxId = (table: string, key: string) => `${table}/${key}`;
 
 function trackingTable(name: string, table: DBCoreTable, outbox: () => DBCoreTable): DBCoreTable {
@@ -48,6 +50,7 @@ function trackingTable(name: string, table: DBCoreTable, outbox: () => DBCoreTab
   };
 }
 
+/** Dexie middleware that records every change to a synced table in the outbox, in the same transaction. */
 export const outboxMiddleware: Middleware<DBCore> = {
   stack: 'dbcore',
   name: 'Outbox',

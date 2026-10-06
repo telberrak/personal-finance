@@ -1,3 +1,7 @@
+/**
+ * Vite: the React app, the PWA (manifest and service worker), receipt-reading files under /ocr/, the security
+ * headers for `vite preview`, the /api proxy to the sync server, and Vitest.
+ */
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';

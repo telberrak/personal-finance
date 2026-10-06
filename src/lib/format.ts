@@ -21,6 +21,7 @@ let config: FormatConfig = { locale: 'en-GB', currency: 'GBP', isolate: false, h
 const numberCache = new Map<string, Intl.NumberFormat>();
 const dateCache = new Map<string, Intl.DateTimeFormat>();
 
+/** Sets the language, digits and currency used by every formatter. Called when settings change. */
 export function configureFormatting(next: Partial<FormatConfig>): void {
   const merged = { ...config, ...next };
   if (
@@ -43,11 +44,17 @@ const BIDI_MARKS = /[\u200E\u200F\u061C]/g;
 
 /** Wraps text in Unicode isolates when the interface is right-to-left. */
 export const isolate = (s: string): string => (config.isolate ? LRI + s.replace(BIDI_MARKS, '') + PDI : s);
+/**
+ * Wraps text that starts a mixed-direction string in a bidi isolate (Arabic), so amounts keep their order.
+ */
 export const isolateStart = (s: string): string => (config.isolate ? LRI + s.replace(BIDI_MARKS, '') : s);
+/** Like isolateStart, for text that ends a mixed-direction string. */
 export const isolateEnd = (s: string): string => (config.isolate ? s.replace(BIDI_MARKS, '') + PDI : s);
 
+/** The current formatting settings. */
 export const formatConfig = (): Readonly<FormatConfig> => config;
 
+/** A cached Intl.NumberFormat for the interface language and digits. */
 export function numberFormat(options: Intl.NumberFormatOptions): Intl.NumberFormat {
   const key = JSON.stringify(options);
   let f = numberCache.get(key);
@@ -55,6 +62,7 @@ export function numberFormat(options: Intl.NumberFormatOptions): Intl.NumberForm
   return f;
 }
 
+/** A cached Intl.DateTimeFormat for the interface language and digits. */
 export function dateFormat(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
   const key = JSON.stringify(options);
   let f = dateCache.get(key);

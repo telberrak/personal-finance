@@ -1,3 +1,7 @@
+/**
+ * Settings → Accounts: list, add, edit, archive and restore accounts, with the extra fields for cards, loans
+ * and mortgages, and each account's currency.
+ */
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon';
@@ -24,6 +28,7 @@ function parseSigned(text: string) {
   return v === null ? null : neg ? -v : v;
 }
 
+/** Settings → Accounts. */
 export function Accounts({ data }: { data?: FinanceData }) {
   const [editing, setEditing] = useState<Account | 'new'>();
   if (!data) return <Loading />;

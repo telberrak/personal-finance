@@ -28,6 +28,7 @@ import {
   type Iou,
 } from './types';
 
+/** Invalid input from a form. The message is already translated and shown as is. */
 export class ValidationError extends Error {
   name = 'ValidationError';
 }
@@ -86,6 +87,7 @@ export async function completeOnboarding(input: {
   });
 }
 
+/** Replaces everything with the demo data set, for exploring the app. */
 export async function startWithDemoData(): Promise<void> {
   await seedDemoData();
 }
@@ -119,6 +121,7 @@ export async function eraseAllData(): Promise<void> {
 
 // ---------------------------------------------------------------- transactions
 
+/** A transaction before it is saved (no id yet). */
 export type NewTransaction = Omit<Transaction, 'id'>;
 
 /** Trimmed, de-duplicated (ignoring case), at most 10 tags of up to 40 characters. Undefined when empty. */
@@ -145,6 +148,9 @@ async function spaceOf(accountId: string): Promise<string | undefined> {
   return (await db.accounts.get(accountId))?.spaceId;
 }
 
+/**
+ * Validates and saves a transaction, joining the household of its account if it is shared. Returns its id.
+ */
 export async function addTransaction({ native: _view, ...input }: NewTransaction): Promise<string> {
   const spaceId = await spaceOf(input.accountId);
   const t = {
@@ -164,6 +170,9 @@ export async function addTransaction({ native: _view, ...input }: NewTransaction
 /** Fields every piece of a split shares; editing one piece's copy updates them all. */
 const SHARED_SPLIT_FIELDS = ['payee', 'date', 'time', 'accountId'] as const;
 
+/**
+ * Changes a transaction. Moving it to another account also moves it in or out of that account's household.
+ */
 export async function updateTransaction(id: string, { native: _view, ...patch }: Partial<NewTransaction>): Promise<void> {
   await db.transaction('rw', db.transactions, async () => {
     const current = await db.transactions.get(id);
@@ -187,10 +196,12 @@ export async function updateTransaction(id: string, { native: _view, ...patch }:
 
 // ---------------------------------------------------------------- attachments
 
+/** File types accepted as receipts and documents. */
 export const ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 /** Per file, after compression: keeps sync and backups reasonable. */
 export const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
 
+/** Saves a receipt or document (already resized) for a transaction. */
 export async function addAttachment(input: Omit<Attachment, 'id' | 'createdAt'>): Promise<string> {
   check(ATTACHMENT_TYPES.includes(input.type), 'errors.attachmentType');
   check(input.size <= MAX_ATTACHMENT_BYTES, 'errors.attachmentSize');
@@ -199,6 +210,7 @@ export async function addAttachment(input: Omit<Attachment, 'id' | 'createdAt'>)
   return id;
 }
 
+/** Removes a receipt or document. */
 export async function deleteAttachment(id: string): Promise<void> {
   await db.attachments.delete(id);
 }
@@ -257,6 +269,7 @@ export async function forgetSpace(spaceId: string, userId: string): Promise<void
 
 // ---------------------------------------------------------------- splitting with friends (P11)
 
+/** Adds or updates a friend for splitting costs. */
 export async function savePerson(input: Omit<Person, 'id'> & { id?: string }): Promise<string> {
   check(input.name.trim(), 'errors.nameRequired');
   const payLink = input.payLink?.trim() || undefined;
@@ -266,6 +279,7 @@ export async function savePerson(input: Omit<Person, 'id'> & { id?: string }): P
   return id;
 }
 
+/** Records who owes whom, for a shared cost or a settlement. */
 export async function addIou(input: Omit<Iou, 'id'>): Promise<string> {
   check(isPence(input.amount) && input.amount !== 0, 'errors.amountNonZero');
   check(ISO_DATE.test(input.date), 'errors.invalidDateValue', { date: input.date });
@@ -274,6 +288,7 @@ export async function addIou(input: Omit<Iou, 'id'>): Promise<string> {
   return id;
 }
 
+/** Removes one entry from a friend's history. */
 export async function deleteIou(id: string): Promise<void> {
   await db.ious.delete(id);
 }
@@ -346,6 +361,7 @@ export async function bulkDelete(ids: string[]): Promise<Transaction[]> {
   });
 }
 
+/** Puts deleted transactions back, for Undo after a bulk delete. */
 export async function restoreTransactions(transactions: Transaction[]): Promise<void> {
   await db.transactions.bulkPut(transactions);
 }
@@ -360,6 +376,7 @@ async function linkedGroup(t: Transaction): Promise<Transaction[]> {
   return [t];
 }
 
+/** One part of a split payment: its category, amount and optional note. */
 export interface SplitPart {
   categoryId: string;
   /** Positive amount of this piece; the sign follows the original payment. */
@@ -449,6 +466,7 @@ export async function deleteTransaction(id: string): Promise<() => Promise<void>
   };
 }
 
+/** Money moved between two of your accounts; `toAmount` when the accounts have different currencies. */
 export interface TransferInput {
   fromAccountId: string;
   toAccountId: string;
@@ -494,6 +512,7 @@ export async function addTransfer(input: TransferInput): Promise<string> {
   return pair[0].id;
 }
 
+/** Changes both sides of a transfer together. */
 export async function updateTransfer(transferId: string, input: TransferInput): Promise<void> {
   await db.transaction('rw', db.transactions, db.accounts, async () => {
     const existing = await db.transactions.where('transferId').equals(transferId).sortBy('amount');
@@ -505,8 +524,10 @@ export async function updateTransfer(transferId: string, input: TransferInput): 
 
 // ---------------------------------------------------------------- accounts
 
+/** An account as edited in the form (id only when editing). */
 export type AccountInput = Omit<Account, 'id'> & { id?: string };
 
+/** Validates and saves an account. Returns its id. */
 export async function saveAccount({ native: _view, ...input }: AccountInput): Promise<string> {
   check(input.name.trim(), 'errors.accountNameRequired');
   check(isPence(input.openingBalance), 'errors.openingNotAmount');
@@ -515,6 +536,7 @@ export async function saveAccount({ native: _view, ...input }: AccountInput): Pr
   return id;
 }
 
+/** Archives (hides) or restores an account. Its history is kept. */
 export async function setAccountArchived(id: string, archived: boolean): Promise<void> {
   if (archived) {
     const active = (await db.accounts.toArray()).filter((a) => !a.archived && a.id !== id);
@@ -525,8 +547,10 @@ export async function setAccountArchived(id: string, archived: boolean): Promise
 
 // ---------------------------------------------------------------- categories
 
+/** A category as edited in the form. */
 export type CategoryInput = Pick<Category, 'name' | 'color' | 'kind'> & { id?: string };
 
+/** Adds a category at the end of the list, or renames and recolours one. Returns its id. */
 export async function saveCategory(input: CategoryInput): Promise<string> {
   check(input.name.trim(), 'errors.categoryNameRequired');
   check(input.kind !== 'transfer', 'errors.transfersBuiltIn');
@@ -557,6 +581,7 @@ export async function archiveCategory(id: string, reassignTo: string): Promise<v
   });
 }
 
+/** Brings an archived category back. */
 export async function restoreCategory(id: string): Promise<void> {
   await db.categories.update(id, { archived: false });
 }
@@ -575,8 +600,10 @@ export async function moveCategory(id: string, direction: -1 | 1): Promise<void>
 
 // ---------------------------------------------------------------- bills
 
+/** A bill as edited in the form; price-change fields are worked out on save. */
 export type RecurringInput = Omit<Recurring, 'id' | 'previousAmount' | 'amountChangedOn' | 'priceAlertDismissed'> & { id?: string };
 
+/** Saves a bill. A new amount is recorded as a price change (for the "went up" alert). */
 export async function saveRecurring(input: RecurringInput): Promise<string> {
   check(input.name.trim(), 'errors.nameRequired');
   check(isPence(input.amount) && input.amount > 0, 'errors.amountPositive');
@@ -600,6 +627,7 @@ export async function saveRecurring(input: RecurringInput): Promise<string> {
   return id;
 }
 
+/** Pauses or resumes a bill. Paused bills are left out of upcoming bills and "safe to spend". */
 export async function setRecurringActive(id: string, active: boolean): Promise<void> {
   await db.recurring.update(id, { active });
 }
@@ -617,6 +645,7 @@ export async function deleteRecurring(id: string): Promise<void> {
   });
 }
 
+/** Hides the price-rise alert for a bill until its amount changes again. */
 export async function dismissPriceAlert(id: string): Promise<void> {
   await db.recurring.update(id, { priceAlertDismissed: true });
 }
@@ -668,8 +697,10 @@ export async function setBudget(categoryId: string, limit: Pence | null, spaceId
 
 // ---------------------------------------------------------------- rules and payee names
 
+/** A categorisation rule as edited in the form. */
 export type RuleInput = Omit<Rule, 'id' | 'priority'> & { id?: string; priority?: number };
 
+/** Saves a rule; new rules go last (lowest priority). */
 export async function saveRule(input: RuleInput): Promise<string> {
   check(input.pattern.trim(), 'errors.patternRequired');
   check(input.categoryId, 'errors.pickCategory');
@@ -679,6 +710,7 @@ export async function saveRule(input: RuleInput): Promise<string> {
   return id;
 }
 
+/** Removes a categorisation rule. */
 export async function deleteRule(id: string): Promise<void> {
   await db.rules.delete(id);
 }
@@ -708,12 +740,14 @@ export async function renamePayee(from: string, to: string): Promise<number> {
   });
 }
 
+/** Removes a payee rename. */
 export async function deleteAlias(id: string): Promise<void> {
   await db.payeeAliases.delete(id);
 }
 
 // ---------------------------------------------------------------- import
 
+/** A row ready to import: its date, amount, payee, chosen category and matched bill. */
 export interface ImportRow {
   date: ISODate;
   amount: Pence;
@@ -756,6 +790,7 @@ export async function importTransactions(accountId: string, fileName: string, ro
   return batch;
 }
 
+/** Deletes every transaction from one import. Returns how many were removed. */
 export async function undoImport(batchId: string): Promise<number> {
   return db.transaction('rw', db.transactions, db.importBatches, async () => {
     const n = await db.transactions.where('importBatchId').equals(batchId).delete();
@@ -766,8 +801,10 @@ export async function undoImport(batchId: string): Promise<number> {
 
 // ---------------------------------------------------------------- goals
 
+/** A savings goal as edited in the form. */
 export type GoalInput = Pick<Goal, 'name' | 'target' | 'saved' | 'deadline'> & { id?: string };
 
+/** Saves a savings goal. Returns its id. */
 export async function saveGoal(input: GoalInput): Promise<string> {
   check(input.name.trim(), 'errors.goalNameRequired');
   check(isPence(input.target) && input.target > 0, 'errors.targetPositive');
@@ -779,6 +816,7 @@ export async function saveGoal(input: GoalInput): Promise<string> {
   return id;
 }
 
+/** Adds money to a goal, or takes some out with a negative amount. */
 export async function addToGoal(id: string, amount: Pence): Promise<void> {
   check(isPence(amount) && amount !== 0, 'errors.amountRequired');
   await db.transaction('rw', db.goals, async () => {
@@ -788,12 +826,14 @@ export async function addToGoal(id: string, amount: Pence): Promise<void> {
   });
 }
 
+/** Removes a goal. */
 export async function deleteGoal(id: string): Promise<void> {
   await db.goals.delete(id);
 }
 
 // ---------------------------------------------------------------- settings
 
+/** Merges changes into the settings record. */
 export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>): Promise<void> {
   if (patch.payday !== undefined) check(Number.isInteger(patch.payday) && patch.payday >= 1 && patch.payday <= 31, 'errors.paydayRange');
   if (patch.monthlySavings !== undefined) check(isPence(patch.monthlySavings) && patch.monthlySavings >= 0, 'errors.savingsNotNegative');
@@ -810,6 +850,7 @@ export async function updateSettings(patch: Partial<Omit<Settings, 'id'>>): Prom
 // Format ids keep the original name so older backups still restore.
 const BACKUP_FORMAT = 'ledger-backup';
 
+/** A backup file: its format, version, when it was made, and every table. */
 export interface Backup {
   format: typeof BACKUP_FORMAT;
   version: 2;
@@ -817,6 +858,7 @@ export interface Backup {
   data: Record<string, unknown[]>;
 }
 
+/** Every table, read and decrypted, for a backup file. */
 export async function createBackup(): Promise<Backup> {
   const [
     accounts,
@@ -867,6 +909,7 @@ export async function createBackup(): Promise<Backup> {
   };
 }
 
+/** Records when the last backup was downloaded, for the backup reminder. */
 export async function markBackedUp(): Promise<void> {
   await updateSettings({ lastBackupAt: Date.now() });
 }
@@ -949,4 +992,5 @@ export function daysSinceBackup(settings: Settings, now = Date.now()): number | 
   return settings.lastBackupAt === undefined ? undefined : Math.floor((now - settings.lastBackupAt) / 86_400_000);
 }
 
+/** The name of a backup file: mizan-backup-YYYY-MM-DD.json. */
 export const backupFileName = () => `mizan-backup-${today()}.json`;

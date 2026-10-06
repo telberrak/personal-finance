@@ -1,3 +1,7 @@
+/**
+ * Exchange rates for the currencies your accounts use: today's ECB rate (fetched from the sync server) or one
+ * you type in. Used by Settings → Language and currency.
+ */
 import { useEffect, useState } from 'react';
 import { updateSettings } from '../db/repo';
 import type { FinanceData } from '../db/types';

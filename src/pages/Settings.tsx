@@ -1,3 +1,7 @@
+/**
+ * Settings: appearance, language and currency, pay cycle, budgets, accounts and categories, security (app
+ * lock, passkeys, hide amounts), backup and export, sync, notifications and data.
+ */
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Link } from 'react-router';
@@ -101,6 +105,7 @@ function Section({ title, id, children }: { title: string; id?: string; children
   );
 }
 
+/** The Settings screen. */
 export function Settings({ data }: { data?: FinanceData }) {
   const confirm = useConfirm();
   const toast = useToast();

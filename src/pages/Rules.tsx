@@ -1,3 +1,6 @@
+/**
+ * Settings → Rules and payee names: categorisation rules (with "apply to past") and payee renames.
+ */
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon';
@@ -14,6 +17,7 @@ import { t } from '../i18n';
 
 const MATCHES: RuleMatch[] = ['contains', 'startsWith', 'exact'];
 
+/** Settings → Rules and payee names. */
 export function Rules({ data }: { data?: FinanceData }) {
   const toast = useToast();
   const [editing, setEditing] = useState<Rule | 'new'>();

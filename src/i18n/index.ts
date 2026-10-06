@@ -5,6 +5,7 @@ import fr from '../locales/fr.json';
 import { configureFormatting } from '../lib/format';
 import { pseudoLocalise } from './pseudo';
 
+/** A supported language: its code, its name in itself, text direction and formatting locale. */
 export interface Language {
   code: string;
   /** Name shown in the picker, in the language itself. */
@@ -31,6 +32,7 @@ export const LANGUAGES: Language[] = [
   { code: 'ar-XB', name: 'RTL test', dir: 'rtl', formatLocale: 'en-GB', pseudo: true },
 ];
 
+/** Home currencies offered in Settings. */
 export const CURRENCIES = ['GBP', 'EUR', 'USD', 'MAD', 'AED', 'SAR', 'EGP', 'TND', 'DZD', 'CHF', 'CAD'] as const;
 
 const pseudoResources = pseudoLocalise(en);
@@ -53,6 +55,7 @@ void i18next.init({
 /** Translate. Re-renders on language change come from settings changing, which re-renders the app. */
 export const t: typeof i18next.t = ((...args: Parameters<typeof i18next.t>) => i18next.t(...args)) as typeof i18next.t;
 
+/** A language by code, English if unknown. */
 export const languageOf = (code: string): Language => LANGUAGES.find((l) => l.code === code) ?? LANGUAGES[0];
 
 /** The language being shown now (the setting, or a ?locale= override). */

@@ -21,6 +21,7 @@ async function token(): Promise<string> {
   return s.token;
 }
 
+/** Whether this server has a bank provider configured (and sync is on), so the Banks screen can say so. */
 export async function banksAvailable(): Promise<boolean> {
   const s = await db.syncState.get('sync');
   if (!s?.token || !s.syncKey) return false;
@@ -28,6 +29,7 @@ export async function banksAvailable(): Promise<boolean> {
   return res.available;
 }
 
+/** Banks available in a country (ISO code), for the bank picker. */
 export const listInstitutions = async (country: string) =>
   api<Institution[]>(`/banks/institutions?country=${country}`, { token: await token() });
 
@@ -95,6 +97,7 @@ export async function mapBankAccount(connectionId: string, bankAccountId: string
   });
 }
 
+/** Ends the consent at the bank and forgets the connection here. Imported transactions stay. */
 export async function disconnectBank(id: string): Promise<void> {
   await api(`/banks/links/${encodeURIComponent(id)}`, { method: 'DELETE', token: await token() }).catch((err) => {
     if (!(err instanceof SyncApiError && err.status === 404)) throw err;

@@ -1,3 +1,7 @@
+/**
+ * ESLint: TypeScript and React rules, plus i18next/no-literal-string so no visible text is hard-coded in JSX
+ * (it must go through t() and the locale files).
+ */
 import js from '@eslint/js';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import reactHooks from 'eslint-plugin-react-hooks';

@@ -14,6 +14,7 @@ function weekdays(first: number): string[] {
   return Array.from({ length: 7 }, (_, i) => f.format(new Date(2024, 0, ((first - 1 + i) % 7) + 1))); // 1 Jan 2024 was a Monday
 }
 
+/** The Calendar screen: a month grid and the details of the chosen day. */
 export function Calendar({ data }: { data?: FinanceData }) {
   const [params, setParams] = useSearchParams();
   const ref = today();

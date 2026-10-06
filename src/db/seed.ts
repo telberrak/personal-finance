@@ -1,3 +1,7 @@
+/**
+ * Default categories for new installs, and the demo data set ("Explore with demo data"): six months of
+ * realistic UK transactions generated from a fixed seed, so screenshots and tests are stable.
+ */
 import { t } from '../i18n';
 import { addDays, daysBetween, shiftMonth, startOfMonth, today, type ISODate } from '../lib/dates';
 import { newId } from '../lib/id';

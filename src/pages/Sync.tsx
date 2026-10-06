@@ -1,3 +1,7 @@
+/**
+ * Settings → Sync and devices: sign in (email code or passkey), the recovery key, sync status, signed-in
+ * devices, sign-in passkeys and deleting the sync account.
+ */
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -49,6 +53,7 @@ function when(ms: number): string {
   return iso === today() ? t('sync.todayAt', { time: dateFormat({ hour: '2-digit', minute: '2-digit' }).format(d) }) : formatDate(iso);
 }
 
+/** Settings → Sync and devices, as its own screen (the same panel appears in onboarding). */
 export function Sync({ data }: { data?: FinanceData }) {
   if (!data) return <Loading />;
   return (

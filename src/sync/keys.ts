@@ -17,6 +17,7 @@ const RECOVERY_BYTES = 20;
 const VAULT_AAD = utf8('ledger-vault');
 const RECORD_AAD = utf8('ledger-sync-record');
 
+/** The recovery key entered does not open this account's vault. */
 export class WrongRecoveryKey extends Error {
   name = 'WrongRecoveryKey';
 }
@@ -69,12 +70,14 @@ interface Envelope {
   data: string;
 }
 
+/** Encrypts the sync key with a key derived from the recovery key, for the server-side vault. */
 export async function wrapSyncKey(syncKey: Uint8Array, recoveryKey: string): Promise<string> {
   const kek = await keyFromBytes(parseRecoveryKey(recoveryKey)!, 'ledger-recovery');
   const envelope: Envelope = { v: 1, data: toB64(seal(syncKey, kek, VAULT_AAD)) };
   return JSON.stringify(envelope);
 }
 
+/** Opens the vault with the recovery key. Throws WrongRecoveryKey if it does not fit. */
 export async function unwrapSyncKey(envelope: string, recoveryKey: string): Promise<Uint8Array> {
   const bytes = parseRecoveryKey(recoveryKey);
   if (!bytes) throw new WrongRecoveryKey();
@@ -95,6 +98,7 @@ export interface SyncedRecord {
   v: Record<string, unknown> | null;
 }
 
+/** Seals and opens synced records, and derives their opaque record keys. */
 export interface SyncKeys {
   rkey(table: string, key: string): Promise<string>;
   seal(record: SyncedRecord): string;
@@ -103,6 +107,7 @@ export interface SyncKeys {
 
 const b64url = (bytes: Uint8Array) => toB64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
+/** The keys for one stream (your own or a household's), derived from its base key. */
 export async function syncKeys(syncKeyB64: string): Promise<SyncKeys> {
   const syncKey = fromB64(syncKeyB64);
   const dataKey = await keyFromBytes(syncKey, 'ledger-sync-data');

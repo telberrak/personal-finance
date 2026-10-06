@@ -1,8 +1,12 @@
+/**
+ * Categorisation rules: the first matching rule (lowest priority number) sets the category.
+ */
 import { learnedCategory } from './learn';
 import { findMerchant } from './merchants';
 import type { Rule, Transaction } from '../db/types';
 import { payeeKey } from './payees';
 
+/** Whether a rule's text matches a payee (case-insensitive). */
 export function ruleMatches(rule: Rule, payee: string): boolean {
   const p = payee.toLowerCase().trim();
   const q = rule.pattern.toLowerCase().trim();

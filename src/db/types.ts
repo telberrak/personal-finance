@@ -4,6 +4,7 @@ import type { Frequency } from '../lib/recurring';
 import type { SavedSearch } from '../lib/search';
 import type { FxRates, Native } from '../lib/fx';
 
+/** Kinds of account. Credit cards, loans and mortgages are debts (see lib/networth.ts). */
 export type AccountType = 'current' | 'savings' | 'cash' | 'credit' | 'loan' | 'mortgage' | 'investment' | 'pension' | 'property';
 
 /** Display order: everyday accounts first, then savings, debts and other assets. */
@@ -24,6 +25,7 @@ export const LIABILITY_TYPES: AccountType[] = ['credit', 'loan', 'mortgage'];
 /** Valued by hand (Update value) rather than by transactions alone. */
 export const VALUED_TYPES: AccountType[] = ['investment', 'pension', 'property'];
 
+/** A bank account, card, loan, pension or anything else with a balance. */
 export interface Account {
   id: string;
   name: string;
@@ -52,8 +54,10 @@ export interface Account {
 
 /** Keys into the category palette in tokens.css (--cat-<color>). */
 export type CategoryColor = 'groceries' | 'eating' | 'transport' | 'bills' | 'shopping' | 'fun' | 'income';
+/** The colours a category can have, named after the default categories. */
 export const CATEGORY_COLORS: CategoryColor[] = ['groceries', 'eating', 'transport', 'bills', 'shopping', 'fun', 'income'];
 
+/** A spending, income or transfer category. */
 export interface Category {
   id: string;
   name: string;
@@ -66,11 +70,14 @@ export interface Category {
   system?: boolean;
 }
 
+/** The built-in category of both sides of a transfer. */
 export const TRANSFER_CATEGORY_ID = 'transfer';
 /** Fallbacks for imported rows that no rule or history can categorise. */
 export const OTHER_EXPENSE_ID = 'other';
+/** Fallback category for income that no rule or history can categorise. */
 export const OTHER_INCOME_ID = 'other-income';
 
+/** Money in (positive) or out (negative) of an account, in pence of the account's currency. */
 export interface Transaction {
   id: string;
   accountId: string;
@@ -113,8 +120,10 @@ export interface Transaction {
   updatedAt?: number;
 }
 
+/** How a bill is paid. */
 export type PaymentMethod = 'direct-debit' | 'standing-order' | 'card';
 
+/** A bill or other payment that repeats. */
 export interface Recurring {
   id: string;
   name: string;
@@ -139,6 +148,7 @@ export interface Recurring {
   spaceId?: string;
 }
 
+/** A monthly (or pay period) spending limit for one category. */
 export interface Budget {
   id: string;
   categoryId: string;
@@ -147,6 +157,7 @@ export interface Budget {
   spaceId?: string;
 }
 
+/** How a rule's text is compared with a payee. */
 export type RuleMatch = 'contains' | 'startsWith' | 'exact';
 
 /** Auto-categorisation: the first matching rule (lowest priority number) sets the category. */
@@ -167,6 +178,7 @@ export interface PayeeAlias {
   to: string;
 }
 
+/** One CSV import or bank fetch, so it can be undone as a whole. */
 export interface ImportBatch {
   id: string;
   accountId: string;
@@ -175,6 +187,7 @@ export interface ImportBatch {
   rowCount: number;
 }
 
+/** A savings goal. */
 export interface Goal {
   id: string;
   name: string;
@@ -184,9 +197,12 @@ export interface Goal {
   createdAt: number;
 }
 
+/** Light, dark, or follow the device. */
 export type ThemePreference = 'system' | 'light' | 'dark';
+/** Budgets reset on the 1st of each month, or on payday. */
 export type BudgetPeriod = 'month' | 'payday';
 
+/** Everything set in Settings, in one record (id 'settings'). */
 export interface Settings {
   id: 'app';
   /** False until the first-run setup is finished. */
@@ -234,6 +250,7 @@ export interface Settings {
   dismissedSuggestions?: string[];
 }
 
+/** Settings for a new install. */
 export const DEFAULT_SETTINGS: Settings = {
   id: 'app',
   onboarded: false,
@@ -248,6 +265,7 @@ export const DEFAULT_SETTINGS: Settings = {
   lockAfterMinutes: 5,
 };
 
+/** Every table the screens read, loaded together by useFinanceData(). */
 export interface FinanceData {
   accounts: Account[];
   categories: Category[];
@@ -310,6 +328,7 @@ export interface SyncState {
   lastSyncAt?: number;
 }
 
+/** Which alerts may notify on this device, and the quiet hours. */
 export interface NotificationSettings {
   enabled: boolean;
   /** Alert types switched off (see ALERT_TYPES in lib/alerts). */
@@ -337,6 +356,7 @@ export interface BankConnection {
   accounts: BankConnectionAccount[];
 }
 
+/** An account at a connected bank and the Mizan account it imports into. */
 export interface BankConnectionAccount {
   bankAccountId: string;
   name: string;

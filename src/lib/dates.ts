@@ -5,19 +5,23 @@ export type ISODate = string;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+/** A local Date as YYYY-MM-DD. */
 export function toISO(d: Date): ISODate {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** YYYY-MM-DD as a local Date at midnight. */
 export function fromISO(s: ISODate): Date {
   const [y, m, d] = s.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
 
+/** Today's local date. */
 export function today(): ISODate {
   return toISO(new Date());
 }
 
+/** Days in a month (monthIndex 0–11). */
 export function daysInMonth(year: number, monthIndex: number): number {
   return new Date(year, monthIndex + 1, 0).getDate();
 }
@@ -31,6 +35,7 @@ export function clampedDate(year: number, monthIndex: number, day: number): ISOD
   return toISO(new Date(y, m, Math.min(day, daysInMonth(y, m))));
 }
 
+/** The date `n` days later (negative for earlier). */
 export function addDays(s: ISODate, n: number): ISODate {
   const d = fromISO(s);
   d.setDate(d.getDate() + n);
@@ -44,20 +49,24 @@ export function daysBetween(a: ISODate, b: ISODate): number {
   return Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86_400_000);
 }
 
+/** The 1st of the month. */
 export function startOfMonth(s: ISODate): ISODate {
   return s.slice(0, 8) + '01';
 }
 
+/** The last day of the month. */
 export function endOfMonth(s: ISODate): ISODate {
   const d = fromISO(s);
   return clampedDate(d.getFullYear(), d.getMonth(), 31);
 }
 
+/** The same day `n` months later, clamped to the end of shorter months. */
 export function shiftMonth(s: ISODate, n: number): ISODate {
   const d = fromISO(s);
   return clampedDate(d.getFullYear(), d.getMonth() + n, d.getDate());
 }
 
+/** The day of the month (1–31). */
 export function dayOfMonth(s: ISODate): number {
   return Number(s.slice(8, 10));
 }
@@ -66,6 +75,7 @@ const fmt = (options: Intl.DateTimeFormatOptions) => (s: ISODate) => dateFormat(
 
 // Formatted for the display locale (see lib/format). Examples are for English.
 export const formatLong = fmt({ weekday: 'long', day: 'numeric', month: 'long' }); // Wednesday 14 October
+/** Dates formatted in the interface language and digits; the comments show English examples. */
 export const formatShort = fmt({ day: 'numeric', month: 'short' }); // 14 Oct
 export const formatMonth = fmt({ month: 'long' }); // October
 export const formatMonthShort = fmt({ month: 'short' }); // Oct

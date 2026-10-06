@@ -2,6 +2,11 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.17.1 — Documentation
+
+- One document for the whole project: docs/PROJECT.md (architecture, data model, security, sync, server, build, tests, CI/CD, deployment, operations, configuration).
+- Code comments: every exported function, component and type, and every screen, now says what it is for.
+
 ## 0.17.0 — Help
 
 - A Help section, right after Friends (in the sidebar on a computer, on Home on a phone): 26 topics explaining each feature step by step with examples, from accounts and bills to households, sync and security, in English, French and Arabic.

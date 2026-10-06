@@ -1,3 +1,7 @@
+/**
+ * Budgets: progress per category for the period (with rollover), editing limits, and a tab per household for
+ * shared budgets.
+ */
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -19,6 +23,7 @@ const RING_C = 2 * Math.PI * RING_R;
 /** At or above this share of a budget, the category is flagged. */
 const TIGHT = 0.95;
 
+/** The Budgets screen; ?household=<id> opens a household's tab. */
 export function Budgets({ data }: { data?: FinanceData }) {
   const ref = today();
   const [offset, setOffset] = useState(0);

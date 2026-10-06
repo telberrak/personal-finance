@@ -15,6 +15,7 @@ const FILES: Record<string, string> = {
   'ocr/lang/eng.traineddata.gz': 'node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz',
 };
 
+/** The Vite plugin (see the comment at the top of this file). */
 export function ocrAssets(): Plugin {
   return {
     name: 'ledger-ocr-assets',

@@ -5,6 +5,7 @@
  */
 import { payeeKey } from './payees';
 
+/** A well-known shop or service: patterns that recognise it, its category and its display name. */
 export interface Merchant {
   name: string;
   categoryId: string;
@@ -165,4 +166,5 @@ export function findMerchant(payee: string): Merchant | undefined {
   return INDEX.find(({ key }) => text.includes(` ${key} `))?.merchant;
 }
 
+/** How many merchants are known (checked by the tests). */
 export const MERCHANT_COUNT = ENTRIES.length;

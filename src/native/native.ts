@@ -12,6 +12,7 @@ import { currentKey, fromB64, setUnlocked, toB64 } from '../db/crypto';
 import { db } from '../db/db';
 import type { Alert } from '../lib/alerts';
 
+/** Whether the app runs inside the iOS or Android app (Capacitor) rather than a browser. */
 export const isNative = () => Capacitor.isNativePlatform();
 
 const KEY_NAME = 'ledger-data-key';
@@ -19,6 +20,7 @@ const KEYRING_ID = 'native-biometric';
 
 // ------------------------------------------------------------------ biometric unlock
 
+/** Whether the device offers Face ID, Touch ID or fingerprint unlock. */
 export async function nativeBiometricAvailable(): Promise<boolean> {
   if (!isNative()) return false;
   const { BiometricAuth } = await import('@aparajita/capacitor-biometric-auth');
@@ -26,6 +28,7 @@ export async function nativeBiometricAvailable(): Promise<boolean> {
   return result.isAvailable || result.deviceIsSecure;
 }
 
+/** Whether biometric unlock is set up on this device. */
 export const nativeBiometricEnabled = async () => isNative() && !!(await db.keyring.get(KEYRING_ID));
 
 async function authenticate(reason: string): Promise<void> {
@@ -44,6 +47,7 @@ export async function enableNativeBiometric(reason: string): Promise<void> {
   await db.keyring.put({ id: KEYRING_ID, kind: 'native', salt: '', wrapped: '', createdAt: Date.now() });
 }
 
+/** Asks for the device's biometrics and unlocks with the key from the secure keychain. */
 export async function unlockWithNativeBiometric(reason: string): Promise<boolean> {
   await authenticate(reason);
   const { SecureStorage } = await import('@aparajita/capacitor-secure-storage');
@@ -53,6 +57,7 @@ export async function unlockWithNativeBiometric(reason: string): Promise<boolean
   return true;
 }
 
+/** Removes the data key from the keychain; the PIN still works. */
 export async function disableNativeBiometric(): Promise<void> {
   await db.keyring.delete(KEYRING_ID);
   if (!isNative()) return;
@@ -69,6 +74,7 @@ const numericId = (id: string) => {
   return Math.abs(h) || 1;
 };
 
+/** Asks for permission to show local notifications in the native app. */
 export async function requestNativeNotifications(): Promise<boolean> {
   const { LocalNotifications } = await import('@capacitor/local-notifications');
   const { display } = await LocalNotifications.requestPermissions();
@@ -94,6 +100,7 @@ export async function scheduleNative(alerts: Alert[]): Promise<void> {
   });
 }
 
+/** Shows a local notification now; tapping it opens `url` in the app. */
 export async function showNativeNow(title: string, body: string, tag: string, url = '/notifications'): Promise<void> {
   const { LocalNotifications } = await import('@capacitor/local-notifications');
   await LocalNotifications.schedule({ notifications: [{ id: numericId(tag), title, body, extra: { url } }] });

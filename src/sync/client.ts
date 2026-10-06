@@ -7,6 +7,7 @@ import type { ApiError } from '../../shared/api.ts';
 
 const API_BASE = `${import.meta.env.VITE_API_ORIGIN ?? ''}/api`;
 
+/** An error from the sync server. Status 0 means the server could not be reached. */
 export class SyncApiError extends Error {
   name = 'SyncApiError';
   constructor(

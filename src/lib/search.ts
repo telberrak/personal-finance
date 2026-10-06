@@ -7,6 +7,7 @@ import type { ISODate } from './dates';
 import type { Pence } from './money';
 import { payeeKey } from './payees';
 
+/** Advanced search: text, dates, amounts, category, account, tag and direction. Empty fields are ignored. */
 export interface SearchFilters {
   text?: string;
   from?: ISODate;
@@ -20,12 +21,14 @@ export interface SearchFilters {
   direction?: 'in' | 'out';
 }
 
+/** A named search, kept in settings. */
 export interface SavedSearch {
   id: string;
   name: string;
   filters: SearchFilters;
 }
 
+/** Transactions matching every filter. */
 export function searchTransactions(transactions: Transaction[], f: SearchFilters): Transaction[] {
   const words = payeeKey(f.text ?? '')
     .split(' ')
@@ -57,4 +60,5 @@ export function allTags(transactions: Transaction[]): string[] {
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([tag]) => tag);
 }
 
+/** Whether any filter is set. */
 export const hasFilters = (f: SearchFilters) => Object.values(f).some((v) => v !== undefined && v !== '');

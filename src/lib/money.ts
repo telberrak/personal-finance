@@ -117,6 +117,7 @@ export function formatRate(percent: number): string {
   return numberFormat({ style: 'percent', maximumFractionDigits: 2 }).format(percent / 100);
 }
 
+/** A ratio as a whole percentage in the interface language, e.g. 0.42 → 42%. */
 export function formatPercent(ratio: number): string {
   return numberFormat({ style: 'percent', maximumFractionDigits: 0 }).format(ratio);
 }

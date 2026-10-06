@@ -27,6 +27,10 @@ import { feedbackRoutes } from './feedback.ts';
 import { RateLimiter } from './rate-limit.ts';
 import { clientIp } from './client-ip.ts';
 
+/**
+ * What the API needs to know about where it runs: passkey relying party, allowed app origins, dev helpers,
+ * version.
+ */
 export interface Config {
   /** WebAuthn relying party: the app's host name, e.g. 'mizan.example.com' or 'localhost'. */
   rpID: string;
@@ -55,6 +59,10 @@ const fail = (status: 400 | 401 | 403 | 404 | 409 | 413 | 429 | 502, error: stri
 
 type Env = { Variables: { userId: string; sessionId: string } };
 
+/**
+ * Builds the whole HTTP API (Hono) under /api from its dependencies, so tests can run it in-process with
+ * PGlite and fakes.
+ */
 export function createApp({
   sql,
   mailer,

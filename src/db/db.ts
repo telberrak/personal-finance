@@ -1,3 +1,7 @@
+/**
+ * The IndexedDB schema (Dexie) and its upgrades. Every change is a new version(); released versions are never
+ * edited, so existing databases upgrade step by step.
+ */
 import Dexie, { type EntityTable } from 'dexie';
 import { t } from '../i18n';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -40,6 +44,7 @@ export const transferCategory = (): Category => ({
   system: true,
 });
 
+/** The IndexedDB database (Dexie). Each version() adds tables or indexes; never change a released version. */
 export class FinanceDB extends Dexie {
   accounts!: EntityTable<Account, 'id'>;
   categories!: EntityTable<Category, 'id'>;
@@ -128,6 +133,7 @@ export class FinanceDB extends Dexie {
   }
 }
 
+/** The one database instance, with the outbox and encryption middleware installed. */
 export const db = new FinanceDB();
 
 /**

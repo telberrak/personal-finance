@@ -4,6 +4,7 @@
  */
 import { api } from '../sync/client';
 
+/** Usage events that may be counted (the server keeps only daily totals per event). */
 export type UsageEvent =
   | 'app_open'
   | 'transaction_added'
@@ -20,11 +21,13 @@ let enabled = false;
 let queue: UsageEvent[] = [];
 let timer: ReturnType<typeof setTimeout> | undefined;
 
+/** Turns opt-in anonymous usage counts on or off. */
 export function setUsageSharing(on: boolean) {
   enabled = on;
   if (!on) queue = [];
 }
 
+/** Counts an event, only if the user opted in. Sent in batches; failures are ignored. */
 export function track(event: UsageEvent) {
   if (!enabled) return;
   queue.push(event);

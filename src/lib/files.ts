@@ -1,5 +1,6 @@
 /** Preparing files for attachment: images are resized and compressed on the device. */
 
+/** An attachment ready to save: name, type, size and base64 data (photos already resized). */
 export interface PreparedFile {
   name: string;
   type: string;
@@ -39,6 +40,7 @@ export async function prepareFile(file: File, maxBytes: number): Promise<Prepare
   return { name, type: 'image/jpeg', size: blob.size, data: toBase64(await blob.arrayBuffer()) };
 }
 
+/** A data: URL for showing an attachment. */
 export const dataUrl = (type: string, data: string) => `data:${type};base64,${data}`;
 
 /** Opens an attachment in a new tab (PDFs) or downloads it. */

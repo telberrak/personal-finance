@@ -7,6 +7,7 @@ import { findMerchant } from './merchants';
 import type { Pence } from './money';
 import { normaliseNumber } from './money';
 
+/** What could be read from a receipt: total, date and shop name. */
 export interface ReceiptGuess {
   amount?: Pence;
   date?: ISODate;
@@ -51,6 +52,10 @@ function dateIn(text: string, ref: ISODate): ISODate | undefined {
   return undefined;
 }
 
+/**
+ * Finds the total, date and shop in OCR text from a receipt. Dates more than a day ahead or two years back
+ * are ignored.
+ */
 export function parseReceipt(text: string, ref: ISODate): ReceiptGuess {
   const lines = text
     .split(/\r?\n/)

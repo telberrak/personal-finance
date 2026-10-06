@@ -20,6 +20,10 @@ const fail = (status: 400 | 403 | 404 | 409, error: string): never => {
 
 type Env = { Variables: { userId: string; sessionId: string } };
 
+/**
+ * Household (space) routes: create, invite with one-use tokens, join, leave, and a separate encrypted record
+ * stream per household.
+ */
 export function spaceRoutes(authed: Hono<Env>, sql: Sql) {
   async function member(spaceId: string, userId: string) {
     if (!/^[0-9a-f-]{36}$/.test(spaceId)) fail(404, 'No such household.');

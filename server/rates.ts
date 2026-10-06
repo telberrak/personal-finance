@@ -8,12 +8,14 @@ import type { Hono } from 'hono';
 const ECB = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
 const TTL_MS = 6 * 3_600_000;
 
+/** Euro reference rates from the European Central Bank: the day they apply to and 1 EUR in each currency. */
 export interface EcbRates {
   date: string;
   /** Units of each currency per euro. */
   rates: Record<string, number>;
 }
 
+/** Reads the ECB daily XML (eurofxref-daily.xml) into rates. */
 export function parseEcb(xml: string): EcbRates {
   const date = xml.match(/time=['"](\d{4}-\d{2}-\d{2})['"]/)?.[1];
   const rates: Record<string, number> = {};
@@ -22,6 +24,7 @@ export function parseEcb(xml: string): EcbRates {
   return { date, rates };
 }
 
+/** GET /rates: the ECB rates, cached for 6 hours. Public, so the app can convert without an account. */
 export function rateRoutes(app: Hono, fetchImpl: typeof fetch = fetch) {
   let cache: { at: number; data: EcbRates } | undefined;
   app.get('/rates', async (c) => {

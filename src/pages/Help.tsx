@@ -1,3 +1,7 @@
+/**
+ * Help: the help file for the interface language, split into searchable topics that open on a tap. A link
+ * such as /help#bills opens one topic.
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router';
 import { Icon } from '../components/Icon';

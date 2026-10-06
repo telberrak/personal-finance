@@ -15,6 +15,10 @@ import { api, SyncApiError } from './client';
 import { queueEverything, resetSyncEngine, syncNow } from './engine';
 import { newRecoveryKey, unwrapSyncKey, wrapSyncKey } from './keys';
 
+/**
+ * After signing in: a new account (show its recovery key), an existing one (ask for the key), or this device
+ * already has the key.
+ */
 export type SignInResult = { kind: 'created'; recoveryKey: string } | { kind: 'needsKey' } | { kind: 'resumed' };
 
 /** "Edge on Windows", for the device list. */
@@ -51,14 +55,17 @@ async function token(): Promise<string> {
   return s.token;
 }
 
+/** Asks the server to email a sign-in code. */
 export async function requestCode(email: string): Promise<void> {
   await api('/auth/email/start', { body: { email } });
 }
 
+/** Signs in with the emailed code. */
 export async function verifyCode(email: string, code: string): Promise<SignInResult> {
   return afterSignIn(await api<Session>('/auth/email/verify', { body: { email, code, deviceName: deviceName() } }));
 }
 
+/** Signs in to the sync account with a passkey instead of an email code. */
 export async function signInWithPasskey(): Promise<SignInResult> {
   const { options, challengeId } = await api<{ options: Parameters<typeof startAuthentication>[0]['optionsJSON']; challengeId: string }>(
     '/auth/passkey/options',
@@ -143,8 +150,11 @@ async function forgetAccount() {
   resetSyncEngine();
 }
 
+/** The account, its devices and passkeys. */
 export const getMe = async (): Promise<Me> => api<Me>('/me', { token: await token() });
+/** Signs out another device (for example a lost phone). */
 export const signOutDevice = async (id: string) => api(`/devices/${encodeURIComponent(id)}`, { method: 'DELETE', token: await token() });
+/** Removes a sign-in passkey from the sync account. */
 export const removeAccountPasskey = async (id: string) =>
   api(`/passkeys/${encodeURIComponent(id)}`, { method: 'DELETE', token: await token() });
 

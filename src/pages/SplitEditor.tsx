@@ -1,3 +1,7 @@
+/**
+ * Splitting one payment across several categories, inside the transaction form. The parts must add up to the
+ * payment's amount.
+ */
 import { useState, type FormEvent } from 'react';
 import { Icon } from '../components/Icon';
 import { useToast } from '../components/ui/Toast';

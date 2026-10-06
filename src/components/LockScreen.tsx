@@ -1,3 +1,7 @@
+/**
+ * The lock screen. While locked, the data key is not in memory, so nothing else can render: the user unlocks
+ * with their PIN, a passkey, or the native app's biometrics.
+ */
 import { useEffect, useState, type FormEvent } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
@@ -42,6 +46,7 @@ export function useAutoLock(minutes: number | undefined) {
   }, [active, minutes]);
 }
 
+/** Shown instead of the app while it is locked: unlock with the PIN, a passkey or the device's biometrics. */
 export function LockScreen() {
   // Only the settings the lock screen needs (theme, language) are readable while locked.
   const stored = useLiveQuery(async () => (await db.settings.get('app')) ?? null);

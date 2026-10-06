@@ -22,6 +22,7 @@ export const CONTENT_SECURITY_POLICY = [
   "frame-ancestors 'none'",
 ].join('; ');
 
+/** Every security header, by name. */
 export const SECURITY_HEADERS: Record<string, string> = {
   'Content-Security-Policy': CONTENT_SECURITY_POLICY,
   'X-Content-Type-Options': 'nosniff',

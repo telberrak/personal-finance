@@ -1,3 +1,7 @@
+/**
+ * Import: read a bank's CSV file, map its columns (or recognise the bank), preview with suggested categories,
+ * duplicates and bill matches, import, and undo recent imports.
+ */
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Icon } from '../components/Icon';
@@ -22,6 +26,7 @@ interface PreviewRow extends ImportRow {
   include: boolean;
 }
 
+/** The Import screen. */
 export function Import({ data }: { data?: FinanceData }) {
   const navigate = useNavigate();
   const toast = useToast();

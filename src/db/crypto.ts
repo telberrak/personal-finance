@@ -27,14 +27,18 @@ const listeners = new Set<() => void>();
 
 const notify = () => listeners.forEach((l) => l());
 
+/** 'off' (no app lock), 'locked' or 'unlocked'. */
 export const securityMode = (): SecurityMode => mode;
+/** The data key while unlocked; null when locked or with no app lock. */
 export const currentKey = (): Uint8Array | null => dataKey;
 
+/** Calls `listener` whenever the security mode changes. Returns an unsubscribe function. */
 export function subscribeSecurity(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
+/** Unlocks with the data key; encrypted reads and writes work from now on. */
 export function setUnlocked(key: Uint8Array): void {
   dataKey = key;
   mode = 'unlocked';
@@ -54,15 +58,19 @@ export function setLocked(encrypted = true): void {
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
+/** Text to UTF-8 bytes. */
 export const utf8 = (s: string) => enc.encode(s);
+/** UTF-8 bytes to text. */
 export const fromUtf8 = (b: Uint8Array) => dec.decode(b);
 
+/** Bytes to base64, in chunks so large attachments do not overflow the call stack. */
 export function toB64(bytes: Uint8Array): string {
   let s = '';
   for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(s);
 }
 
+/** Base64 to bytes. */
 export const fromB64 = (s: string): Uint8Array => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
 // ------------------------------------------------------------------ AES-GCM
@@ -86,6 +94,10 @@ export function unseal(sealed: Uint8Array, key: Uint8Array, aad?: Uint8Array): U
 
 // ------------------------------------------------------------------ key derivation
 
+/**
+ * PBKDF2-SHA256 iterations for keys derived from PINs and backup passwords: slow enough to make guessing
+ * expensive.
+ */
 export const PBKDF2_ITERATIONS = 310_000;
 
 /** A 256-bit key from a PIN or password. */
@@ -106,4 +118,5 @@ export async function keyFromBytes(bytes: Uint8Array, info: string): Promise<Uin
   return new Uint8Array(bits);
 }
 
+/** WebCrypto needs a secure context (HTTPS or localhost); without it the app lock cannot be offered. */
 export const cryptoAvailable = () => typeof crypto !== 'undefined' && !!crypto.subtle;

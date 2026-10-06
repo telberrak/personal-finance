@@ -1,14 +1,20 @@
+/**
+ * Balance forecast: today's everyday balance, plus income and bills on their dates, minus your usual daily
+ * spending, day by day. Used by Reports, Calendar and the low-balance alert.
+ */
 import type { FinanceData } from '../db/types';
 import { addDays, daysBetween, endOfMonth, shiftMonth, startOfMonth, type ISODate } from './dates';
 import type { Pence } from './money';
 import { nextPayday } from './recurring';
 import { billOccurrences, dayToDaySpend, isTransfer, MATCH_WINDOW_DAYS, totalBalance } from './selectors';
 
+/** Expected balance on one day. */
 export interface ForecastPoint {
   date: ISODate;
   balance: Pence;
 }
 
+/** Expected balance day by day, and its lowest point. */
 export interface Forecast {
   points: ForecastPoint[];
   lowest: ForecastPoint;

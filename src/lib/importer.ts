@@ -1,11 +1,17 @@
+/**
+ * CSV import: parsing (quotes, separators, encodings), recognising known banks' exports, reading dates and
+ * amounts with a column mapping, and fingerprints to skip rows already imported.
+ */
 import type { Transaction } from '../db/types';
 import { toISO, type ISODate } from './dates';
 import { normaliseNumber, type Pence } from './money';
 import { payeeKey } from './payees';
 import { t } from '../i18n';
 
+/** Order of day, month and year in a CSV file's dates. */
 export type DateFormat = 'dmy' | 'mdy' | 'ymd';
 
+/** Which CSV columns hold the date, description and amounts, and how to read them. */
 export interface ColumnMapping {
   hasHeader: boolean;
   date: number;
@@ -20,6 +26,7 @@ export interface ColumnMapping {
   invertAmount: boolean;
 }
 
+/** A known bank export: how to recognise its header row and map its columns. */
 export interface BankPreset {
   id: string;
   name: string;
@@ -154,6 +161,7 @@ export const PRESETS: BankPreset[] = [
   },
 ];
 
+/** The bank whose export this header row looks like, if any. */
 export function detectPreset(header: string[]): BankPreset | undefined {
   const lower = new Set(header.map((h) => h.toLowerCase().trim()));
   return PRESETS.find((p) => p.signature.every((s) => lower.has(s)));
@@ -260,6 +268,7 @@ export function parseAmount(input: string): Pence | null {
   return sign * Math.round(Number(n) * 100);
 }
 
+/** A CSV row read with a mapping, or the reason it could not be. */
 export interface ParsedRow {
   /** 1-based line in the file, for error messages. */
   line: number;
@@ -269,6 +278,7 @@ export interface ParsedRow {
   error?: string;
 }
 
+/** Reads every data row with a column mapping. */
 export function mapRows(rows: string[][], m: ColumnMapping): ParsedRow[] {
   const body = m.hasHeader ? rows.slice(1) : rows;
   const offset = m.hasHeader ? 2 : 1;
@@ -292,6 +302,7 @@ export function mapRows(rows: string[][], m: ColumnMapping): ParsedRow[] {
   });
 }
 
+/** Identifies a transaction across imports, to skip rows already imported. */
 export function fingerprint(accountId: string, date: ISODate, amount: Pence, payee: string): string {
   return `${accountId}|${date}|${amount}|${payeeKey(payee)}`;
 }

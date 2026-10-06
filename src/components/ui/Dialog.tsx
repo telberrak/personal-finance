@@ -48,6 +48,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
   );
 }
 
+/** What a confirmation dialog says, and whether its button is styled as dangerous. */
 export interface ConfirmOptions {
   title: string;
   message?: string;
@@ -64,6 +65,7 @@ const ConfirmContext = createContext<(options: ConfirmOptions) => Promise<boolea
 /** `if (await confirm({ title: 'Erase all data?', danger: true })) …` */
 export const useConfirm = () => useContext(ConfirmContext);
 
+/** Provides useConfirm(): one shared alert dialog that resolves to true or false. */
 export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<Pending>();
   const confirm = useCallback((options: ConfirmOptions) => new Promise<boolean>((resolve) => setPending({ ...options, resolve })), []);

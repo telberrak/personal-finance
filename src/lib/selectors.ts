@@ -10,6 +10,7 @@ export const MATCH_WINDOW_DAYS = 3;
 /** Moving money between your own accounts is neither spending nor income. */
 export const isTransfer = (t: Transaction) => !!t.transferId;
 
+/** Whether a dated item falls within [from, to], inclusive. */
 export function inRange(t: { date: ISODate }, from: ISODate, to: ISODate): boolean {
   return t.date >= from && t.date <= to;
 }
@@ -43,6 +44,7 @@ export function dayToDaySpend(transactions: Transaction[], from: ISODate, to: IS
   );
 }
 
+/** Money in and out in a period, leaving out transfers between your own accounts. */
 export function moneyInOut(transactions: Transaction[], from: ISODate, to: ISODate): { moneyIn: Pence; moneyOut: Pence } {
   let moneyIn = 0;
   let moneyOut = 0;
@@ -54,6 +56,7 @@ export function moneyInOut(transactions: Transaction[], from: ISODate, to: ISODa
   return { moneyIn, moneyOut };
 }
 
+/** One due date of a bill, and whether a payment has been matched to it. */
 export interface BillOccurrence {
   rule: Recurring;
   date: ISODate;
@@ -95,6 +98,7 @@ export function overdueBills(data: Pick<FinanceData, 'recurring' | 'transactions
   );
 }
 
+/** The parts of the "safe to spend" figure, for the hero and its explanation sheet. */
 export interface SafeToSpend {
   balance: Pence;
   billsBeforePayday: Pence;
@@ -147,6 +151,7 @@ export function spendVersusLastMonth(transactions: Transaction[], ref: ISODate):
   return now - then;
 }
 
+/** Spending against one budget in a period. */
 export interface BudgetProgress {
   budget: Budget;
   category: Category;

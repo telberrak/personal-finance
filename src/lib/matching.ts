@@ -43,6 +43,7 @@ export function paidOccurrenceKeys(recurring: Recurring[], transactions: Transac
   return keys;
 }
 
+/** A regular payment that looks like a bill but is not one yet. */
 export interface RecurringSuggestion {
   key: string;
   payee: string;

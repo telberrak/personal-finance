@@ -10,6 +10,7 @@
 import type { DBCore, DBCoreCursor, DBCoreMutateRequest, DBCoreTable, DBCoreTableSchema, Middleware } from 'dexie';
 import { currentKey, fromB64, fromUtf8, LockedError, securityMode, seal, toB64, unseal, utf8 } from './crypto';
 
+/** Where a stored record keeps its ciphertext; only the primary key and this field are readable on disk. */
 export const ENCRYPTED_FIELD = '_e';
 
 /** Settings the lock screen and app shell need before unlocking. Everything else is encrypted. */
@@ -99,6 +100,7 @@ function encryptingTable(name: string, table: DBCoreTable): DBCoreTable {
   };
 }
 
+/** Dexie middleware that encrypts records on write and decrypts them on read while an app lock is on. */
 export const encryptionMiddleware: Middleware<DBCore> = {
   stack: 'dbcore',
   name: 'Encryption',

@@ -4,10 +4,12 @@
  */
 import { OPERATOR, SUPPORT_EMAIL } from '../brand';
 
+/** The long-form documents the app ships, one Markdown file per language. */
 export type ContentKind = 'help' | 'privacy' | 'terms';
 
 const files = import.meta.glob<string>('./*.md', { query: '?raw', import: 'default' });
 
+/** Loads a document in a language (English if missing) and fills in the operator and support email. */
 export async function loadContent(kind: ContentKind, language: string): Promise<string> {
   const load = files[`./${kind}.${language}.md`] ?? files[`./${kind}.en.md`];
   const text = await load();

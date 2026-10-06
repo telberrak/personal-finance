@@ -1,3 +1,7 @@
+/**
+ * Friends: people you split costs with, who owes whom, payment requests through their payment link, and
+ * settling up.
+ */
 import { useMemo, useState, type FormEvent } from 'react';
 import { Icon } from '../components/Icon';
 import { Loading, PageHeader } from '../components/Layout';
@@ -11,6 +15,7 @@ import { formatDate, today } from '../lib/dates';
 import { balances, requestLink } from '../lib/friends';
 import { formatMoney, parseMoney } from '../lib/money';
 
+/** The Friends screen. */
 export function Friends({ data }: { data?: FinanceData }) {
   const [editing, setEditing] = useState<Person | 'new'>();
   const [open, setOpen] = useState<string>();

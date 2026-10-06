@@ -1,3 +1,6 @@
+/**
+ * The app's icon set: simple stroked SVG paths, so no icon font or image requests are needed.
+ */
 const PATHS = {
   home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />,
   activity: <path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" />,
@@ -114,11 +117,13 @@ const PATHS = {
   ),
 } as const;
 
+/** Every icon the app can draw. */
 export type IconName = keyof typeof PATHS;
 
 /** Icons that point left or right flip in right-to-left languages. */
 const MIRRORED = new Set<IconName>(['back', 'forward', 'trendUp']);
 
+/** A stroked 24×24 SVG icon in the current text colour. Decorative unless `label` is given. */
 export function Icon({
   name,
   size = 24,

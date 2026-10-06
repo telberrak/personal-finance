@@ -11,6 +11,7 @@ import { findMerchant } from './merchants';
 import { applyAlias, normalisePayee } from './payees';
 import { suggestCategory } from './rules';
 
+/** A row from a CSV file or a bank, before categories and duplicates are worked out. */
 export interface RawRow {
   date: ISODate;
   amount: Pence;
@@ -19,6 +20,7 @@ export interface RawRow {
   externalId?: string;
 }
 
+/** A row with its suggested category, matched bill and whether it is already in Mizan. */
 export interface PreparedRow extends RawRow {
   payee: string;
   categoryId: string;
@@ -27,6 +29,7 @@ export interface PreparedRow extends RawRow {
   duplicate: boolean;
 }
 
+/** Prepares rows for import the same way for CSV files and bank connections. */
 export function prepareRows<T extends RawRow>(data: FinanceData, accountId: string, rows: T[]): (T & PreparedRow)[] {
   const known = new Set(data.transactions.filter((t) => t.externalId && t.accountId === accountId).map((t) => t.externalId));
   const withDupes = markDuplicates(rows, data.transactions, accountId);

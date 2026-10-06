@@ -1,3 +1,7 @@
+/**
+ * Home: "safe to spend" and how it is worked out, alerts, spending this month, upcoming bills, recent
+ * transactions, budgets (computer) and shortcuts to other screens (phone).
+ */
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon';
 import { NotificationBell } from './Notifications';
@@ -42,6 +46,7 @@ function greeting(hour: number) {
   return t('home.goodEvening');
 }
 
+/** The Home screen. */
 export function Home({ data }: { data?: FinanceData }) {
   const isDesktop = useIsDesktop();
   if (!data) return <Loading />;

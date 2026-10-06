@@ -1,3 +1,7 @@
+/**
+ * Activity: transactions for a month, grouped by day (phone) or in a table (computer), with search, filters,
+ * totals, and bills coming up in the next 7 days.
+ */
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { Icon } from '../components/Icon';
@@ -25,6 +29,7 @@ const MATCHES: Record<Filter, (t: Transaction) => boolean> = {
   Transfers: (t) => !!t.transferId,
 };
 
+/** The Activity screen. The month is kept in the URL (?month=) so Back returns to it. */
 export function Activity({ data }: { data?: FinanceData }) {
   const ref = today();
   const isDesktop = useIsDesktop();

@@ -7,6 +7,7 @@ import type { Transaction } from '../db/types';
 import type { ISODate } from './dates';
 import type { Pence } from './money';
 
+/** A line of a tax return that income or expenses can be marked for. */
 export interface TaxHeading {
   id: string;
   /** Translation key for its name. */
@@ -14,6 +15,7 @@ export interface TaxHeading {
   kind: 'income' | 'expense';
 }
 
+/** A country's tax year and the headings the tax helper offers. */
 export interface TaxSystem {
   country: string;
   /** Month and day the tax year starts: "04-06" for the UK (6 April), "01-01" for France. */
@@ -21,6 +23,7 @@ export interface TaxSystem {
   headings: TaxHeading[];
 }
 
+/** Supported tax systems (UK and France). */
 export const TAX_SYSTEMS: TaxSystem[] = [
   {
     country: 'GB',
@@ -49,6 +52,7 @@ export const TAX_SYSTEMS: TaxSystem[] = [
   },
 ];
 
+/** The tax system for a country, the UK if unknown. */
 export const taxSystem = (country: string | undefined): TaxSystem => TAX_SYSTEMS.find((s) => s.country === country) ?? TAX_SYSTEMS[0];
 
 /** The tax year containing `date`, named by the year it starts in. */
@@ -57,6 +61,7 @@ export function taxYearOf(system: TaxSystem, date: ISODate): number {
   return date.slice(5) >= system.yearStart ? year : year - 1;
 }
 
+/** The first and last day of the tax year that starts in `startYear`. */
 export function taxYearRange(system: TaxSystem, startYear: number): { from: ISODate; to: ISODate } {
   const from = `${startYear}-${system.yearStart}`;
   const end = new Date(startYear + 1, Number(system.yearStart.slice(0, 2)) - 1, Number(system.yearStart.slice(3)) - 1);
@@ -64,6 +69,7 @@ export function taxYearRange(system: TaxSystem, startYear: number): { from: ISOD
   return { from, to };
 }
 
+/** Totals per heading for a tax year, and the transactions behind them. */
 export interface TaxSummary {
   heading: TaxHeading;
   total: Pence;

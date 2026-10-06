@@ -1,3 +1,7 @@
+/**
+ * Net worth: assets and debts with their 12-month history, value updates for property and investments, and
+ * the debt payoff planner.
+ */
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { BalanceLine } from '../components/charts';
@@ -16,6 +20,7 @@ import { debtsOf, netWorth, netWorthHistory } from '../lib/networth';
 const monthsLater = (n: number): ISODate => shiftMonth(today(), n);
 const STRATEGIES: Strategy[] = ['avalanche', 'snowball'];
 
+/** The Net worth screen. */
 export function NetWorth({ data }: { data?: FinanceData }) {
   const [valuing, setValuing] = useState<Account>();
   const ref = today();

@@ -1,3 +1,7 @@
+/**
+ * Settings → Household: create a household, invite someone with a one-use link, choose which accounts to
+ * share, leave. Also the /join page that opens an invitation.
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -21,6 +25,7 @@ function errorText(err: unknown) {
   return t('household.failed');
 }
 
+/** Settings → Household. */
 export function Household({ data }: { data?: FinanceData }) {
   const toast = useToast();
   const confirm = useConfirm();

@@ -6,6 +6,7 @@
 import type { PGlite } from '@electric-sql/pglite';
 import type pg from 'pg';
 
+/** The two calls the API needs from a database, so Postgres (pg) and PGlite can be swapped. */
 export interface Sql {
   query<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<T[]>;
   /** Runs `fn` in one transaction, committed if it resolves and rolled back if it throws. */
@@ -156,6 +157,7 @@ const MIGRATIONS: string[] = [
   `,
 ];
 
+/** Applies the migrations not yet recorded in schema_migrations, each in its own transaction. */
 export async function migrate(sql: Sql): Promise<void> {
   await sql.query('CREATE TABLE IF NOT EXISTS schema_migrations (version int PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
   const done = new Set((await sql.query<{ version: number }>('SELECT version FROM schema_migrations')).map((r) => r.version));

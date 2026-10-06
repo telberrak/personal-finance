@@ -1,3 +1,7 @@
+/**
+ * Advanced search: filters, saved searches, and editing many transactions at once (category, tags, delete
+ * with undo).
+ */
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { Loading, PageHeader } from '../components/Layout';
@@ -14,6 +18,7 @@ import { allTags, hasFilters, searchTransactions, type SearchFilters } from '../
 
 const SHOWN = 200;
 
+/** The advanced search screen. */
 export function Search({ data }: { data?: FinanceData }) {
   const toast = useToast();
   const confirm = useConfirm();

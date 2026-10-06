@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react';
 /** Keep in step with the desktop @media block in app.css. */
 export const DESKTOP_QUERY = '(min-width: 1024px)';
 
+/** Whether a CSS media query matches, updated as it changes. */
 export function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(
     (onChange) => {

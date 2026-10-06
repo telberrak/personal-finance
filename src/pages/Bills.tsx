@@ -1,3 +1,7 @@
+/**
+ * Bills: what is due in the next 30 days (and overdue), all bills, card subscriptions, price-rise alerts and
+ * suggested bills, with the month's committed and paid totals.
+ */
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon';
@@ -55,6 +59,7 @@ function suggestionLink(s: RecurringSuggestion) {
   return `/bills/new?${q}`;
 }
 
+/** The Bills screen. */
 export function Bills({ data }: { data?: FinanceData }) {
   const [tab, setTab] = useState<Tab>('upcoming');
   const isDesktop = useIsDesktop();
