@@ -4,6 +4,10 @@
 <dict>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Unlock Mizan with Face ID instead of typing your PIN.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Take a photo of a receipt to keep it with a transaction. Photos stay on your device.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a receipt photo to keep with a transaction. Photos stay on your device.</string>
   <key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>

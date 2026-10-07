@@ -2,6 +2,8 @@
 
 The App Store and Google Play apps are the same web app inside a native shell ([Capacitor](https://capacitorjs.com)). One codebase; the native projects live in [`android/`](../android) and [`ios/`](../ios).
 
+**Releasing to the stores, step by step: [MOBILE_RELEASE.md](MOBILE_RELEASE.md).**
+
 ## What the native apps add
 
 | Feature                                 | How                                                                                                                                                                                                                                                                                          |
@@ -19,7 +21,7 @@ Everything else (sync, bank connections, OCR) works unchanged: the app is served
 Requirements: Node 24; Android Studio for Android; a Mac with Xcode 16+ for iOS.
 
 ```bash
-npm run native:sync      # build the web app and copy it into both native projects
+npm run native:sync      # build the web app, set the native version from package.json, copy it into both projects
 npm run native:android   # open Android Studio, then Run or Build > Generate Signed Bundle
 npm run native:ios       # open Xcode, then Product > Archive
 ```

@@ -12,7 +12,7 @@ const config: CapacitorConfig = {
   // Serve the app as https://localhost inside the app, so secure-context APIs (crypto.subtle) work.
   server: { androidScheme: 'https', iosScheme: 'capacitor' },
   plugins: {
-    LocalNotifications: { smallIcon: 'ic_stat_ledger', iconColor: '#2B54E0' },
+    LocalNotifications: { smallIcon: 'ic_stat_mizan', iconColor: '#2B54E0' },
   },
 };
 

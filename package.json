@@ -1,7 +1,7 @@
 {
   "name": "mizan",
   "private": true,
-  "version": "0.20.1",
+  "version": "0.20.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -20,9 +20,10 @@
     "serve": "npm run build && vite preview --host --port 4173 --strictPort",
     "server": "node server/main.ts",
     "server:dev": "node --watch server/main.ts --dev",
-    "native:sync": "npm run build && cap sync",
+    "native:sync": "npm run build && node scripts/native-version.mjs && cap sync",
     "native:android": "cap open android",
-    "native:ios": "cap open ios"
+    "native:ios": "cap open ios",
+    "native:version": "node scripts/native-version.mjs"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",

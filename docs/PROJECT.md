@@ -369,7 +369,7 @@ GitHub's own outages (such as jobs not being picked up) block deploys but not th
 
 ## 18. Native apps
 
-The same web app is wrapped with **Capacitor** for iOS and Android (`capacitor.config.ts`, app id `app.mizan.money`, name Mizan). Native extras: biometric unlock (the data key kept in the secure keychain), local notifications for reminders, deep links from notifications. Build with `npm run native:sync`, then open Xcode (`native:ios`, needs a Mac) or Android Studio (`native:android`). Store listings use the full name **Mizan: Safe to Spend**. See [NATIVE.md](NATIVE.md).
+The same web app is wrapped with **Capacitor** for iOS and Android (`capacitor.config.ts`, app id `app.mizan.money`, name Mizan). Native extras: biometric unlock (the data key kept in the secure keychain), local notifications for reminders, deep links from notifications. Build with `npm run native:sync` (which also sets the native version from `package.json`), then open Xcode (`native:ios`, needs a Mac) or Android Studio (`native:android`). Store release, step by step: [MOBILE_RELEASE.md](MOBILE_RELEASE.md). Store listings use the full name **Mizan: Safe to Spend**. See [NATIVE.md](NATIVE.md).
 
 ## 19. Conventions
 
@@ -383,16 +383,17 @@ The same web app is wrapped with **Capacitor** for iOS and Android (`capacitor.c
 
 ## 20. Further reading
 
-| Document                                         | About                                           |
-| ------------------------------------------------ | ----------------------------------------------- |
-| [README.md](../README.md)                        | Quick start                                     |
-| [CHANGELOG.md](../CHANGELOG.md)                  | Every release                                   |
-| [ROADMAP_PRO.md](ROADMAP_PRO.md)                 | Phases P1–P14 and their status                  |
-| [SECURITY.md](SECURITY.md)                       | Threat model and encryption details             |
-| [SERVER.md](SERVER.md)                           | The sync server                                 |
-| [DEPLOY.md](DEPLOY.md)                           | Setting up and running production on EC2        |
-| [OPEN_BANKING.md](OPEN_BANKING.md)               | Bank connections and going live                 |
-| [NATIVE.md](NATIVE.md)                           | iOS and Android apps                            |
-| [TRANSLATING.md](TRANSLATING.md)                 | Adding and checking translations                |
-| [LAUNCH.md](LAUNCH.md)                           | Name, legal, support and store launch checklist |
-| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | The original build plan                         |
+| Document                                         | About                                                    |
+| ------------------------------------------------ | -------------------------------------------------------- |
+| [README.md](../README.md)                        | Quick start                                              |
+| [CHANGELOG.md](../CHANGELOG.md)                  | Every release                                            |
+| [ROADMAP_PRO.md](ROADMAP_PRO.md)                 | Phases P1–P14 and their status                           |
+| [SECURITY.md](SECURITY.md)                       | Threat model and encryption details                      |
+| [SERVER.md](SERVER.md)                           | The sync server                                          |
+| [DEPLOY.md](DEPLOY.md)                           | Setting up and running production on EC2                 |
+| [OPEN_BANKING.md](OPEN_BANKING.md)               | Bank connections and going live                          |
+| [NATIVE.md](NATIVE.md)                           | iOS and Android apps                                     |
+| [MOBILE_RELEASE.md](MOBILE_RELEASE.md)           | Releasing on the App Store and Google Play, then updates |
+| [TRANSLATING.md](TRANSLATING.md)                 | Adding and checking translations                         |
+| [LAUNCH.md](LAUNCH.md)                           | Name, legal, support and store launch checklist          |
+| [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | The original build plan                                  |

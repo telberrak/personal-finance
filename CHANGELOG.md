@@ -2,6 +2,13 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.20.2 — Ready for the app stores
+
+- A step-by-step guide to releasing on the App Store and Google Play, and to updates: docs/MOBILE_RELEASE.md.
+- iOS: the app now explains camera and photo access (taking a receipt photo would otherwise close the app, and Apple rejects that).
+- Android: a proper status-bar icon for reminders (the one configured did not exist).
+- `npm run native:sync` sets the native version and build number from package.json.
+
 ## 0.20.1 — Safe to spend in green
 
 - On Home, "safe to spend" shows in green when it is above zero (readable on the dark card in both themes).

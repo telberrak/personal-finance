@@ -15,3 +15,7 @@ test-results
 mizan-deploy
 mizan-deploy.pub
 .env
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
