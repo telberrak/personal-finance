@@ -7,7 +7,7 @@ import { Icon } from '../components/Icon';
 import { NotificationBell } from './Notifications';
 import { Tour } from '../components/Tour';
 import { Loading } from '../components/Layout';
-import { BillRow, catVar, methodLabel, TransactionRow } from '../components/rows';
+import { BillRow, catVar, ruleLabel, TransactionRow } from '../components/rows';
 import { useIsDesktop } from '../components/useMediaQuery';
 import { daysSinceBackup } from '../db/repo';
 import type { FinanceData } from '../db/types';
@@ -241,12 +241,7 @@ export function Home({ data }: { data?: FinanceData }) {
             <div className="list">
               {upcoming.length === 0 && <p className="empty">{t('home.nothingDue')}</p>}
               {upcoming.map((o) => (
-                <BillRow
-                  key={o.rule.id + o.date}
-                  rule={o.rule}
-                  date={o.date}
-                  meta={`${methodLabel(o.rule.method)} · ${dueLabel(o.date, ref)}`}
-                />
+                <BillRow key={o.rule.id + o.date} rule={o.rule} date={o.date} meta={`${ruleLabel(o.rule)} · ${dueLabel(o.date, ref)}`} />
               ))}
             </div>
           </section>

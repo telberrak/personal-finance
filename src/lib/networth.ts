@@ -13,18 +13,22 @@ export interface NetWorth {
   assets: Pence;
   liabilities: Pence;
   net: Pence;
+  /** The accounts counted. */
   rows: { account: Account; balance: Pence; liability: boolean }[];
+  /** Accounts left out by choice (such as a child's Junior ISA), shown apart. */
+  excluded: { account: Account; balance: Pence; liability: boolean }[];
 }
 
-/** Net worth on a date (today by default), from every account that is not archived. */
+/** Net worth on a date (today by default), from every account that is not archived or left out. */
 export function netWorth(data: Pick<FinanceData, 'accounts' | 'transactions'>, date?: ISODate): NetWorth {
-  const rows = data.accounts
+  const all = data.accounts
     .filter((a) => !a.archived)
     .map((account) => ({ account, balance: accountBalance(account, data.transactions, date), liability: isLiability(account) }));
+  const rows = all.filter((r) => !r.account.excludeFromNetWorth);
   // A liability is owed money (negative); an overdrawn current account also counts against you.
   const assets = rows.reduce((s, r) => (r.balance > 0 ? s + r.balance : s), 0);
   const liabilities = rows.reduce((s, r) => (r.balance < 0 ? s - r.balance : s), 0);
-  return { assets, liabilities, net: assets - liabilities, rows };
+  return { assets, liabilities, net: assets - liabilities, rows, excluded: all.filter((r) => r.account.excludeFromNetWorth) };
 }
 
 /** Net worth at the end of each of the last `months` months, then today. */

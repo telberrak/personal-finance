@@ -61,6 +61,9 @@ export function TransactionRow({ tx, category, accountName }: { tx: Transaction;
 /** The translated name of a bill's payment method. */
 export const methodLabel = (m: Recurring['method']) => t(`bills.method.${m}`);
 
+/** How a bill is paid, or "Recurring transfer" for a transfer between your accounts. */
+export const ruleLabel = (rule: Recurring) => (rule.toAccountId ? t('bills.recurringTransfer') : methodLabel(rule.method));
+
 /**
  * A bill occurrence in a list: date tile, name, a caller-supplied line of details, and the amount (or custom
  * trailing content).

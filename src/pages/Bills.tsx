@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { Icon } from '../components/Icon';
 import { Loading, PageHeader } from '../components/Layout';
-import { BillRow, catVar, methodLabel } from '../components/rows';
+import { BillRow, catVar, ruleLabel } from '../components/rows';
 import { useToast } from '../components/ui/Toast';
 import { useIsDesktop } from '../components/useMediaQuery';
 import { deleteTransaction, dismissPriceAlert, dismissSuggestion, markBillPaid } from '../db/repo';
@@ -238,7 +238,7 @@ export function Bills({ data }: { data?: FinanceData }) {
                   <span className="label">{t('bills.nextPayment')}</span>
                   <span className="value-md">{nextDue.rule.name}</span>
                   <span className="label">
-                    {methodLabel(nextDue.rule.method)} · {dueLabel(nextDue.date, ref)}
+                    {ruleLabel(nextDue.rule)} · {dueLabel(nextDue.date, ref)}
                   </span>
                 </div>
                 <span className="value-md num">{formatMoney(nextDue.rule.amount)}</span>
@@ -282,7 +282,7 @@ export function Bills({ data }: { data?: FinanceData }) {
                         {o.rule.name}
                       </Link>
                     </td>
-                    <td className="muted">{methodLabel(o.rule.method)}</td>
+                    <td className="muted">{ruleLabel(o.rule)}</td>
                     <td>
                       <Status o={o} refDate={ref} />
                     </td>
@@ -326,7 +326,7 @@ export function Bills({ data }: { data?: FinanceData }) {
                         {rule.name}
                       </Link>
                     </td>
-                    <td className="muted">{methodLabel(rule.method)}</td>
+                    <td className="muted">{ruleLabel(rule)}</td>
                     <td className="muted">{freqLabel(rule.frequency)}</td>
                     <td className="num">{next ? formatShort(next) : '—'}</td>
                     <td className="num-col amount">{formatMoney(rule.amount)}</td>
@@ -341,7 +341,7 @@ export function Bills({ data }: { data?: FinanceData }) {
                           {rule.name}
                         </Link>
                       </td>
-                      <td>{methodLabel(rule.method)}</td>
+                      <td>{ruleLabel(rule)}</td>
                       <td>{freqLabel(rule.frequency)}</td>
                       <td>{t('bills.paused')}</td>
                       <td className="num-col">{formatMoney(rule.amount)}</td>
@@ -388,7 +388,7 @@ export function Bills({ data }: { data?: FinanceData }) {
                     isOverdue(o, ref) ? (
                       <span className="text-warn">{t('bills.overdueOn', { date: formatShort(o.date) })}</span>
                     ) : (
-                      `${methodLabel(o.rule.method)} · ${dueLabel(o.date, ref)}`
+                      `${ruleLabel(o.rule)} · ${dueLabel(o.date, ref)}`
                     )
                   }
                   trailing={
@@ -408,14 +408,7 @@ export function Bills({ data }: { data?: FinanceData }) {
               <h2 className="section-label">{t('bills.paid')}</h2>
               <div className="list">
                 {done.map((o) => (
-                  <BillRow
-                    key={o.rule.id + o.date}
-                    rule={o.rule}
-                    date={o.date}
-                    to={`/bills/${o.rule.id}`}
-                    meta={methodLabel(o.rule.method)}
-                    paid
-                  />
+                  <BillRow key={o.rule.id + o.date} rule={o.rule} date={o.date} to={`/bills/${o.rule.id}`} meta={ruleLabel(o.rule)} paid />
                 ))}
               </div>
             </section>
@@ -434,7 +427,7 @@ export function Bills({ data }: { data?: FinanceData }) {
                 rule={rule}
                 date={next ?? rule.startDate}
                 to={`/bills/${rule.id}`}
-                meta={[methodLabel(rule.method), freqLabel(rule.frequency), next && t('bills.nextOn', { date: formatShort(next) })]
+                meta={[ruleLabel(rule), freqLabel(rule.frequency), next && t('bills.nextOn', { date: formatShort(next) })]
                   .filter(Boolean)
                   .join(' · ')}
                 trailing={

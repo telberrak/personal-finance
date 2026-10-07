@@ -97,6 +97,7 @@ function AccountRow({ account, balance, onEdit }: { account: Account; balance: n
         <span className="item-meta">
           {typeLabel(account.type)}
           {account.includeInSafeToSpend && <span className="tag">{t('accounts.everyday')}</span>}
+          {account.excludeFromNetWorth && <span className="tag">{t('accounts.notInNetWorth')}</span>}
         </span>
       </div>
       <span className={'amount' + (balance < 0 ? ' text-warn' : '')}>{formatMoney(balance, { currency: account.native?.currency })}</span>
@@ -112,6 +113,7 @@ function AccountEditor({ account, onDone, homeCurrency }: { account?: Account; o
   const [openingText, setOpeningText] = useState(account ? ((native?.openingBalance ?? account.openingBalance) / 100).toFixed(2) : '0.00');
   const [currency, setCurrency] = useState(account?.currency ?? '');
   const [everyday, setEveryday] = useState(account?.includeInSafeToSpend ?? true);
+  const [inNetWorth, setInNetWorth] = useState(!account?.excludeFromNetWorth);
   const pounds = (p?: number) => (p === undefined ? '' : (p / 100).toFixed(2));
   const [aprText, setAprText] = useState(account?.apr?.toString() ?? '');
   const credit = native ? native.credit : account?.credit;
@@ -136,6 +138,7 @@ function AccountEditor({ account, onDone, homeCurrency }: { account?: Account; o
         type,
         openingBalance: opening,
         includeInSafeToSpend: everyday,
+        excludeFromNetWorth: inNetWorth ? undefined : true,
         archived: account?.archived,
         valuations: native ? native.valuations : account?.valuations,
         currency: currency || undefined,
@@ -256,6 +259,15 @@ function AccountEditor({ account, onDone, homeCurrency }: { account?: Account; o
           {t('accounts.everydayAccount')}
           <span className="small muted" style={{ display: 'block' }}>
             {t('accounts.everydayHint')}
+          </span>
+        </span>
+      </label>
+      <label className="check-row">
+        <input type="checkbox" checked={inNetWorth} onChange={(e) => setInNetWorth(e.target.checked)} />
+        <span>
+          {t('accounts.includeInNetWorth')}
+          <span className="small muted" style={{ display: 'block' }}>
+            {t('accounts.includeInNetWorthHint')}
           </span>
         </span>
       </label>

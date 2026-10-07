@@ -3,7 +3,8 @@
  * write through these functions, so validation, undo and rules live in one place.
  */
 import { t } from '../i18n';
-import { today, type ISODate } from '../lib/dates';
+import { addDays, today, type ISODate } from '../lib/dates';
+import { occurrencesBetween } from '../lib/recurring';
 import { newId } from '../lib/id';
 import { fingerprint } from '../lib/importer';
 import type { Pence } from '../lib/money';
@@ -611,9 +612,19 @@ export async function saveRecurring(input: RecurringInput): Promise<string> {
   check(!input.endDate || input.endDate >= input.startDate, 'errors.endBeforeStart');
   check(!input.trialEndsOn || ISO_DATE.test(input.trialEndsOn), 'errors.trialDate');
   check(input.accountId && input.categoryId, 'errors.accountAndCategory');
+  if (input.toAccountId) {
+    check(input.toAccountId !== input.accountId, 'errors.transferSameAccount');
+    // A transfer is never spending: it always uses the built-in Transfers category.
+    input = { ...input, categoryId: TRANSFER_CATEGORY_ID, trialEndsOn: undefined };
+  } else {
+    input = { ...input, autoLog: undefined, loggedThrough: undefined };
+  }
   const id = input.id ?? newId();
   await db.transaction('rw', db.recurring, db.accounts, async () => {
     const existing = input.id ? await db.recurring.get(input.id) : undefined;
+    // A new transfer is recorded from today on: earlier due dates are not filled in.
+    if (input.toAccountId && !existing?.loggedThrough && !input.loggedThrough) input = { ...input, loggedThrough: addDays(today(), -1) };
+    else if (input.toAccountId) input = { ...input, loggedThrough: input.loggedThrough ?? existing?.loggedThrough };
     const priceChange =
       existing && existing.amount !== input.amount
         ? { previousAmount: existing.amount, amountChangedOn: today(), priceAlertDismissed: false }
@@ -652,6 +663,7 @@ export async function dismissPriceAlert(id: string): Promise<void> {
 
 /** Records a bill payment for a due date, linked to the bill. */
 export async function markBillPaid(rule: Recurring, date: ISODate): Promise<string> {
+  if (rule.toAccountId) return recordScheduledTransfer(rule, date > today() ? today() : date, date);
   return addTransaction({
     accountId: rule.accountId,
     date: date > today() ? today() : date,
@@ -660,6 +672,52 @@ export async function markBillPaid(rule: Recurring, date: ISODate): Promise<stri
     categoryId: rule.categoryId,
     recurringId: rule.id,
   });
+}
+
+/**
+ * Records one payment of a recurring transfer: both sides, linked to the rule. Ids come from the
+ * rule and due date, so two synced devices recording the same payment write the same records
+ * rather than a duplicate.
+ */
+async function recordScheduledTransfer(rule: Recurring, date: ISODate, due: ISODate): Promise<string> {
+  const key = `rt-${rule.id}-${due}`;
+  const pair = await transferPair({ fromAccountId: rule.accountId, toAccountId: rule.toAccountId!, amount: rule.amount, date }, key, [
+    `${key}-out`,
+    `${key}-in`,
+  ]);
+  await db.transactions.bulkPut(pair.map((tx) => ({ ...tx, recurringId: rule.id, createdAt: Date.now() })));
+  return pair[0].id;
+}
+
+/**
+ * Records recurring transfers that have fallen due (up to `upTo`, today by default) and are set to
+ * be recorded automatically. Each due date is recorded once: the rule remembers how far it got, so a
+ * recorded transfer you delete stays deleted. Returns how many were recorded.
+ */
+export async function logDueTransfers(upTo: ISODate = today()): Promise<number> {
+  let count = 0;
+  const rules = (await db.recurring.toArray()).filter((r) => r.toAccountId && r.autoLog && r.active);
+  for (const rule of rules) {
+    const from = rule.loggedThrough ? addDays(rule.loggedThrough, 1) : rule.startDate;
+    const to = rule.endDate && rule.endDate < upTo ? rule.endDate : upTo;
+    const due = occurrencesBetween(rule, from, to);
+    if (!due.length) continue;
+    await db.transaction('rw', db.recurring, db.transactions, db.accounts, async () => {
+      const current = await db.recurring.get(rule.id);
+      // Another tab (or a sync) may have recorded them meanwhile.
+      if (!current || (current.loggedThrough ?? '') >= due[due.length - 1]) return;
+      for (const date of due) {
+        if (current.loggedThrough && date <= current.loggedThrough) continue;
+        // An account that no longer exists (or is archived) stops the rule rather than failing.
+        const accounts = await db.accounts.bulkGet([current.accountId, current.toAccountId!]);
+        if (accounts.some((a) => !a || a.archived)) return;
+        await recordScheduledTransfer(current, date, date);
+        count += 1;
+      }
+      await db.recurring.update(rule.id, { loggedThrough: due[due.length - 1] });
+    });
+  }
+  return count;
 }
 
 /** Links an existing payment to a bill (or unlinks it with undefined). */

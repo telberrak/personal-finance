@@ -52,6 +52,7 @@ export function NetWorth({ data }: { data?: FinanceData }) {
 
       <Breakdown title={t('networth.assets')} rows={assets} onValue={setValuing} />
       <Breakdown title={t('networth.liabilities')} rows={liabilities} onValue={setValuing} />
+      <Breakdown title={t('networth.notCounted')} rows={worth.excluded} onValue={setValuing} />
       {worth.rows.length > 0 && (
         <Link to="/settings/accounts" className="link-btn" style={{ alignSelf: 'flex-start' }}>
           {t('networth.manageAccounts')}

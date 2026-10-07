@@ -25,12 +25,13 @@ test('attach a receipt photo to an expense', async ({ page }) => {
   await page.getByLabel('Add photo or PDF').setInputFiles({ name: 'receipt.png', mimeType: 'image/png', buffer: image });
   await expect(page.getByRole('button', { name: /^Open receipt/ })).toBeVisible();
   await page.getByLabel('Amount', { exact: true }).fill('12.50');
-  await page.getByLabel('Payee').fill('Tesco');
+  // A payee the demo data never uses, so the row found is this one.
+  await page.getByLabel('Payee').fill('Receipt Test Shop');
   await page.getByRole('button', { name: 'Save expense' }).click();
   await expect(page.getByText('Expense saved')).toBeVisible();
   await page.goto('/activity');
   await page
-    .getByRole('link', { name: /^Tesco/ })
+    .getByRole('link', { name: /^Receipt Test Shop/ })
     .first()
     .click();
   await expect(page.getByRole('button', { name: /^Open receipt/ })).toBeVisible();

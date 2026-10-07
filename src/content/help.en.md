@@ -41,6 +41,8 @@ Go to **Settings → Accounts → Add account**. Choose a type: **Current accoun
 
 To close an account, edit it and **Archive** it: its history stays, and you can restore it later.
 
+Turn off **Include in net worth** for money you hold for someone else, such as a child's Junior ISA: it stays in your accounts and transfers, but is listed apart on **Net worth** and left out of its total.
+
 ## Adding a transaction {#transactions}
 
 Tap **+** (on a computer, **Add transaction**). Choose **Expense**, **Income** or **Transfer**, then enter the amount and the **Payee**.
@@ -62,6 +64,10 @@ Moving money between two of your own accounts is a **Transfer**, not spending: c
 > **Example:** paying off your credit card: a transfer from your current account to the card.
 
 If the two accounts have different currencies, enter the amount that arrived as well.
+
+**Regular transfers.** For money you move on a schedule, such as savings or a Junior ISA, go to **Bills → +** and choose **Transfer**: set the amount, how often, the next date, and the **From** and **To** accounts. With **Record it automatically on each due date** on, each transfer is added to both accounts when it falls due (turn it off if it already arrives through a bank connection or import, and tap **Mark paid** instead). If it moves money out of your everyday accounts, "safe to spend" sets it aside before payday.
+
+> **Example:** £50 into "Junior ISA – Sara" on the 1st of every month: **Transfer**, £50, **Monthly**, next on the 1st, from Current account to Junior ISA – Sara. On the 1st, both accounts show it.
 
 ## Splitting one payment across categories {#split}
 
@@ -182,6 +188,8 @@ Tap **Select**, choose transactions, then **Edit selected** to **Move to categor
 The **Debt payoff planner** shows when each loan and card is paid off. Enter what you can pay **Each month** and choose a **Strategy**: **Avalanche** (highest interest first, cheapest overall) or **Snowball** (smallest balance first, quick wins). **What if I paid extra** shows the time and interest you save.
 
 > **Example:** a £2,000 card at 22.9% and a £6,000 car loan at 7%: with £400 a month, Avalanche clears the card first and saves the most interest.
+
+Accounts with **Include in net worth** turned off appear under **Not counted in net worth**, where you can still update their value.
 
 ## Friends: splitting costs {#friends}
 

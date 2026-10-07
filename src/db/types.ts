@@ -48,6 +48,8 @@ export interface Account {
   ownerId?: string;
   /** ISO currency of the account when not the home currency (P12). */
   currency?: string;
+  /** Left out of net worth, e.g. an account you hold for a child such as a Junior ISA. */
+  excludeFromNetWorth?: boolean;
   /** View only (never stored): original values when converted to the home currency. */
   native?: Native;
 }
@@ -146,6 +148,18 @@ export interface Recurring {
   trialEndsOn?: ISODate;
   /** Household the bill is shared with (set from its account). */
   spaceId?: string;
+  /**
+   * A recurring transfer rather than a bill: money moves from `accountId` to this account (for
+   * example into savings or a Junior ISA). Its payments are transfers, never spending.
+   */
+  toAccountId?: string;
+  /** Transfers: record each one automatically on its due date. */
+  autoLog?: boolean;
+  /**
+   * Transfers: due dates up to this one are recorded (or were before the rule existed); later ones
+   * are recorded as they fall due. A recorded transfer you delete is not recorded again.
+   */
+  loggedThrough?: ISODate;
 }
 
 /** A monthly (or pay period) spending limit for one category. */

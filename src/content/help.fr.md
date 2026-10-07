@@ -41,6 +41,8 @@ Allez dans **Réglages → Comptes → Ajouter un compte**. Choisissez un type :
 
 Pour fermer un compte, modifiez-le et **archivez-le** : son historique est conservé, et vous pouvez le restaurer.
 
+Désactivez **Inclure dans le patrimoine** pour l’argent que vous gérez pour quelqu’un d’autre, comme le placement d’un enfant : il reste dans vos comptes et virements, mais apparaît à part dans **Patrimoine** et n’entre pas dans le total.
+
 ## Ajouter une transaction {#transactions}
 
 Touchez **+** (sur ordinateur, **Ajouter une transaction**). Choisissez **Dépense**, **Revenu** ou **Virement**, puis saisissez le montant et le **Bénéficiaire**.
@@ -62,6 +64,10 @@ Déplacer de l’argent entre deux de vos comptes est un **Virement**, pas une d
 > **Exemple :** rembourser votre carte de crédit : un virement du compte courant vers la carte.
 
 Si les deux comptes ont des devises différentes, saisissez aussi le montant arrivé.
+
+**Virements réguliers.** Pour l’argent déplacé à intervalles réguliers, comme l’épargne ou un placement pour un enfant, allez dans **Factures → +** et choisissez **Virement** : montant, fréquence, prochaine date, comptes **De** et **Vers**. Avec **L’enregistrer automatiquement à chaque échéance**, chaque virement est ajouté aux deux comptes à son échéance (désactivez si il arrive déjà par une connexion bancaire ou un import, et touchez **Marquer payée**). S’il sort de l’argent de vos comptes du quotidien, le « Disponible » le met de côté avant la paie.
+
+> **Exemple :** 50 € vers « Livret de Sara » le 1er de chaque mois : **Virement**, 50 €, **Chaque mois**, prochain le 1er, du compte courant vers Livret de Sara. Le 1er, les deux comptes l’affichent.
 
 ## Répartir un paiement entre catégories {#split}
 
@@ -182,6 +188,8 @@ Le **Patrimoine** est tout ce que vous possédez (**Actifs**) moins tout ce que 
 Le **Plan de remboursement** montre quand chaque prêt et chaque carte sera remboursé. Indiquez ce que vous pouvez payer **Chaque mois** et choisissez une **Stratégie** : **Avalanche** (le taux le plus élevé d’abord, le moins cher au total) ou **Boule de neige** (le plus petit solde d’abord, pour des victoires rapides). **Et si je payais plus** montre le temps et les intérêts économisés.
 
 > **Exemple :** une carte de 2 000 € à 19,9 % et un crédit auto de 6 000 € à 5 % : avec 400 € par mois, l’Avalanche solde d’abord la carte et économise le plus d’intérêts.
+
+Les comptes dont **Inclure dans le patrimoine** est désactivé apparaissent sous **Non compté dans le patrimoine**, où vous pouvez toujours mettre à jour leur valeur.
 
 ## Amis : partager les dépenses {#friends}
 

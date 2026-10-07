@@ -6,7 +6,7 @@ import type { FinanceData } from '../db/types';
 import { addDays, daysBetween, endOfMonth, shiftMonth, startOfMonth, type ISODate } from './dates';
 import type { Pence } from './money';
 import { nextPayday } from './recurring';
-import { billOccurrences, dayToDaySpend, isTransfer, MATCH_WINDOW_DAYS, totalBalance } from './selectors';
+import { billOccurrences, dayToDaySpend, everydayOutflow, isTransfer, MATCH_WINDOW_DAYS, totalBalance } from './selectors';
 
 /** Expected balance on one day. */
 export interface ForecastPoint {
@@ -47,7 +47,7 @@ export function forecastBalance(data: FinanceData, ref: ISODate, days = 45): For
   for (const o of billOccurrences(data.recurring, data.transactions, addDays(ref, -MATCH_WINDOW_DAYS), end)) {
     if (o.paid) continue;
     const day = o.date < ref ? ref : o.date; // late bills are expected any moment
-    billsByDay.set(day, (billsByDay.get(day) ?? 0) + o.rule.amount);
+    billsByDay.set(day, (billsByDay.get(day) ?? 0) + everydayOutflow(o.rule, data.accounts));
   }
   const paydays = new Set<ISODate>();
   for (let p = nextPayday(ref, data.settings.payday); p <= end; p = nextPayday(p, data.settings.payday)) paydays.add(p);

@@ -16,6 +16,9 @@ import { formatMoney, parseMoney } from '../lib/money';
 import { nextOccurrence, type Frequency } from '../lib/recurring';
 import { t } from '../i18n';
 
+/** What a schedule can be: a bill, or a transfer between your own accounts. */
+const KINDS = ['bill', 'transfer'] as const;
+
 /** /bills/new (optionally prefilled from a suggestion) and /bills/:id */
 export function BillForm({ data }: { data?: FinanceData }) {
   const { id } = useParams();
@@ -56,9 +59,19 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
     existing?.categoryId ?? params.get('category') ?? categories.find((c) => c.id === 'bills')?.id ?? categories[0]?.id,
   );
   const [active, setActive] = useState(existing?.active ?? true);
+  // A bill, or a transfer between your own accounts on a schedule (e.g. into a Junior ISA).
+  const [kind, setKind] = useState<'bill' | 'transfer'>(
+    existing ? (existing.toAccountId ? 'transfer' : 'bill') : params.get('kind') === 'transfer' ? 'transfer' : 'bill',
+  );
+  const isTransfer = kind === 'transfer';
+  const [toAccountId, setToAccountId] = useState(existing?.toAccountId ?? accounts.find((a) => a.id !== accountId)?.id);
+  const [autoLog, setAutoLog] = useState(existing?.autoLog ?? true);
 
   const amount = parseMoney(amountText);
-  const payments = existing ? data.transactions.filter((t) => t.recurringId === existing.id).slice(0, 6) : [];
+  // A transfer's payments come in pairs: list the money going out once.
+  const payments = existing
+    ? data.transactions.filter((t) => t.recurringId === existing.id && (!isTransfer || t.amount < 0)).slice(0, 6)
+    : [];
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -72,17 +85,18 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
         startDate,
         endDate: endDate || undefined,
         trialEndsOn: trialEndsOn || undefined,
-        method,
+        method: isTransfer ? 'standing-order' : method,
         accountId: accountId!,
         categoryId: categoryId!,
         active,
+        ...(isTransfer ? { toAccountId, autoLog, loggedThrough: existing?.loggedThrough } : {}),
       });
       const next = nextOccurrence({ startDate, frequency }, today());
       toast({
         message: existing
           ? t('billForm.updated')
           : next
-            ? t('billForm.addedNext', { name: name.trim(), date: formatShort(next) })
+            ? t(isTransfer ? 'billForm.transferAdded' : 'billForm.addedNext', { name: name.trim(), date: formatShort(next) })
             : t('billForm.added'),
       });
       navigate('/bills');
@@ -112,7 +126,15 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
           <Link to="/bills" className="icon-btn" aria-label={t('billForm.back')}>
             <Icon name="close" size={20} strokeWidth={2} />
           </Link>
-          <h1 style={{ fontSize: 17, fontWeight: 600 }}>{existing ? t('billForm.edit') : t('billForm.new')}</h1>
+          <h1 style={{ fontSize: 17, fontWeight: 600 }}>
+            {isTransfer
+              ? existing
+                ? t('billForm.editTransfer')
+                : t('billForm.newTransfer')
+              : existing
+                ? t('billForm.edit')
+                : t('billForm.new')}
+          </h1>
           {existing ? (
             <button type="button" className="icon-btn" aria-label={t('billForm.delete')} onClick={remove}>
               <Icon name="trash" size={20} />
@@ -121,6 +143,17 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
             <span style={{ width: 44 }} />
           )}
         </header>
+
+        {!existing && (
+          <div className="segmented" role="radiogroup" aria-label={t('billForm.kindLabel')}>
+            {KINDS.map((k) => (
+              <button key={k} type="button" role="radio" aria-checked={kind === k} onClick={() => setKind(k)}>
+                {t(`billForm.kind.${k}`)}
+              </button>
+            ))}
+          </div>
+        )}
+        {isTransfer && <p className="small muted">{t('billForm.transferHint')}</p>}
 
         <MoneyInput value={amountText} onChange={setAmountText} autoFocus={!existing} />
 
@@ -136,15 +169,17 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
               />
             )}
           </Field>
-          <Field label={t('fields.type')}>
-            {(id) => (
-              <select id={id} value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
-                <option value="direct-debit">{t('bills.method.direct-debit')}</option>
-                <option value="standing-order">{t('bills.method.standing-order')}</option>
-                <option value="card">{t('bills.method.card')}</option>
-              </select>
-            )}
-          </Field>
+          {!isTransfer && (
+            <Field label={t('fields.type')}>
+              {(id) => (
+                <select id={id} value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
+                  <option value="direct-debit">{t('bills.method.direct-debit')}</option>
+                  <option value="standing-order">{t('bills.method.standing-order')}</option>
+                  <option value="card">{t('bills.method.card')}</option>
+                </select>
+              )}
+            </Field>
+          )}
           <Field label={t('billForm.repeats')}>
             {(id) => (
               <select id={id} value={frequency} onChange={(e) => setFrequency(e.target.value as Frequency)}>
@@ -160,12 +195,21 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
           <Field label={t('billForm.ends')}>
             {(id) => <input id={id} type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} />}
           </Field>
-          <Field label={t('billForm.trialEnds')}>
-            {(id) => <input id={id} type="date" value={trialEndsOn} onChange={(e) => setTrialEndsOn(e.target.value)} />}
-          </Field>
-          <Field label={t('fields.account')}>
+          {!isTransfer && (
+            <Field label={t('billForm.trialEnds')}>
+              {(id) => <input id={id} type="date" value={trialEndsOn} onChange={(e) => setTrialEndsOn(e.target.value)} />}
+            </Field>
+          )}
+          <Field label={isTransfer ? t('billForm.from') : t('fields.account')}>
             {(id) => (
-              <select id={id} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
+              <select
+                id={id}
+                value={accountId}
+                onChange={(e) => {
+                  setAccountId(e.target.value);
+                  if (toAccountId === e.target.value) setToAccountId(accounts.find((a) => a.id !== e.target.value)?.id);
+                }}
+              >
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
                     {a.name}
@@ -174,18 +218,46 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
               </select>
             )}
           </Field>
-          <Field label={t('fields.category')}>
-            {(id) => (
-              <select id={id} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
+          {isTransfer ? (
+            <Field label={t('billForm.to')}>
+              {(id) => (
+                <select id={id} value={toAccountId} onChange={(e) => setToAccountId(e.target.value)}>
+                  {accounts
+                    .filter((a) => a.id !== accountId)
+                    .map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                </select>
+              )}
+            </Field>
+          ) : (
+            <Field label={t('fields.category')}>
+              {(id) => (
+                <select id={id} value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
+          )}
         </div>
+
+        {isTransfer && (
+          <label className="check-row">
+            <input type="checkbox" checked={autoLog} onChange={(e) => setAutoLog(e.target.checked)} />
+            <span>
+              {t('billForm.autoLog')}
+              <span className="small muted" style={{ display: 'block' }}>
+                {t('billForm.autoLogHint')}
+              </span>
+            </span>
+          </label>
+        )}
 
         {existing && (
           <label className="check-row">
@@ -208,7 +280,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Recurring })
         )}
 
         <button type="submit" className="btn btn--primary">
-          {existing ? t('common.saveChanges') : t('bills.add')}
+          {existing ? t('common.saveChanges') : isTransfer ? t('billForm.addTransfer') : t('bills.add')}
         </button>
 
         {payments.length > 0 && (

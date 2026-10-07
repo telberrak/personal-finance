@@ -104,7 +104,10 @@
     "monthlyPayment": "Mensualité",
     "notSet": "Non défini",
     "currency": "Devise",
-    "homeCurrency": "{{currency}} (devise principale)"
+    "homeCurrency": "{{currency}} (devise principale)",
+    "includeInNetWorth": "Inclure dans le patrimoine",
+    "includeInNetWorthHint": "Désactivez pour l’argent que vous gérez pour quelqu’un d’autre, comme le placement d’un enfant.",
+    "notInNetWorth": "Hors patrimoine"
   },
   "categories": {
     "transfer": "Virements",
@@ -259,7 +262,8 @@
     "suggestionWeekly_one": "{{amount}} chaque semaine · vu {{count}} fois",
     "suggestionWeekly_other": "{{amount}} chaque semaine · vu {{count}} fois",
     "comingUp": "À payer dans les 30 prochains jours",
-    "nothingSoon": "Rien à payer dans les 30 prochains jours."
+    "nothingSoon": "Rien à payer dans les 30 prochains jours.",
+    "recurringTransfer": "Virement récurrent"
   },
   "activity": {
     "title": "Activité",
@@ -464,7 +468,21 @@
     "recently": "récemment",
     "recentPayments": "Paiements récents",
     "trialEnds": "Fin de l’essai gratuit",
-    "addedNext": "{{name}} ajouté. Prochain paiement le {{date}}."
+    "addedNext": "{{name}} ajouté. Prochain paiement le {{date}}.",
+    "kindLabel": "Facture ou virement",
+    "kind": {
+      "bill": "Facture",
+      "transfer": "Virement"
+    },
+    "newTransfer": "Nouveau virement récurrent",
+    "editTransfer": "Modifier le virement récurrent",
+    "addTransfer": "Ajouter le virement",
+    "from": "De",
+    "to": "Vers",
+    "transferHint": "De l’argent déplacé entre vos propres comptes à intervalles réguliers, par exemple vers l’épargne ou un placement pour un enfant. Ce n’est jamais une dépense.",
+    "autoLog": "L’enregistrer automatiquement à chaque échéance",
+    "autoLogHint": "Chaque virement est ajouté aux deux comptes à son échéance. Désactivez si il arrive déjà par une connexion bancaire ou un import.",
+    "transferAdded": "{{name}} ajouté. Prochain virement le {{date}}."
   },
   "fields": {
     "name": "Nom",
@@ -1078,7 +1096,8 @@
     "valueIntro": "Combien vaut {{name}} ? Mizan utilise la dernière valeur, plus les transactions qui suivent.",
     "value": "Valeur",
     "valueHint": "Saisissez la valeur sous forme de montant, par exemple 12500.",
-    "valueSaved": "Valeur enregistrée"
+    "valueSaved": "Valeur enregistrée",
+    "notCounted": "Non compté dans le patrimoine"
   },
   "planner": {
     "title": "Plan de remboursement",

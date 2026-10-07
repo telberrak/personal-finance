@@ -12,7 +12,7 @@ import { useTheme } from './components/useTheme';
 import { useFinanceData } from './db/db';
 import { useSecurityMode } from './db/security';
 import { startSync } from './sync/engine';
-import { cleanOrphanAttachments } from './db/repo';
+import { cleanOrphanAttachments, logDueTransfers } from './db/repo';
 import { useNotifier } from './notify/notifier';
 import { useBankAutoSync } from './banks/banks';
 import { useDailyRates } from './components/ExchangeRates';
@@ -87,6 +87,13 @@ function Unlocked() {
   useEffect(() => startSync(), []);
   // Receipts of transactions deleted in an earlier session (after the chance to undo).
   useEffect(() => void cleanOrphanAttachments().catch(() => undefined), []);
+  // Recurring transfers set to be recorded automatically: on opening, then every hour.
+  useEffect(() => {
+    const run = () => void logDueTransfers().catch(() => undefined);
+    run();
+    const timer = window.setInterval(run, 3_600_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   let content;
   if (!data) content = <Loading />;

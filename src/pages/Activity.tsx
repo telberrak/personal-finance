@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { Icon } from '../components/Icon';
 import { Loading, MonthSwitcher, PageHeader } from '../components/Layout';
-import { BillRow, methodLabel, TransactionRow } from '../components/rows';
+import { BillRow, ruleLabel, TransactionRow } from '../components/rows';
 import { TransactionTable } from '../components/tables';
 import { useIsDesktop } from '../components/useMediaQuery';
 import type { FinanceData, Transaction } from '../db/types';
@@ -139,7 +139,7 @@ export function Activity({ data }: { data?: FinanceData }) {
               o.date < ref ? (
                 <span className="text-warn">{t('bills.overdueOn', { date: formatShort(o.date) })}</span>
               ) : (
-                `${methodLabel(o.rule.method)} · ${dueLabel(o.date, ref)}`
+                `${ruleLabel(o.rule)} · ${dueLabel(o.date, ref)}`
               )
             }
           />

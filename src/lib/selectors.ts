@@ -110,13 +110,27 @@ export interface SafeToSpend {
 }
 
 /** Balance of the everyday accounts, minus unpaid bills due before the next payday, minus the savings set aside. */
+/** Whether a recurring payment is a transfer between your own accounts rather than a bill. */
+export const isTransferRule = (rule: Recurring): boolean => !!rule.toAccountId;
+
+/**
+ * How much one payment of a rule takes out of your everyday money. A bill: its amount. A transfer:
+ * its amount only when it moves money from an everyday account to one that is not (savings, a
+ * Junior ISA); between two everyday accounts, or into one, it changes nothing.
+ */
+export function everydayOutflow(rule: Recurring, accounts: Account[]): Pence {
+  if (!rule.toAccountId) return rule.amount;
+  const everyday = (id: string) => !!accounts.find((a) => a.id === id)?.includeInSafeToSpend;
+  return everyday(rule.accountId) && !everyday(rule.toAccountId) ? rule.amount : 0;
+}
+
 export function safeToSpend(data: FinanceData, ref: ISODate): SafeToSpend {
   const balance = totalBalance(data, 'safe');
   const payday = nextPayday(ref, data.settings.payday);
   // Bills from a few days back are included in case a payment is due but not yet taken.
   const billsBeforePayday = billOccurrences(data.recurring, data.transactions, addDays(ref, -MATCH_WINDOW_DAYS), addDays(payday, -1))
     .filter((o) => !o.paid)
-    .reduce((sum, o) => sum + o.rule.amount, 0);
+    .reduce((sum, o) => sum + everydayOutflow(o.rule, data.accounts), 0);
   const savings = data.settings.monthlySavings;
   const safe = balance - billsBeforePayday - savings;
   const daysToPayday = daysBetween(ref, payday);

@@ -102,7 +102,8 @@ export function computeAlerts(data: FinanceData, now: Date): Alert[] {
 
   // Bills: the day before, at 9am.
   for (const o of billOccurrences(data.recurring, data.transactions, today, horizon)) {
-    if (o.paid) continue;
+    // Transfers recorded automatically need nothing from you.
+    if (o.paid || (o.rule.toAccountId && o.rule.autoLog)) continue;
     out.push({
       id: `billDue:${o.rule.id}:${o.date}`,
       type: 'billDue',

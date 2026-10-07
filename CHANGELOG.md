@@ -2,6 +2,13 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.20.0 — Recurring transfers, and net worth choices
+
+- Recurring transfers: money you move between your own accounts on a schedule (savings, a Junior ISA). Add one from Bills → + → Transfer. Each due transfer can be recorded automatically in both accounts, or marked done by hand; it never counts as spending, and "safe to spend" sets it aside only when it leaves your everyday accounts.
+- Every due transfer is recorded exactly once, even with sync on several devices, and one you delete is not recorded again. Earlier due dates are not filled in.
+- Accounts can be left out of net worth (for money you hold for someone else, such as a child's Junior ISA); they are listed apart on Net worth, where their value can still be updated.
+- Help updated in English, French and Arabic.
+
 ## 0.19.0 — Settings in AWS Parameter Store
 
 - Every server setting and secret lives in AWS Systems Manager Parameter Store under /mizan/ (encrypted, audited in CloudTrail, versioned). Each deploy writes the server's .env from it with mizan-config; nothing is edited on the server any more.

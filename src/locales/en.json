@@ -104,7 +104,10 @@
     "monthlyPayment": "Monthly payment",
     "notSet": "Not set",
     "currency": "Currency",
-    "homeCurrency": "{{currency}} (home currency)"
+    "homeCurrency": "{{currency}} (home currency)",
+    "includeInNetWorth": "Include in net worth",
+    "includeInNetWorthHint": "Turn off for money you hold for someone else, such as a child’s Junior ISA.",
+    "notInNetWorth": "Not in net worth"
   },
   "categories": {
     "transfer": "Transfers",
@@ -259,7 +262,8 @@
     "nextOn": "next {{date}}",
     "perYearShort": "{{amount}}/yr",
     "comingUp": "Due in the next 30 days",
-    "nothingSoon": "Nothing due in the next 30 days."
+    "nothingSoon": "Nothing due in the next 30 days.",
+    "recurringTransfer": "Recurring transfer"
   },
   "activity": {
     "title": "Activity",
@@ -464,7 +468,21 @@
     "recently": "recently",
     "recentPayments": "Recent payments",
     "trialEnds": "Free trial ends",
-    "addedNext": "{{name}} added. Next payment {{date}}."
+    "addedNext": "{{name}} added. Next payment {{date}}.",
+    "kindLabel": "Bill or transfer",
+    "kind": {
+      "bill": "Bill",
+      "transfer": "Transfer"
+    },
+    "newTransfer": "New recurring transfer",
+    "editTransfer": "Edit recurring transfer",
+    "addTransfer": "Add transfer",
+    "from": "From",
+    "to": "To",
+    "transferHint": "Money moved between your own accounts on a schedule, for example into savings or a Junior ISA. It never counts as spending.",
+    "autoLog": "Record it automatically on each due date",
+    "autoLogHint": "Each transfer is added to both accounts when it falls due. Turn this off if it already arrives through a bank connection or import.",
+    "transferAdded": "{{name}} added. Next transfer {{date}}."
   },
   "fields": {
     "name": "Name",
@@ -1078,7 +1096,8 @@
     "valueIntro": "What is {{name}} worth? Mizan uses the latest value, plus any transactions after it.",
     "value": "Value",
     "valueHint": "Enter the value as an amount, for example 12500.",
-    "valueSaved": "Value saved"
+    "valueSaved": "Value saved",
+    "notCounted": "Not counted in net worth"
   },
   "planner": {
     "title": "Debt payoff planner",
