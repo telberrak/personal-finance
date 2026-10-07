@@ -18,6 +18,7 @@ plain('first run: setting up your own account', async ({ page }, info) => {
   await page.getByRole('button', { name: 'Start' }).click();
   await page.getByRole('dialog', { name: 'Safe to spend' }).getByRole('button', { name: 'Skip' }).click(); // first-run tour
   await expect(page.getByRole('region', { name: 'Safe to spend' })).toContainText('£1,000');
+  await expect(page.locator('.hero-amount')).toHaveClass(/hero-amount--pos/); // positive: shown in green
   await expect(page.getByText('Nothing due in the next month.')).toBeVisible();
 });
 

@@ -2,6 +2,10 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.20.1 — Safe to spend in green
+
+- On Home, "safe to spend" shows in green when it is above zero (readable on the dark card in both themes).
+
 ## 0.20.0 — Recurring transfers, and net worth choices
 
 - Recurring transfers: money you move between your own accounts on a schedule (savings, a Junior ISA). Add one from Bills → + → Transfer. Each due transfer can be recorded automatically in both accounts, or marked done by hand; it never counts as spending, and "safe to spend" sets it aside only when it leaves your everyday accounts.

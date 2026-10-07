@@ -146,7 +146,7 @@ export function Home({ data }: { data?: FinanceData }) {
               </span>
               <span className="hero-chip">{t('home.daysToPayday', { count: s.daysToPayday })}</span>
             </div>
-            <div className="hero-amount num">
+            <div className={'hero-amount num' + (s.safe > 0 ? ' hero-amount--pos' : '')}>
               {safeParts.main}
               <span className="muted">{safeParts.fraction}</span>
             </div>

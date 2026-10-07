@@ -207,6 +207,14 @@ p {
   letter-spacing: -0.035em;
   line-height: 1;
 }
+/* Safe to spend above zero is shown in green, pence slightly dimmed. */
+.hero-amount--pos,
+.hero .hero-amount--pos .muted {
+  color: var(--hero-pos);
+}
+.hero .hero-amount--pos .muted {
+  opacity: 0.75;
+}
 
 .hero-chip {
   font-size: 12px;
