@@ -27,10 +27,12 @@ npm run native:ios       # open Xcode, then Product > Archive
 To use sync and bank connections from the native apps, build them with the API's full origin, since they are not served by your web host:
 
 ```bash
-VITE_API_ORIGIN=https://mizan.example.com npm run native:sync
+VITE_API_ORIGIN=https://mizan.tarikelberrak.com npm run native:sync
 ```
 
-and add `capacitor://localhost,https://localhost` to the server's `APP_ORIGINS`, which also controls CORS.
+The server already allows `capacitor://localhost` and `https://localhost` (its `APP_ORIGINS`, which also controls CORS).
+
+**Sign-in in the native apps:** use the emailed code. Sign-in **passkeys** are tied to the web domain, and the apps run from `capacitor://localhost`, so they only work in the browser version (making them work natively needs Associated Domains on iOS and Digital Asset Links on Android). Unlocking the app with Face ID or a fingerprint works natively.
 
 ### Icons and splash screens
 
@@ -42,7 +44,7 @@ npx @capacitor/assets generate --iconBackgroundColor '#14161A' --splashBackgroun
 
 ## Before the first store upload
 
-1. **App id:** `appId` in [`capacitor.config.ts`](../capacitor.config.ts) is `app.ledger.money`. Change it to a reverse-DNS id you own; it cannot change after the first upload. Update `android/app/build.gradle` (`applicationId`) and the Xcode bundle identifier to match.
+1. **App id:** `app.mizan.money` in [`capacitor.config.ts`](../capacitor.config.ts), `android/app/build.gradle` (`applicationId`) and the Xcode bundle identifier. It cannot change after the first upload; register the same id in App Store Connect and Google Play Console.
 2. **Accounts:** an Apple Developer Program membership (£79/year) and a Google Play developer account (one-off $25). These are yours to create; nothing in the code can do it.
 3. **Signing:** Android: create an upload key and enable Play App Signing. iOS: let Xcode manage signing with your team.
 4. **Version:** keep `versionName` / `CFBundleShortVersionString` in step with `package.json`, and increase `versionCode` / build number on every upload.
