@@ -2,6 +2,10 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.22.1 — Imports open on their month
+
+- After importing, Activity opens on the month of the newest imported transaction, so an older statement no longer looks missing.
+
 ## 0.22.0 — Importing files with categories
 
 - Import reads a Category column: names are matched to your categories (ignoring capitals and spaces), refunds stay in their spending category, and names Mizan does not have are listed.

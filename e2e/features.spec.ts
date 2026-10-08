@@ -22,6 +22,15 @@ plain('first run: setting up your own account', async ({ page }, info) => {
   await expect(page.getByText('Nothing due in the next month.')).toBeVisible();
 });
 
+test('importing an older statement opens Activity on its month', async ({ page }) => {
+  const csv = ['Date,Description,Amount', '03/02/2025,OLD BOOKSHOP,-12.00', '10/03/2025,LATE BAKERY,-4.50'].join('\n');
+  await page.goto('/import');
+  await page.locator('input[type=file]').setInputFiles({ name: 'old.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
+  await page.getByRole('button', { name: 'Import 2 transactions' }).click();
+  await expect(page).toHaveURL(/\/activity\?month=2025-03-01$/);
+  await expect(page.locator('.list-row, tbody tr', { hasText: /late bakery/i })).toHaveCount(1);
+});
+
 test('importing a CSV skips duplicates, matches bills and can be undone', async ({ page }) => {
   const now = new Date();
   const lastMonth18 = new Date(now.getFullYear(), now.getMonth() - 1, 18);

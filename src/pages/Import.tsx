@@ -11,7 +11,7 @@ import { Field } from '../components/ui/forms';
 import { useToast } from '../components/ui/Toast';
 import { importTransactions, undoImport, ValidationError, type ImportRow } from '../db/repo';
 import type { FinanceData } from '../db/types';
-import { formatDate, formatShort, toISO } from '../lib/dates';
+import { formatDate, formatShort, startOfMonth, toISO } from '../lib/dates';
 import { parseCsv } from '../lib/csv';
 import { detectPreset, guessMapping, mapRows, type ColumnMapping, type DateFormat } from '../lib/importer';
 import { prepareRows } from '../lib/importPrep';
@@ -116,7 +116,10 @@ export function Import({ data }: { data?: FinanceData }) {
           },
         },
       });
-      navigate('/activity');
+      // Open Activity on the month of the newest imported row: an older statement would otherwise look missing.
+      const newest = toImport.reduce((d, r) => (r.date > d ? r.date : d), '');
+      const month = newest && startOfMonth(newest);
+      navigate(month && month !== startOfMonth(toISO(new Date())) ? `/activity?month=${month}` : '/activity');
     } catch (err) {
       setBusy(false);
       toast({ message: err instanceof ValidationError ? err.message : t('import.failed') });
