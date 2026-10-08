@@ -588,7 +588,11 @@
     "imported_one": "{{count}} transaction importée",
     "imported_other": "{{count}} transactions importées",
     "run_one": "Importer {{count}} transaction",
-    "run_other": "Importer {{count}} transactions"
+    "run_other": "Importer {{count}} transactions",
+    "noCategoryColumn": "Aucune (catégories suggérées)",
+    "transfersWith_one": "{{count}} virement avec",
+    "transfersWith_other": "{{count}} virements avec",
+    "unknownCategories": "Introuvables dans Mizan, des catégories suggérées sont utilisées à la place : {{names}}. Ajoutez-les dans Réglages → Catégories, puis choisissez le fichier à nouveau."
   },
   "settings": {
     "theme": {

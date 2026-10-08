@@ -2,7 +2,7 @@
  * Turns raw statement rows (from a CSV file or a bank connection) into rows ready to import:
  * tidy payee, category from rules and history, bill match, and duplicate check.
  */
-import { OTHER_EXPENSE_ID, OTHER_INCOME_ID, type FinanceData } from '../db/types';
+import { OTHER_EXPENSE_ID, OTHER_INCOME_ID, TRANSFER_CATEGORY_ID, type FinanceData } from '../db/types';
 import type { ISODate } from './dates';
 import { markDuplicates } from './importer';
 import { findBillMatch, paidOccurrenceKeys } from './matching';
@@ -18,6 +18,8 @@ export interface RawRow {
   rawPayee: string;
   /** The bank's own id, when known: rows already imported with it are duplicates. */
   externalId?: string;
+  /** A category named in the file: used when it matches one of yours. */
+  categoryName?: string;
 }
 
 /** A row with its suggested category, matched bill and whether it is already in Mizan. */
@@ -27,7 +29,14 @@ export interface PreparedRow extends RawRow {
   recurringId?: string;
   billName?: string;
   duplicate: boolean;
+  /** The file named the Transfers category: the row is a transfer with another of your accounts. */
+  transfer?: boolean;
+  /** The file named a category that does not exist in Mizan (the suggested one is used instead). */
+  unknownCategory?: string;
 }
+
+/** Category names compared without case, accents or extra spaces. */
+const nameKey = (s: string) => s.toLocaleLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replace(/\s+/g, ' ').trim();
 
 /** Prepares rows for import the same way for CSV files and bank connections. */
 export function prepareRows<T extends RawRow>(data: FinanceData, accountId: string, rows: T[]): (T & PreparedRow)[] {
@@ -36,6 +45,7 @@ export function prepareRows<T extends RawRow>(data: FinanceData, accountId: stri
   const expense = new Set(data.categories.filter((c) => c.kind === 'expense' && !c.system && !c.archived).map((c) => c.id));
   const income = new Set(data.categories.filter((c) => c.kind === 'income' && !c.archived).map((c) => c.id));
   const taken = paidOccurrenceKeys(data.recurring, data.transactions);
+  const byName = new Map(data.categories.filter((c) => !c.archived).map((c) => [nameKey(c.name), c]));
 
   return withDupes.map((r) => {
     // Your renames win (of the exact bank description, then of the tidied one); then the merchant
@@ -58,6 +68,19 @@ export function prepareRows<T extends RawRow>(data: FinanceData, accountId: stri
         categoryId = match.rule.categoryId;
       }
     }
-    return { ...r, payee, categoryId, recurringId, billName, duplicate };
+    // A category named in the file wins over suggestions and bills; Transfers makes it a transfer.
+    let transfer: boolean | undefined;
+    let unknownCategory: string | undefined;
+    if (r.categoryName) {
+      const named = byName.get(nameKey(r.categoryName));
+      if (named?.id === TRANSFER_CATEGORY_ID) {
+        transfer = true;
+        categoryId = TRANSFER_CATEGORY_ID;
+        recurringId = undefined;
+        billName = undefined;
+      } else if (named) categoryId = named.id;
+      else unknownCategory = r.categoryName;
+    }
+    return { ...r, payee, categoryId, recurringId, billName, duplicate, transfer, unknownCategory };
   });
 }

@@ -24,6 +24,8 @@ export interface ColumnMapping {
   dateFormat: DateFormat;
   /** Some banks export money out as positive numbers. */
   invertAmount: boolean;
+  /** Optional: a column naming each row's category (matched to Mizan's categories by name). */
+  category?: number;
 }
 
 /** A known bank export: how to recognise its header row and map its columns. */
@@ -195,6 +197,7 @@ export function guessMapping(rows: string[][]): ColumnMapping {
     description: find(/desc|payee|name|memo|counter ?party|narrative|details|merchant|reference|libell|intitul/i) ?? 1,
     dateFormat: guessDateFormat(rows.slice(1).map((r) => r[date] ?? '')),
     invertAmount: false,
+    category: find(/^\s*(categor|catégor|الفئة|التصنيف)/i),
   };
   if (moneyOut !== undefined && moneyIn !== undefined) return { ...mapping, moneyIn, moneyOut };
   return { ...mapping, amount: amount ?? 2 };
@@ -275,6 +278,8 @@ export interface ParsedRow {
   date?: ISODate;
   amount?: Pence;
   rawPayee: string;
+  /** The category named in the file, if it has a category column. */
+  categoryName?: string;
   error?: string;
 }
 
@@ -294,7 +299,8 @@ export function mapRows(rows: string[][], m: ColumnMapping): ParsedRow[] {
       amount = out || inn ? (inn ? Math.abs(inn) : 0) - (out ? Math.abs(out) : 0) : null;
     }
     if (amount !== null && m.invertAmount) amount = -amount;
-    const row: ParsedRow = { line: i + offset, rawPayee, date: date ?? undefined, amount: amount ?? undefined };
+    const categoryName = m.category !== undefined ? (r[m.category] ?? '').trim() || undefined : undefined;
+    const row: ParsedRow = { line: i + offset, rawPayee, date: date ?? undefined, amount: amount ?? undefined, categoryName };
     if (!date) row.error = t('import.errors.date', { value: r[m.date] ?? '' });
     else if (amount === null || amount === 0) row.error = t('import.errors.amount');
     else if (!rawPayee) row.error = t('import.errors.description');

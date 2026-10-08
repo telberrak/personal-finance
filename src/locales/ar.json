@@ -624,7 +624,15 @@
     "run_two": "استيراد معاملتين",
     "run_few": "استيراد {{count}} معاملات",
     "run_many": "استيراد {{count}} معاملة",
-    "run_other": "استيراد {{count}} معاملة"
+    "run_other": "استيراد {{count}} معاملة",
+    "noCategoryColumn": "لا شيء (فئات مقترحة)",
+    "transfersWith_zero": "{{count}} تحويل مع",
+    "transfersWith_one": "تحويل واحد مع",
+    "transfersWith_two": "تحويلان مع",
+    "transfersWith_few": "{{count}} تحويلات مع",
+    "transfersWith_many": "{{count}} تحويلًا مع",
+    "transfersWith_other": "{{count}} تحويل مع",
+    "unknownCategories": "غير موجودة في Mizan، لذا تُستخدم فئات مقترحة بدلًا منها: {{names}}. أضفها من الإعدادات ← الفئات ثم اختر الملف مجددًا."
   },
   "settings": {
     "theme": {

@@ -1,6 +1,7 @@
 /**
  * Import: read a bank's CSV file, map its columns (or recognise the bank), preview with suggested categories,
- * duplicates and bill matches, import, and undo recent imports.
+ * duplicates and bill matches, import, and undo recent imports. A file can also name each row's category;
+ * rows named "Transfers" become transfers with another of your accounts (such as card payments).
  */
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
@@ -24,6 +25,9 @@ interface PreviewRow extends ImportRow {
   error?: string;
   billName?: string;
   include: boolean;
+  /** Named Transfers in the file: a transfer with the "Transfers with" account. */
+  transfer?: boolean;
+  unknownCategory?: string;
 }
 
 /** The Import screen. */
@@ -36,6 +40,7 @@ export function Import({ data }: { data?: FinanceData }) {
   const [accountId, setAccountId] = useState<string>();
   const [overrides, setOverrides] = useState<Record<number, { categoryId?: string; include?: boolean }>>({});
   const [busy, setBusy] = useState(false);
+  const [transferWith, setTransferWith] = useState<string>();
 
   const account = accountId ?? data?.accounts.find((a) => !a.archived)?.id;
   const header = rows && mapping?.hasHeader ? rows[0] : undefined;
@@ -51,7 +56,7 @@ export function Import({ data }: { data?: FinanceData }) {
       const base = { line: r.line, rawPayee: r.rawPayee, date: r.date ?? '', amount: r.amount ?? 0 };
       const p = prepared.get(r.line);
       if (r.error || !p) return { ...base, payee: r.rawPayee, categoryId: '', duplicate: false, error: r.error, include: false };
-      const { payee, categoryId, recurringId, billName, duplicate } = p;
+      const { payee, categoryId, recurringId, billName, duplicate, transfer, unknownCategory } = p;
       const o = overrides[r.line] ?? {};
       return {
         ...base,
@@ -61,6 +66,8 @@ export function Import({ data }: { data?: FinanceData }) {
         billName,
         duplicate,
         include: o.include ?? !duplicate,
+        transfer,
+        unknownCategory,
       };
     });
   }, [data, rows, mapping, account, overrides]);
@@ -78,7 +85,15 @@ export function Import({ data }: { data?: FinanceData }) {
     setOverrides({});
   }
 
-  const toImport = preview.filter((r) => r.include && !r.error);
+  // Transfers go to (or come from) this account: by default an everyday account other than the one imported into.
+  const others = data.accounts.filter((a) => !a.archived && a.id !== account);
+  const transferAccount =
+    transferWith && others.some((a) => a.id === transferWith)
+      ? transferWith
+      : (others.find((a) => a.includeInSafeToSpend) ?? others[0])?.id;
+  const toImport = preview.filter((r) => r.include && !r.error).map((r) => (r.transfer ? { ...r, transferAccountId: transferAccount } : r));
+  const transferCount = toImport.filter((r) => r.transfer).length;
+  const unknownNames = [...new Set(preview.flatMap((r) => (r.unknownCategory ? [r.unknownCategory] : [])))];
   const counts = {
     total: preview.length,
     duplicates: preview.filter((r) => r.duplicate).length,
@@ -114,8 +129,12 @@ export function Import({ data }: { data?: FinanceData }) {
     </option>
   ));
   const setMap = (patch: Partial<ColumnMapping>) => mapping && setMapping({ ...mapping, ...patch });
-  const categoriesFor = (amount: number) =>
-    data.categories.filter((c) => !c.system && !c.archived && c.kind === (amount < 0 ? 'expense' : 'income'));
+  // The usual kind first (spending for money out), then the other: a refund stays in its spending category.
+  const categoriesFor = (amount: number) => {
+    const usable = data.categories.filter((c) => !c.system && !c.archived && c.kind !== 'transfer');
+    const kind = amount < 0 ? 'expense' : 'income';
+    return [...usable.filter((c) => c.kind === kind), ...usable.filter((c) => c.kind !== kind)];
+  };
 
   return (
     <main className="screen">
@@ -217,6 +236,20 @@ export function Import({ data }: { data?: FinanceData }) {
               </>
             )}
           </div>
+          <div className="list">
+            <Field label={t('columns.category')}>
+              {(id) => (
+                <select
+                  id={id}
+                  value={mapping.category ?? ''}
+                  onChange={(e) => setMap({ category: e.target.value === '' ? undefined : Number(e.target.value) })}
+                >
+                  <option value="">{t('import.noCategoryColumn')}</option>
+                  {columnOptions}
+                </select>
+              )}
+            </Field>
+          </div>
           <div className="row" style={{ gap: 20, flexWrap: 'wrap' }}>
             <label className="check-row">
               <input type="checkbox" checked={mapping.hasHeader} onChange={(e) => setMap({ hasHeader: e.target.checked })} />
@@ -243,6 +276,26 @@ export function Import({ data }: { data?: FinanceData }) {
               })}
             </span>
           </div>
+          {transferCount > 0 && (
+            <div className="list" style={{ maxWidth: 720 }}>
+              <Field label={t('import.transfersWith', { count: transferCount })}>
+                {(id) => (
+                  <select id={id} value={transferAccount} onChange={(e) => setTransferWith(e.target.value)}>
+                    {others.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+            </div>
+          )}
+          {unknownNames.length > 0 && (
+            <p className="small text-warn" role="status">
+              {t('import.unknownCategories', { names: unknownNames.join(', ') })}
+            </p>
+          )}
           <div className="table-card table-scroll">
             <table className="table">
               <caption className="visually-hidden">{t('import.rows')}</caption>
@@ -288,19 +341,27 @@ export function Import({ data }: { data?: FinanceData }) {
                       </div>
                     </td>
                     <td>
-                      {!r.error && (
-                        <select
-                          aria-label={t('import.categoryForLine', { line: r.line })}
-                          className="cell-select"
-                          value={r.categoryId}
-                          onChange={(e) => setOverrides({ ...overrides, [r.line]: { ...overrides[r.line], categoryId: e.target.value } })}
-                        >
-                          {categoriesFor(r.amount).map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
+                      {!r.error && r.transfer ? (
+                        <span className="small muted">
+                          {t(r.amount > 0 ? 'transactions.transferFrom' : 'transactions.transferTo', {
+                            name: others.find((a) => a.id === transferAccount)?.name ?? '',
+                          })}
+                        </span>
+                      ) : (
+                        !r.error && (
+                          <select
+                            aria-label={t('import.categoryForLine', { line: r.line })}
+                            className="cell-select"
+                            value={r.categoryId}
+                            onChange={(e) => setOverrides({ ...overrides, [r.line]: { ...overrides[r.line], categoryId: e.target.value } })}
+                          >
+                            {categoriesFor(r.amount).map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                        )
                       )}
                     </td>
                     <td className={'num-col amount' + (r.amount > 0 ? ' amount--in' : '')}>

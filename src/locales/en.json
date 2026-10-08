@@ -588,7 +588,11 @@
     "undo": "Undo import",
     "tipPrefix": "Tip: set up ",
     "tipLink": "rules",
-    "tipSuffix": " so imports land in the right categories."
+    "tipSuffix": " so imports land in the right categories.",
+    "noCategoryColumn": "None (suggest categories)",
+    "transfersWith_one": "{{count}} transfer with",
+    "transfersWith_other": "{{count}} transfers with",
+    "unknownCategories": "Not found in Mizan, so suggested categories are used instead: {{names}}. Add them under Settings → Categories, then choose the file again."
   },
   "settings": {
     "theme": {

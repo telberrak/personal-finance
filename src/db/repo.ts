@@ -814,6 +814,11 @@ export interface ImportRow {
   categoryId: string;
   recurringId?: string;
   externalId?: string;
+  /**
+   * A transfer with another of your accounts (for example a card payment from your current
+   * account): both sides are saved, linked, as part of the import.
+   */
+  transferAccountId?: string;
 }
 
 /** Saves an import in one go, tagged with a batch id so it can be undone. */
@@ -839,6 +844,35 @@ export async function importTransactions(accountId: string, fileName: string, ro
     fingerprint: fingerprint(accountId, r.date, r.amount, r.rawPayee),
     createdAt: now,
   }));
+  // Transfers: the imported side becomes one half of a transfer; the other half goes to the other
+  // account. Both carry the batch id, so undoing the import removes both.
+  const [own, ...others] = await db.accounts.bulkGet([accountId, ...new Set(rows.flatMap((r) => r.transferAccountId ?? []))]);
+  const otherById = new Map(others.flatMap((a) => (a ? [[a.id, a]] : [])));
+  for (const [i, r] of rows.entries()) {
+    if (!r.transferAccountId) continue;
+    const other = otherById.get(r.transferAccountId);
+    check(other && own && other.id !== own.id, 'errors.transferSameAccount');
+    const transferId = newId();
+    const mine = transactions[i];
+    Object.assign(mine, {
+      categoryId: TRANSFER_CATEGORY_ID,
+      transferId,
+      recurringId: undefined,
+      payee: t(mine.amount > 0 ? 'transactions.transferFrom' : 'transactions.transferTo', { name: other!.name }),
+    });
+    transactions.push({
+      id: newId(),
+      accountId: other!.id,
+      spaceId: other!.spaceId,
+      date: r.date,
+      amount: -r.amount,
+      payee: t(r.amount > 0 ? 'transactions.transferTo' : 'transactions.transferFrom', { name: own!.name }),
+      categoryId: TRANSFER_CATEGORY_ID,
+      transferId,
+      importBatchId: batch.id,
+      createdAt: now,
+    });
+  }
   transactions.forEach(validateTransaction);
   await db.transaction('rw', db.transactions, db.importBatches, db.categories, async () => {
     for (const c of fallbacks) if (!(await db.categories.get(c.id))) await db.categories.put(c);

@@ -143,6 +143,8 @@ Téléchargez un fichier CSV sur le site de votre banque, puis allez dans **Impo
 
 > **Astuce :** créez d’abord des règles, pour que les transactions importées arrivent dans les bonnes catégories.
 
+**Fichiers avec catégories.** Si le fichier a une colonne **Catégorie**, Mizan l’utilise : les noms sont rapprochés de vos catégories (sans tenir compte des majuscules ni des espaces), les remboursements restent dans leur catégorie de dépense, et les noms introuvables sont listés pour que vous puissiez les ajouter d’abord. Les lignes de la catégorie **Virements** deviennent des virements avec le compte choisi sous **Virements avec**, par exemple les remboursements de carte depuis le compte courant.
+
 ## Connexions bancaires {#banks}
 
 Avec la synchronisation activée, **Réglages → Connexions bancaires → Connecter une banque** fait arriver vos transactions automatiquement.

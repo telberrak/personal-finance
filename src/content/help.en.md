@@ -143,6 +143,8 @@ Download a CSV file from your bank's website, then go to **Import → Choose a C
 
 > **Tip:** set up rules first, so imported transactions land in the right categories.
 
+**Files with categories.** If the file has a **Category** column, Mizan uses it: names are matched to your categories (ignoring capitals and spaces), refunds stay in their spending category, and names not found are listed so you can add them first. Rows in the **Transfers** category become transfers with the account you choose under **Transfers with**, for example credit card payments made from your current account.
+
 ## Bank connections {#banks}
 
 With sync turned on, **Settings → Bank connections → Connect a bank** brings your transactions in automatically.

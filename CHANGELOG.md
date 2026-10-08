@@ -2,6 +2,11 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.22.0 — Importing files with categories
+
+- Import reads a Category column: names are matched to your categories (ignoring capitals and spaces), refunds stay in their spending category, and names Mizan does not have are listed.
+- Rows in the Transfers category become transfers with an account you choose (for example card payments from your current account); undoing the import removes both sides.
+
 ## 0.21.0 — Accounts section
 
 - Accounts is now a main section, just below Home (on a phone, the first shortcut on Home): every account with its value, grouped as Everyday, Savings and investments, and Debts, with subtotals and your net worth. Tapping an account opens Edit account. The old Settings → Accounts address redirects there.
