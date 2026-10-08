@@ -30,7 +30,7 @@ Seuls les comptes marqués **Compte courant du quotidien** comptent. L’épargn
 
 ## Comptes {#accounts}
 
-Allez dans **Réglages → Comptes → Ajouter un compte**. Choisissez un type : **Compte courant**, **Épargne**, **Carte de crédit**, **Espèces**, **Prêt**, **Prêt immobilier**, **Placements**, **Retraite** ou **Bien immobilier**.
+**Comptes** (juste sous Accueil ; sur téléphone, le premier raccourci de l’Accueil) liste chaque compte avec sa valeur, regroupés en Au quotidien, Épargne et placements, et Dettes, avec votre patrimoine en haut. Touchez un compte pour le modifier, ou **Ajouter un compte** pour en créer un. Choisissez un type : **Compte courant**, **Épargne**, **Carte de crédit**, **Espèces**, **Prêt**, **Prêt immobilier**, **Placements**, **Retraite** ou **Bien immobilier**.
 
 1. Saisissez un nom et le **Solde initial** (ce qu’il contient aujourd’hui).
 2. Activez **Compte courant du quotidien** pour les comptes sur lesquels vous dépensez : ils comptent dans le « Disponible ».

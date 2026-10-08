@@ -250,6 +250,10 @@ export function Home({ data }: { data?: FinanceData }) {
 
           {!isDesktop && (
             <nav className="quick-links" aria-label={t('home.more')}>
+              <Link to="/accounts" className="quick-link">
+                <Icon name="bank" size={22} />
+                {t('nav.accounts')}
+              </Link>
               <Link to="/reports" className="quick-link">
                 <Icon name="chart" size={22} />
                 {t('nav.reports')}

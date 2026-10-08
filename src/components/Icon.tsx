@@ -102,6 +102,12 @@ const PATHS = {
   ),
   rules: <path d="M4 6h16M4 12h10M4 18h6" />,
   bell: <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" />,
+  bank: (
+    <>
+      <path d="M3 9.5 12 4l9 5.5" />
+      <path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" />
+    </>
+  ),
   help: (
     <>
       <circle cx="12" cy="12" r="9" />

@@ -326,7 +326,7 @@ export function Settings({ data }: { data?: FinanceData }) {
       <Section title={t('settings.manage')}>
         <div className="list">
           <LinkRow
-            to="/settings/accounts"
+            to="/accounts"
             icon="wallet"
             title={t('settings.accounts')}
             detail={t('settings.accountsOpen', { count: data.accounts.filter((a) => !a.archived).length })}

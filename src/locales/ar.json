@@ -107,7 +107,12 @@
     "homeCurrency": "{{currency}} (العملة الرئيسية)",
     "includeInNetWorth": "احتسابه في صافي الثروة",
     "includeInNetWorthHint": "أوقفه للمال الذي تديره لغيرك، كحساب استثمار لطفلك.",
-    "notInNetWorth": "خارج صافي الثروة"
+    "notInNetWorth": "خارج صافي الثروة",
+    "groups": {
+      "everyday": "الحسابات اليومية",
+      "saved": "الادخار والاستثمارات",
+      "debts": "الديون"
+    }
   },
   "categories": {
     "transfer": "التحويلات",
@@ -174,7 +179,8 @@
     "search": "بحث",
     "calendar": "التقويم",
     "friends": "الأصدقاء",
-    "help": "المساعدة"
+    "help": "المساعدة",
+    "accounts": "الحسابات"
   },
   "app": {
     "name": "Mizan"

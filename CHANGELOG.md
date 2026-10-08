@@ -2,6 +2,12 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.21.0 — Accounts section
+
+- Accounts is now a main section, just below Home (on a phone, the first shortcut on Home): every account with its value, grouped as Everyday, Savings and investments, and Debts, with subtotals and your net worth. Tapping an account opens Edit account. The old Settings → Accounts address redirects there.
+- Fixed: accounts in the home currency with value updates (pensions, investments) showed only their opening balance and transactions on the accounts list; they now show their latest value, as on Net worth.
+- The net worth at the top of Accounts now leaves out accounts you chose not to count.
+
 ## 0.20.2 — Ready for the app stores
 
 - A step-by-step guide to releasing on the App Store and Google Play, and to updates: docs/MOBILE_RELEASE.md.

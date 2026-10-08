@@ -30,7 +30,7 @@ Only accounts marked **Everyday account** count. Savings, pensions and loans do 
 
 ## Accounts {#accounts}
 
-Go to **Settings → Accounts → Add account**. Choose a type: **Current account**, **Savings**, **Credit card**, **Cash**, **Loan**, **Mortgage**, **Investments**, **Pension** or **Property**.
+**Accounts** (just below Home; on a phone, the first shortcut on Home) lists every account with its value, grouped as Everyday, Savings and investments, and Debts, with your net worth at the top. Tap an account to edit it, or **Add account** to create one. Choose a type: **Current account**, **Savings**, **Credit card**, **Cash**, **Loan**, **Mortgage**, **Investments**, **Pension** or **Property**.
 
 1. Enter a name and the **opening** balance (what it holds today).
 2. Turn on **Everyday account** for accounts you spend from, so they count in "safe to spend".

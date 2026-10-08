@@ -413,7 +413,7 @@ function Editor({ data, existing }: { data: FinanceData; existing?: Transaction 
 
           {kind === 'transfer' && openAccounts.length < 2 && (
             <p className="callout small">
-              {t('txForm.needTwoAccounts')} <Link to="/settings/accounts">{t('txForm.addAccount')}</Link>
+              {t('txForm.needTwoAccounts')} <Link to="/accounts">{t('txForm.addAccount')}</Link>
             </p>
           )}
 

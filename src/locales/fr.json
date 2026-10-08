@@ -107,7 +107,12 @@
     "homeCurrency": "{{currency}} (devise principale)",
     "includeInNetWorth": "Inclure dans le patrimoine",
     "includeInNetWorthHint": "Désactivez pour l’argent que vous gérez pour quelqu’un d’autre, comme le placement d’un enfant.",
-    "notInNetWorth": "Hors patrimoine"
+    "notInNetWorth": "Hors patrimoine",
+    "groups": {
+      "everyday": "Au quotidien",
+      "saved": "Épargne et placements",
+      "debts": "Dettes"
+    }
   },
   "categories": {
     "transfer": "Virements",
@@ -170,7 +175,8 @@
     "search": "Recherche",
     "calendar": "Calendrier",
     "friends": "Amis",
-    "help": "Aide"
+    "help": "Aide",
+    "accounts": "Comptes"
   },
   "app": {
     "name": "Mizan"

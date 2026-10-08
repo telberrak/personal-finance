@@ -8,6 +8,7 @@
 import type { Account, FinanceData, Transaction } from '../db/types';
 import type { ISODate } from './dates';
 import type { Pence } from './money';
+import { accountBalance } from './selectors';
 
 /** The rate for one currency: home-currency units per unit, its date, and whether it was typed in. */
 export interface FxRate {
@@ -77,7 +78,8 @@ export function inHomeCurrency(data: FinanceData): FinanceData {
 
 /** An account's balance in its own currency. */
 export function nativeBalance(account: Account, transactions: Transaction[]): Pence {
-  if (!account.native) return transactions.reduce((s, t) => (t.accountId === account.id ? s + t.amount : s), account.openingBalance);
+  // In the home currency nothing is converted: the usual balance, which counts value updates (valuations).
+  if (!account.native) return accountBalance(account, transactions);
   const latest = account.native.valuations?.length
     ? [...account.native.valuations].sort((a, b) => (a.date < b.date ? -1 : 1)).at(-1)
     : undefined;

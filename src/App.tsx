@@ -130,7 +130,8 @@ function Unlocked() {
               <Route path="transactions/:id" element={<TransactionForm data={data} />} />
               <Route path="notifications" element={<Notifications data={data} />} />
               <Route path="settings" element={<Settings data={data} />} />
-              <Route path="settings/accounts" element={<Accounts data={data} />} />
+              <Route path="accounts" element={<Accounts data={data} />} />
+              <Route path="settings/accounts" element={<Navigate to="/accounts" replace />} />
               <Route path="settings/categories" element={<Categories data={data} />} />
               <Route path="settings/rules" element={<Rules data={data} />} />
               <Route path="settings/sync" element={<Sync data={data} />} />

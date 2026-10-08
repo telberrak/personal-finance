@@ -43,6 +43,22 @@ describe('multi-currency', () => {
     expect(view.transactions.find((t) => t.id === 't1')).toMatchObject({ amount: -8_600, native: { amount: -10_000, currency: 'EUR' } });
   });
 
+  it('shows a home-currency account at its latest value update, plus what came in after it', () => {
+    const pension = {
+      id: 'p',
+      name: 'Pension',
+      type: 'pension' as const,
+      openingBalance: 0,
+      includeInSafeToSpend: false,
+      valuations: [
+        { date: '2026-06-30', value: 2_400_000 },
+        { date: '2026-09-30', value: 2_468_000 },
+      ],
+    };
+    const later = { id: 'x', accountId: 'p', date: '2026-10-01', amount: 20_000, payee: 'Contribution', categoryId: 'transfer' };
+    expect(nativeBalance(pension, [later])).toBe(2_488_000);
+  });
+
   it('leaves everything alone when all accounts use the home currency, and lists foreign currencies', () => {
     const d = data();
     d.accounts[1].currency = undefined;

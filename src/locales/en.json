@@ -107,7 +107,12 @@
     "homeCurrency": "{{currency}} (home currency)",
     "includeInNetWorth": "Include in net worth",
     "includeInNetWorthHint": "Turn off for money you hold for someone else, such as a child’s Junior ISA.",
-    "notInNetWorth": "Not in net worth"
+    "notInNetWorth": "Not in net worth",
+    "groups": {
+      "everyday": "Everyday",
+      "saved": "Savings and investments",
+      "debts": "Debts"
+    }
   },
   "categories": {
     "transfer": "Transfers",
@@ -170,7 +175,8 @@
     "search": "Search",
     "calendar": "Calendar",
     "friends": "Friends",
-    "help": "Help"
+    "help": "Help",
+    "accounts": "Accounts"
   },
   "app": {
     "name": "Mizan"

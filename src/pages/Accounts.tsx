@@ -1,6 +1,8 @@
 /**
- * Settings → Accounts: list, add, edit, archive and restore accounts, with the extra fields for cards, loans
- * and mortgages, and each account's currency.
+ * Accounts (a main section, just below Home): every account with its value, grouped as everyday,
+ * savings and investments, and debts, with subtotals and net worth. Tapping an account opens Edit
+ * account; accounts can also be added, archived and restored here, with the extra fields for cards,
+ * loans and mortgages, and each account's currency.
  */
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
@@ -14,7 +16,8 @@ import { LIABILITY_TYPES, type Account, type AccountType, type FinanceData } fro
 import { currencyName, formatMoney, parseMoney } from '../lib/money';
 import { nativeBalance } from '../lib/fx';
 import { CURRENCIES } from '../i18n';
-import { totalBalance } from '../lib/selectors';
+import { netWorth } from '../lib/networth';
+import { accountBalance } from '../lib/selectors';
 import { t } from '../i18n';
 
 const TYPES: AccountType[] = ['current', 'savings', 'cash', 'credit', 'loan', 'mortgage', 'investment', 'pension', 'property'];
@@ -28,7 +31,14 @@ function parseSigned(text: string) {
   return v === null ? null : neg ? -v : v;
 }
 
-/** Settings → Accounts. */
+/** How the list is grouped: money you spend from, money you keep, money you owe. */
+const GROUPS = [
+  { id: 'everyday', label: 'accounts.groups.everyday', test: (a: Account) => a.includeInSafeToSpend && !LIABILITY_TYPES.includes(a.type) },
+  { id: 'saved', label: 'accounts.groups.saved', test: (a: Account) => !a.includeInSafeToSpend && !LIABILITY_TYPES.includes(a.type) },
+  { id: 'debts', label: 'accounts.groups.debts', test: (a: Account) => LIABILITY_TYPES.includes(a.type) },
+] as const;
+
+/** The Accounts screen. */
 export function Accounts({ data }: { data?: FinanceData }) {
   const [editing, setEditing] = useState<Account | 'new'>();
   if (!data) return <Loading />;
@@ -36,10 +46,10 @@ export function Accounts({ data }: { data?: FinanceData }) {
   const archived = data.accounts.filter((a) => a.archived);
 
   return (
-    <main className="screen screen--modal">
+    <main className="screen">
       <PageHeader
         title={t('accounts.title')}
-        subtitle={t('accounts.netWorth', { amount: formatMoney(totalBalance(data, 'all')) })}
+        subtitle={t('accounts.netWorth', { amount: formatMoney(netWorth(data).net) })}
         actions={
           <button type="button" className="btn btn--solid" onClick={() => setEditing('new')}>
             <Icon name="plus" size={18} strokeWidth={2.2} />
@@ -47,15 +57,27 @@ export function Accounts({ data }: { data?: FinanceData }) {
           </button>
         }
       />
-      <Link to="/settings" className="link-btn" style={{ alignSelf: 'flex-start', padding: 0 }}>
-        {t('common.backToSettings')}
-      </Link>
-
-      <div className="list">
-        {open.map((a) => (
-          <AccountRow key={a.id} account={a} balance={nativeBalance(a, data.transactions)} onEdit={() => setEditing(a)} />
-        ))}
-      </div>
+      {GROUPS.map((group) => {
+        const accounts = open.filter(group.test);
+        if (!accounts.length) return null;
+        // Subtotals in the home currency; each row shows its own currency.
+        const subtotal = accounts.reduce((sum, a) => sum + accountBalance(a, data.transactions), 0);
+        return (
+          <section key={group.id} className="section" aria-labelledby={`accounts-${group.id}`}>
+            <div className="section-head">
+              <h2 id={`accounts-${group.id}`} className="section-label">
+                {t(group.label)}
+              </h2>
+              <span className={'num small' + (subtotal < 0 ? ' text-warn' : ' muted')}>{formatMoney(subtotal)}</span>
+            </div>
+            <div className="list">
+              {accounts.map((a) => (
+                <AccountRow key={a.id} account={a} balance={nativeBalance(a, data.transactions)} onEdit={() => setEditing(a)} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
       <p className="small muted">
         {t('accounts.everydayNote')}
         <Link to="/add?kind=transfer">{t('nav.addTransaction')}</Link>.

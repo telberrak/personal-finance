@@ -23,6 +23,9 @@ const TABS: { to: string; label: string; icon: IconName }[] = [
  */
 const hidesTabBar = (path: string) => /^\/(add|transactions\/|bills\/|settings)/.test(path);
 
+/** In the sidebar just below Home (on the phone, the first shortcut on Home). */
+const ACCOUNTS = { to: '/accounts', label: 'nav.accounts', icon: 'bank' as IconName };
+
 /** Extra sections in the desktop sidebar (on the phone they are linked from Home). */
 const MORE: { to: string; label: string; icon: IconName }[] = [
   { to: '/reports', label: 'nav.reports', icon: 'chart' },
@@ -72,7 +75,7 @@ function Sidebar() {
         {t('nav.addTransaction')}
       </Link>
       <nav className="side-nav" aria-label={t('nav.main')}>
-        {[...TABS, ...MORE].map((tab) => (
+        {[TABS[0], ACCOUNTS, ...TABS.slice(1), ...MORE].map((tab) => (
           <NavLink key={tab.to} to={tab.to} end className={({ isActive }) => 'side-link' + (isActive ? ' active' : '')}>
             <Icon name={tab.icon} size={20} />
             {t(tab.label)}
