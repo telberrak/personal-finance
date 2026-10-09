@@ -163,3 +163,14 @@ test('app lock asks for the PIN after reopening', async ({ page }) => {
   await page.getByRole('button', { name: 'Unlock' }).click();
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
 });
+
+test('Activity keeps its filters when going back from a transaction', async ({ page }) => {
+  await page.goto('/activity');
+  await page.getByRole('button', { name: 'Spending' }).click();
+  await page.getByPlaceholder('Search payees or categories').fill('groceries');
+  await page.locator('a[href^="/transactions/"]').first().click();
+  await expect(page).toHaveURL(/\/transactions\//);
+  await page.goBack();
+  await expect(page.getByRole('button', { name: 'Spending' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByPlaceholder('Search payees or categories')).toHaveValue('groceries');
+});

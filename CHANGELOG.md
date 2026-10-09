@@ -2,6 +2,10 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.23.1 — Activity keeps its filters
+
+- Activity's type filter, search and account filter are kept in the address, like the month: opening a transaction and going back returns to the same filtered list.
+
 ## 0.23.0 — Importing files that cover several accounts
 
 - Import reads an Account column, so one file (such as Mizan's own export, edited in a spreadsheet) goes into several accounts. Under "Accounts in this file" you check which of your accounts each name goes into; small differences ("Narwest", "Lloyd") are matched for you.

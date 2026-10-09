@@ -2,7 +2,7 @@
  * Activity: transactions for a month, grouped by day (phone) or in a table (computer), with search, filters,
  * totals, and bills coming up in the next 7 days.
  */
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { Icon } from '../components/Icon';
 import { Loading, MonthSwitcher, PageHeader } from '../components/Layout';
@@ -29,17 +29,32 @@ const MATCHES: Record<Filter, (t: Transaction) => boolean> = {
   Transfers: (t) => !!t.transferId,
 };
 
-/** The Activity screen. The month is kept in the URL (?month=) so Back returns to it. */
+/** The Activity screen. The month and filters are kept in the URL so Back returns to them. */
 export function Activity({ data }: { data?: FinanceData }) {
   const ref = today();
   const isDesktop = useIsDesktop();
-  // The month lives in the URL (?month=2026-09-01) so going back from an edit returns to it.
+  // The month and filters live in the URL (?month=2026-09-01&type=Spending&q=tesco&account=current), so
+  // going back from a transaction returns to the same list. Defaults are left out of the URL.
   const [params, setParams] = useSearchParams();
+  const setParam = (key: string, value: string, fallback: string) =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value === fallback) next.delete(key);
+        else next.set(key, value);
+        return next;
+      },
+      { replace: true },
+    );
   const month = params.get('month') ?? startOfMonth(ref);
-  const setMonth = (m: string) => setParams(m === startOfMonth(ref) ? {} : { month: m }, { replace: true });
-  const [filter, setFilter] = useState<Filter>('All');
-  const [query, setQuery] = useState('');
-  const [accountFilter, setAccountFilter] = useState('all');
+  const setMonth = (m: string) => setParam('month', m, startOfMonth(ref));
+  const typeParam = params.get('type');
+  const filter: Filter = FILTERS.find((f) => f === typeParam) ?? 'All';
+  const setFilter = (f: Filter) => setParam('type', f, 'All');
+  const query = params.get('q') ?? '';
+  const setQuery = (q: string) => setParam('q', q, '');
+  const accountFilter = params.get('account') ?? 'all';
+  const setAccountFilter = (a: string) => setParam('account', a, 'all');
 
   const view = useMemo(() => {
     if (!data) return undefined;
