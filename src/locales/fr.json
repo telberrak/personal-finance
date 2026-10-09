@@ -548,7 +548,8 @@
     "errors": {
       "date": "Date illisible « {{value}} »",
       "amount": "Pas de montant",
-      "description": "Pas de libellé"
+      "description": "Pas de libellé",
+      "account": "Aucun compte Mizan choisi pour « {{name}} »"
     },
     "empty": "Ce fichier semble vide.",
     "failed": "L’importation a échoué.",
@@ -592,7 +593,16 @@
     "noCategoryColumn": "Aucune (catégories suggérées)",
     "transfersWith_one": "{{count}} virement avec",
     "transfersWith_other": "{{count}} virements avec",
-    "unknownCategories": "Introuvables dans Mizan, des catégories suggérées sont utilisées à la place : {{names}}. Ajoutez-les dans Réglages → Catégories, puis choisissez le fichier à nouveau."
+    "unknownCategories": "Introuvables dans Mizan, des catégories suggérées sont utilisées à la place : {{names}}. Ajoutez-les dans Réglages → Catégories, puis choisissez le fichier à nouveau.",
+    "accountFallback": "Compte (pour les lignes sans compte)",
+    "sourceColumn": "Virement depuis (source)",
+    "destinationColumn": "Virement vers (destination)",
+    "noColumn": "Aucune",
+    "fileAccounts": "Comptes de ce fichier",
+    "fileAccountsHelp": "Chaque compte nommé dans le fichier et le compte Mizan où il va. Les lignes d’un compte réglé sur « Pas dans Mizan » sont ignorées ; les virements avec lui utilisent le compte choisi plus bas.",
+    "notInMizan": "Pas dans Mizan",
+    "unpairedTransfers_one": "{{count}} virement n’a pas de ligne correspondante dans l’autre compte de ce fichier : son autre côté sera associé à une opération déjà présente, ou ajouté.",
+    "unpairedTransfers_other": "{{count}} virements n’ont pas de ligne correspondante dans l’autre compte de ce fichier : leur autre côté sera associé à une opération déjà présente, ou ajouté."
   },
   "settings": {
     "theme": {

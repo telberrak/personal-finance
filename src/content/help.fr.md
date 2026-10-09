@@ -145,6 +145,8 @@ Téléchargez un fichier CSV sur le site de votre banque, puis allez dans **Impo
 
 **Fichiers avec catégories.** Si le fichier a une colonne **Catégorie**, Mizan l’utilise : les noms sont rapprochés de vos catégories (sans tenir compte des majuscules ni des espaces), les remboursements restent dans leur catégorie de dépense, et les noms introuvables sont listés pour que vous puissiez les ajouter d’abord. Les lignes de la catégorie **Virements** deviennent des virements avec le compte choisi sous **Virements avec**, par exemple les remboursements de carte depuis le compte courant.
 
+**Fichiers couvrant plusieurs comptes.** Un fichier avec une colonne **Account** (compte), comme l’export de Mizan (Réglages → Exporter), va dans plusieurs comptes à la fois. Sous **Comptes de ce fichier**, vérifiez dans quel compte va chaque nom ; les petites différences comme « Narwest » ou « Lloyd » sont rapprochées pour vous. Pour les virements, une colonne **Source** indique le compte d’où vient l’argent et une colonne **Destination** celui où il va. Quand le fichier a les deux côtés d’un virement (même jour, montants opposés), ils sont liés ; quand il n’en a qu’un, l’autre côté est rapproché d’une opération déjà dans ce compte, ou ajouté. Exemple : une ligne HSBC « −200 £, Source HSBC, Destination NatWest » et une ligne NatWest « +200 £, Source HSBC » deviennent un seul virement.
+
 ## Connexions bancaires {#banks}
 
 Avec la synchronisation activée, **Réglages → Connexions bancaires → Connecter une banque** fait arriver vos transactions automatiquement.

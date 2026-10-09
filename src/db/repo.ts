@@ -7,6 +7,7 @@ import { addDays, today, type ISODate } from '../lib/dates';
 import { occurrencesBetween } from '../lib/recurring';
 import { newId } from '../lib/id';
 import { fingerprint } from '../lib/importer';
+import { pairTransfers } from '../lib/importPrep';
 import type { Pence } from '../lib/money';
 import { payeeKey } from '../lib/payees';
 import { db, transferCategory } from './db';
@@ -814,9 +815,14 @@ export interface ImportRow {
   categoryId: string;
   recurringId?: string;
   externalId?: string;
+  /** The row's own account, when a file covers several (otherwise the import's account). */
+  accountId?: string;
+  time?: string;
+  note?: string;
   /**
    * A transfer with another of your accounts (for example a card payment from your current
-   * account): both sides are saved, linked, as part of the import.
+   * account). When the file also has the other side, the two are linked; otherwise the other
+   * side is found in that account (same day, opposite amount) or made, as part of the import.
    */
   transferAccountId?: string;
 }
@@ -824,70 +830,123 @@ export interface ImportRow {
 /** Saves an import in one go, tagged with a batch id so it can be undone. */
 export async function importTransactions(accountId: string, fileName: string, rows: ImportRow[]): Promise<ImportBatch> {
   check(rows.length > 0, 'errors.nothingToImport');
-  const batch: ImportBatch = { id: newId(), accountId, fileName, importedAt: Date.now(), rowCount: rows.length };
+  const accountIds = [...new Set(rows.map((r) => r.accountId ?? accountId))];
+  const batch: ImportBatch = {
+    id: newId(),
+    accountId,
+    fileName,
+    importedAt: Date.now(),
+    rowCount: rows.length,
+    ...(accountIds.length > 1 || accountIds[0] !== accountId ? { accountIds } : {}),
+  };
   // Older installs may not have the fallback categories yet.
   const fallbacks = defaultCategories().filter((c) => c.id === OTHER_EXPENSE_ID || c.id === OTHER_INCOME_ID);
   const now = Date.now();
-  const spaceId = await spaceOf(accountId);
-  const transactions: Transaction[] = rows.map((r) => ({
+  const accounts = new Map(
+    (await db.accounts.bulkGet([...new Set([...accountIds, ...rows.flatMap((r) => r.transferAccountId ?? [])])])).flatMap((a) =>
+      a ? [[a.id, a] as const] : [],
+    ),
+  );
+  const sides = rows.map((r) => ({ ...r, accountId: r.accountId ?? accountId }));
+  const transactions: Transaction[] = sides.map((r) => ({
     id: newId(),
-    accountId,
-    spaceId,
+    accountId: r.accountId,
+    spaceId: accounts.get(r.accountId)?.spaceId,
     date: r.date,
+    time: r.time,
     amount: r.amount,
     payee: r.payee.trim() || r.rawPayee,
     rawPayee: r.rawPayee,
     categoryId: r.categoryId,
+    note: r.note,
     recurringId: r.recurringId,
     externalId: r.externalId,
     importBatchId: batch.id,
-    fingerprint: fingerprint(accountId, r.date, r.amount, r.rawPayee),
+    fingerprint: fingerprint(r.accountId, r.date, r.amount, r.rawPayee),
     createdAt: now,
   }));
-  // Transfers: the imported side becomes one half of a transfer; the other half goes to the other
-  // account. Both carry the batch id, so undoing the import removes both.
-  const [own, ...others] = await db.accounts.bulkGet([accountId, ...new Set(rows.flatMap((r) => r.transferAccountId ?? []))]);
-  const otherById = new Map(others.flatMap((a) => (a ? [[a.id, a]] : [])));
-  for (const [i, r] of rows.entries()) {
-    if (!r.transferAccountId) continue;
-    const other = otherById.get(r.transferAccountId);
-    check(other && own && other.id !== own.id, 'errors.transferSameAccount');
-    const transferId = newId();
-    const mine = transactions[i];
-    Object.assign(mine, {
+
+  // Transfers: each imported side becomes one half of a transfer. Its other half is the matching row of
+  // the file, else an unlinked transaction already in the other account, else a new one. New halves carry
+  // the batch id, so undoing the import removes them too.
+  const partner = pairTransfers(sides);
+  const linked: Transaction[] = [];
+  const usedExisting = new Set<string>();
+  const asTransfer = (tx: Transaction, otherName: string, transferId: string) =>
+    Object.assign(tx, {
       categoryId: TRANSFER_CATEGORY_ID,
       transferId,
       recurringId: undefined,
-      payee: t(mine.amount > 0 ? 'transactions.transferFrom' : 'transactions.transferTo', { name: other!.name }),
+      payee: t(tx.amount > 0 ? 'transactions.transferFrom' : 'transactions.transferTo', { name: otherName }),
     });
-    transactions.push({
-      id: newId(),
-      accountId: other!.id,
-      spaceId: other!.spaceId,
-      date: r.date,
-      amount: -r.amount,
-      payee: t(r.amount > 0 ? 'transactions.transferTo' : 'transactions.transferFrom', { name: own!.name }),
-      categoryId: TRANSFER_CATEGORY_ID,
-      transferId,
-      importBatchId: batch.id,
-      createdAt: now,
-    });
+  for (const [i, r] of sides.entries()) {
+    if (!r.transferAccountId || transactions[i].transferId) continue;
+    const own = accounts.get(r.accountId);
+    const other = accounts.get(r.transferAccountId);
+    check(other && own && other.id !== own.id, 'errors.transferSameAccount');
+    const transferId = newId();
+    asTransfer(transactions[i], other!.name, transferId);
+    const j = partner.get(i);
+    if (j !== undefined) {
+      asTransfer(transactions[j], own!.name, transferId);
+      continue;
+    }
+    const existing = await db.transactions
+      .where('accountId')
+      .equals(other!.id)
+      .filter((x) => x.date === r.date && x.amount === -r.amount && !x.transferId && !x.splitId && !usedExisting.has(x.id))
+      .first();
+    if (existing) {
+      usedExisting.add(existing.id);
+      linked.push(asTransfer({ ...existing }, own!.name, transferId));
+      continue;
+    }
+    transactions.push(
+      asTransfer(
+        {
+          id: newId(),
+          accountId: other!.id,
+          spaceId: other!.spaceId,
+          date: r.date,
+          amount: -r.amount,
+          payee: '',
+          categoryId: TRANSFER_CATEGORY_ID,
+          importBatchId: batch.id,
+          createdAt: now,
+        },
+        own!.name,
+        transferId,
+      ),
+    );
   }
   transactions.forEach(validateTransaction);
   await db.transaction('rw', db.transactions, db.importBatches, db.categories, async () => {
     for (const c of fallbacks) if (!(await db.categories.get(c.id))) await db.categories.put(c);
     await db.importBatches.add(batch);
     await db.transactions.bulkAdd(transactions);
+    if (linked.length) await db.transactions.bulkPut(linked);
   });
   return batch;
 }
 
-/** Deletes every transaction from one import. Returns how many were removed. */
+/**
+ * Deletes every transaction from one import. Transactions that were already in Mizan and became the
+ * other half of an imported transfer stay, no longer linked. Returns how many were removed.
+ */
 export async function undoImport(batchId: string): Promise<number> {
   return db.transaction('rw', db.transactions, db.importBatches, async () => {
-    const n = await db.transactions.where('importBatchId').equals(batchId).delete();
+    const removed = await db.transactions.where('importBatchId').equals(batchId).toArray();
+    const transferIds = new Set(removed.flatMap((x) => x.transferId ?? []));
+    await db.transactions.bulkDelete(removed.map((x) => x.id));
+    if (transferIds.size) {
+      const left = await db.transactions
+        .where('transferId')
+        .anyOf([...transferIds])
+        .toArray();
+      await db.transactions.bulkPut(left.map(({ transferId: _gone, ...x }) => x));
+    }
     await db.importBatches.delete(batchId);
-    return n;
+    return removed.length;
   });
 }
 

@@ -199,6 +199,8 @@ export interface ImportBatch {
   fileName: string;
   importedAt: number;
   rowCount: number;
+  /** The accounts a file covering several accounts went into. */
+  accountIds?: string[];
 }
 
 /** A savings goal. */

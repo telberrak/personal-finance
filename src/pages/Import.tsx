@@ -1,7 +1,9 @@
 /**
  * Import: read a bank's CSV file, map its columns (or recognise the bank), preview with suggested categories,
  * duplicates and bill matches, import, and undo recent imports. A file can also name each row's category;
- * rows named "Transfers" become transfers with another of your accounts (such as card payments).
+ * rows named "Transfers" become transfers with another of your accounts (such as card payments). A file
+ * with an Account column (such as Mizan's own export) goes into several accounts at once, and its Source
+ * and Destination columns say where each transfer came from and went to.
  */
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
@@ -14,12 +16,15 @@ import type { FinanceData } from '../db/types';
 import { formatDate, formatShort, startOfMonth, toISO } from '../lib/dates';
 import { parseCsv } from '../lib/csv';
 import { detectPreset, guessMapping, mapRows, type ColumnMapping, type DateFormat } from '../lib/importer';
-import { prepareRows } from '../lib/importPrep';
+import { matchAccount, nameKey, otherAccountName, pairTransfers, prepareRows } from '../lib/importPrep';
 import { track } from '../lib/usage';
 import { formatMoney } from '../lib/money';
 import { t } from '../i18n';
 
 interface PreviewRow extends ImportRow {
+  accountId: string;
+  /** For a transfer: the other account named in the file, when it is one of yours. */
+  otherAccountId?: string;
   line: number;
   duplicate: boolean;
   error?: string;
@@ -29,6 +34,13 @@ interface PreviewRow extends ImportRow {
   transfer?: boolean;
   unknownCategory?: string;
 }
+
+/** Optional columns for files covering several accounts, with their labels. */
+const EXTRA_COLUMNS = [
+  ['account', 'fields.account'],
+  ['source', 'import.sourceColumn'],
+  ['destination', 'import.destinationColumn'],
+] as const;
 
 /** The Import screen. */
 export function Import({ data }: { data?: FinanceData }) {
@@ -41,23 +53,49 @@ export function Import({ data }: { data?: FinanceData }) {
   const [overrides, setOverrides] = useState<Record<number, { categoryId?: string; include?: boolean }>>({});
   const [busy, setBusy] = useState(false);
   const [transferWith, setTransferWith] = useState<string>();
+  // Names of accounts in the file → your account ('' to leave its rows out), where you changed the guess.
+  const [accountMap, setAccountMap] = useState<Record<string, string>>({});
 
   const account = accountId ?? data?.accounts.find((a) => !a.archived)?.id;
   const header = rows && mapping?.hasHeader ? rows[0] : undefined;
   const preset = header ? detectPreset(header) : undefined;
 
-  const preview = useMemo<PreviewRow[]>(() => {
-    if (!data || !rows || !mapping || !account) return [];
-    const parsed = mapRows(rows, mapping);
-    const valid = parsed.filter((r) => !r.error) as ((typeof parsed)[number] & { date: string; amount: number })[];
-    const prepared = new Map(prepareRows(data, account, valid).map((r) => [r.line, r]));
+  const parsed = useMemo(() => (rows && mapping ? mapRows(rows, mapping) : []), [rows, mapping]);
+  // Every account named in the file (its Account, Source and Destination columns), first spelling kept.
+  const fileAccounts = useMemo(() => {
+    const names = new Map<string, string>();
+    for (const r of parsed)
+      for (const n of [r.accountName, r.sourceName, r.destinationName]) if (n && !names.has(nameKey(n))) names.set(nameKey(n), n);
+    return [...names.values()];
+  }, [parsed]);
+  const multi = mapping?.account !== undefined;
 
-    return parsed.map((r) => {
-      const base = { line: r.line, rawPayee: r.rawPayee, date: r.date ?? '', amount: r.amount ?? 0 };
+  const preview = useMemo<PreviewRow[]>(() => {
+    if (!data || !account) return [];
+    const accountOf = (name: string) => {
+      const chosen = accountMap[nameKey(name)];
+      return chosen !== undefined ? chosen || undefined : matchAccount(name, data.accounts);
+    };
+    // Each row's account: the one the file names (in a file covering several), else the one chosen above.
+    const placed = parsed.map((r) => {
+      if (r.error || !multi || !r.accountName) return { r, accountId: account, error: r.error };
+      const accountId = accountOf(r.accountName);
+      return { r, accountId, error: accountId ? undefined : t('import.errors.account', { name: r.accountName }) };
+    });
+    const prepared = new Map<number, ReturnType<typeof prepareRows>[number]>();
+    for (const id of new Set(placed.flatMap((p) => (p.accountId && !p.error ? [p.accountId] : [])))) {
+      const valid = placed.filter((p) => p.accountId === id && !p.error).map((p) => p.r as typeof p.r & { date: string; amount: number });
+      for (const row of prepareRows(data, id, valid)) prepared.set(row.line, row);
+    }
+
+    return placed.map(({ r, accountId = account, error }) => {
+      const base = { line: r.line, accountId, rawPayee: r.rawPayee, date: r.date ?? '', amount: r.amount ?? 0, time: r.time, note: r.note };
       const p = prepared.get(r.line);
-      if (r.error || !p) return { ...base, payee: r.rawPayee, categoryId: '', duplicate: false, error: r.error, include: false };
+      if (error || !p) return { ...base, payee: r.payeeName ?? r.rawPayee, categoryId: '', duplicate: false, error, include: false };
       const { payee, categoryId, recurringId, billName, duplicate, transfer, unknownCategory } = p;
       const o = overrides[r.line] ?? {};
+      const otherName = transfer ? otherAccountName(r, accountOf) : undefined;
+      const otherAccountId = otherName ? accountOf(otherName) : undefined;
       return {
         ...base,
         payee,
@@ -67,10 +105,11 @@ export function Import({ data }: { data?: FinanceData }) {
         duplicate,
         include: o.include ?? !duplicate,
         transfer,
+        otherAccountId: otherAccountId !== accountId ? otherAccountId : undefined,
         unknownCategory,
       };
     });
-  }, [data, rows, mapping, account, overrides]);
+  }, [data, parsed, multi, account, accountMap, overrides]);
 
   if (!data) return <Loading />;
 
@@ -83,16 +122,24 @@ export function Import({ data }: { data?: FinanceData }) {
     setRows(parsed);
     setMapping(guessMapping(parsed));
     setOverrides({});
+    setAccountMap({});
   }
 
-  // Transfers go to (or come from) this account: by default an everyday account other than the one imported into.
-  const others = data.accounts.filter((a) => !a.archived && a.id !== account);
+  // Transfers whose other account the file does not name go to (or come from) this account: by default an
+  // everyday account other than the one imported into.
+  const open = data.accounts.filter((a) => !a.archived);
+  const others = open.filter((a) => a.id !== account);
   const transferAccount =
     transferWith && others.some((a) => a.id === transferWith)
       ? transferWith
       : (others.find((a) => a.includeInSafeToSpend) ?? others[0])?.id;
-  const toImport = preview.filter((r) => r.include && !r.error).map((r) => (r.transfer ? { ...r, transferAccountId: transferAccount } : r));
-  const transferCount = toImport.filter((r) => r.transfer).length;
+  const otherOf = (r: PreviewRow) => r.otherAccountId ?? (transferAccount !== r.accountId ? transferAccount : undefined);
+  const toImport = preview.filter((r) => r.include && !r.error).map((r) => (r.transfer ? { ...r, transferAccountId: otherOf(r) } : r));
+  const transferCount = toImport.filter((r) => r.transfer && !r.otherAccountId).length;
+  // Transfers without their other side in the file: it is found in the other account, or made.
+  const pairs = pairTransfers(toImport);
+  const unpaired = toImport.filter((r, i) => r.transferAccountId && !pairs.has(i)).length;
+  const accountName = (id?: string) => open.find((a) => a.id === id)?.name ?? '';
   const unknownNames = [...new Set(preview.flatMap((r) => (r.unknownCategory ? [r.unknownCategory] : [])))];
   const counts = {
     total: preview.length,
@@ -145,7 +192,7 @@ export function Import({ data }: { data?: FinanceData }) {
 
       <section className="card stack" style={{ gap: 14, maxWidth: 720 }}>
         <div className="list">
-          <Field label={t('fields.account')}>
+          <Field label={multi ? t('import.accountFallback') : t('fields.account')}>
             {(id) => (
               <select id={id} value={account} onChange={(e) => setAccountId(e.target.value)}>
                 {data.accounts
@@ -239,7 +286,21 @@ export function Import({ data }: { data?: FinanceData }) {
               </>
             )}
           </div>
-          <div className="list">
+          <div className="list" style={{ maxWidth: 720 }}>
+            {EXTRA_COLUMNS.map(([key, label]) => (
+              <Field key={key} label={t(label)}>
+                {(id) => (
+                  <select
+                    id={id}
+                    value={mapping[key] ?? ''}
+                    onChange={(e) => setMap({ [key]: e.target.value === '' ? undefined : Number(e.target.value) })}
+                  >
+                    <option value="">{t('import.noColumn')}</option>
+                    {columnOptions}
+                  </select>
+                )}
+              </Field>
+            ))}
             <Field label={t('columns.category')}>
               {(id) => (
                 <select
@@ -262,6 +323,33 @@ export function Import({ data }: { data?: FinanceData }) {
               <input type="checkbox" checked={mapping.invertAmount} onChange={(e) => setMap({ invertAmount: e.target.checked })} />
               <span>{t('import.flip')}</span>
             </label>
+          </div>
+        </section>
+      )}
+
+      {fileAccounts.length > 0 && (
+        <section className="section" style={{ maxWidth: 720 }}>
+          <h2 className="section-title">{t('import.fileAccounts')}</h2>
+          <p className="small muted">{t('import.fileAccountsHelp')}</p>
+          <div className="list">
+            {fileAccounts.map((name) => (
+              <Field key={name} label={name}>
+                {(id) => (
+                  <select
+                    id={id}
+                    value={accountMap[nameKey(name)] ?? matchAccount(name, data.accounts) ?? ''}
+                    onChange={(e) => setAccountMap({ ...accountMap, [nameKey(name)]: e.target.value })}
+                  >
+                    <option value="">{t('import.notInMizan')}</option>
+                    {open.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+            ))}
           </div>
         </section>
       )}
@@ -294,6 +382,11 @@ export function Import({ data }: { data?: FinanceData }) {
               </Field>
             </div>
           )}
+          {unpaired > 0 && (
+            <p className="small muted" role="status">
+              {t('import.unpairedTransfers', { count: unpaired })}
+            </p>
+          )}
           {unknownNames.length > 0 && (
             <p className="small text-warn" role="status">
               {t('import.unknownCategories', { names: unknownNames.join(', ') })}
@@ -308,6 +401,7 @@ export function Import({ data }: { data?: FinanceData }) {
                     <span className="visually-hidden">{t('import.include')}</span>
                   </th>
                   <th scope="col">{t('fields.date')}</th>
+                  {multi && <th scope="col">{t('fields.account')}</th>}
                   <th scope="col">{t('columns.payee')}</th>
                   <th scope="col">{t('columns.category')}</th>
                   <th scope="col" className="num-col">
@@ -328,6 +422,7 @@ export function Import({ data }: { data?: FinanceData }) {
                       />
                     </td>
                     <td className="num nowrap">{r.date ? formatShort(r.date) : '—'}</td>
+                    {multi && <td className="nowrap">{accountName(r.accountId) || '—'}</td>}
                     <td>
                       <div className="stack" style={{ gap: 0 }}>
                         <span className="item-title">{r.payee || '—'}</span>
@@ -347,7 +442,7 @@ export function Import({ data }: { data?: FinanceData }) {
                       {!r.error && r.transfer ? (
                         <span className="small muted">
                           {t(r.amount > 0 ? 'transactions.transferFrom' : 'transactions.transferTo', {
-                            name: others.find((a) => a.id === transferAccount)?.name ?? '',
+                            name: accountName(otherOf(r)),
                           })}
                         </span>
                       ) : (
@@ -399,7 +494,7 @@ export function Import({ data }: { data?: FinanceData }) {
                     {t('import.batchMeta', {
                       count: b.rowCount,
                       date: formatDate(toISO(new Date(b.importedAt))),
-                      account: data.accounts.find((a) => a.id === b.accountId)?.name ?? '',
+                      account: (b.accountIds ?? [b.accountId]).map((id) => data.accounts.find((a) => a.id === id)?.name ?? '').join(', '),
                     })}
                   </span>
                 </div>

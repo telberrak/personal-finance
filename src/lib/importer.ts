@@ -26,6 +26,16 @@ export interface ColumnMapping {
   invertAmount: boolean;
   /** Optional: a column naming each row's category (matched to Mizan's categories by name). */
   category?: number;
+  /** Optional: a column naming each row's account, for a file covering several accounts. */
+  account?: number;
+  /** Optional, for transfers: the account the money came from, and the one it went to. */
+  source?: number;
+  destination?: number;
+  /** Optional: a tidy payee name, when the description column holds the bank's wording. */
+  payee?: number;
+  /** Optional: a note, and a time of day (HH:MM). */
+  note?: number;
+  time?: number;
 }
 
 /** A known bank export: how to recognise its header row and map its columns. */
@@ -48,6 +58,22 @@ const col = (header: string[], ...names: string[]) => {
 
 /** Common UK and French bank exports. Detected by their header row; anything else uses guessMapping. */
 export const PRESETS: BankPreset[] = [
+  {
+    // Mizan's own export (Settings → Export), possibly edited in a spreadsheet: every account in one file.
+    id: 'mizan',
+    name: 'Mizan',
+    signature: ['date', 'account', 'payee', 'category', 'amount', 'bank description'],
+    build: (h) => ({
+      date: col(h, 'date'),
+      description: col(h, 'bank description'),
+      payee: col(h, 'payee'),
+      amount: col(h, 'amount'),
+      category: col(h, 'category'),
+      account: col(h, 'account'),
+      note: col(h, 'note'),
+      time: col(h, 'time'),
+    }),
+  },
   {
     id: 'monzo',
     name: 'Monzo',
@@ -176,16 +202,23 @@ export function guessMapping(rows: string[][]): ColumnMapping {
   const base: ColumnMapping = { hasHeader: looksLikeHeader, date: 0, description: 1, amount: 2, dateFormat: 'dmy', invertAmount: false };
   if (!looksLikeHeader) return { ...base, dateFormat: guessDateFormat(rows.map((r) => r[0] ?? '')) };
 
-  const preset = detectPreset(first);
-  if (preset) {
-    const built = preset.build(first);
-    return { ...base, amount: undefined, ...stripUndefined(built), hasHeader: true };
-  }
-
   const find = (re: RegExp) => {
     const i = first.findIndex((h) => re.test(h));
     return i >= 0 ? i : undefined;
   };
+  // Transfers between your accounts: where the money came from and where it went.
+  const transfers = {
+    source: find(/^\s*(source|from account|transfer from|compte source|المصدر)\s*$/i),
+    destination: find(/^\s*(destination|to account|transfer to|compte destination|الوجهة)\s*$/i),
+  };
+
+  const preset = detectPreset(first);
+  if (preset) {
+    const built = stripUndefined(preset.build(first));
+    const dateFormat = guessDateFormat(rows.slice(1).map((r) => r[built.date ?? 0] ?? ''));
+    return { ...base, dateFormat, amount: undefined, ...stripUndefined(transfers), ...built, hasHeader: true };
+  }
+
   // English and French column names; Arabic-language exports usually use one of these too.
   const moneyOut = find(/paid out|debit|débit|money out|withdraw|sortie/i);
   const moneyIn = find(/paid in|credit|crédit|money in|deposit|entrée/i);
@@ -198,6 +231,8 @@ export function guessMapping(rows: string[][]): ColumnMapping {
     dateFormat: guessDateFormat(rows.slice(1).map((r) => r[date] ?? '')),
     invertAmount: false,
     category: find(/^\s*(categor|catégor|الفئة|التصنيف)/i),
+    account: find(/^\s*(account|account name|compte|الحساب)\s*$/i),
+    ...transfers,
   };
   if (moneyOut !== undefined && moneyIn !== undefined) return { ...mapping, moneyIn, moneyOut };
   return { ...mapping, amount: amount ?? 2 };
@@ -280,6 +315,14 @@ export interface ParsedRow {
   rawPayee: string;
   /** The category named in the file, if it has a category column. */
   categoryName?: string;
+  /** The account named in the file, and for transfers where the money came from and went to. */
+  accountName?: string;
+  sourceName?: string;
+  destinationName?: string;
+  /** A tidy payee named in the file. */
+  payeeName?: string;
+  note?: string;
+  time?: string;
   error?: string;
 }
 
@@ -287,8 +330,11 @@ export interface ParsedRow {
 export function mapRows(rows: string[][], m: ColumnMapping): ParsedRow[] {
   const body = m.hasHeader ? rows.slice(1) : rows;
   const offset = m.hasHeader ? 2 : 1;
-  return body.map((r, i) => {
-    const rawPayee = (r[m.description] ?? '').trim();
+  const cell = (r: string[], i: number | undefined) => (i !== undefined ? (r[i] ?? '').trim() || undefined : undefined);
+  const parsed = body.map((r, i) => {
+    if (r.every((c) => !c.trim())) return undefined; // blank lines (",,,,") left by spreadsheets
+    // The bank's wording, or the payee name when a row has none (such as one typed in by hand).
+    const rawPayee = (r[m.description] ?? '').trim() || (cell(r, m.payee) ?? '');
     const date = parseDate(r[m.date] ?? '', m.dateFormat);
     let amount: Pence | null;
     if (m.amount !== undefined) {
@@ -299,13 +345,26 @@ export function mapRows(rows: string[][], m: ColumnMapping): ParsedRow[] {
       amount = out || inn ? (inn ? Math.abs(inn) : 0) - (out ? Math.abs(out) : 0) : null;
     }
     if (amount !== null && m.invertAmount) amount = -amount;
-    const categoryName = m.category !== undefined ? (r[m.category] ?? '').trim() || undefined : undefined;
-    const row: ParsedRow = { line: i + offset, rawPayee, date: date ?? undefined, amount: amount ?? undefined, categoryName };
+    const time = cell(r, m.time);
+    const row: ParsedRow = {
+      line: i + offset,
+      rawPayee,
+      date: date ?? undefined,
+      amount: amount ?? undefined,
+      categoryName: cell(r, m.category),
+      accountName: cell(r, m.account),
+      sourceName: cell(r, m.source),
+      destinationName: cell(r, m.destination),
+      payeeName: cell(r, m.payee),
+      note: cell(r, m.note),
+      time: time && /^\d{1,2}:\d{2}/.test(time) ? time.slice(0, 5).padStart(5, '0') : undefined,
+    };
     if (!date) row.error = t('import.errors.date', { value: r[m.date] ?? '' });
     else if (amount === null || amount === 0) row.error = t('import.errors.amount');
     else if (!rawPayee) row.error = t('import.errors.description');
     return row;
   });
+  return parsed.filter((r) => r !== undefined);
 }
 
 /** Identifies a transaction across imports, to skip rows already imported. */

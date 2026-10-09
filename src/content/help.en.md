@@ -145,6 +145,8 @@ Download a CSV file from your bank's website, then go to **Import → Choose a C
 
 **Files with categories.** If the file has a **Category** column, Mizan uses it: names are matched to your categories (ignoring capitals and spaces), refunds stay in their spending category, and names not found are listed so you can add them first. Rows in the **Transfers** category become transfers with the account you choose under **Transfers with**, for example credit card payments made from your current account.
 
+**Files covering several accounts.** A file with an **Account** column, such as Mizan’s own export (Settings → Export), goes into several accounts at once. Under **Accounts in this file**, check which of your accounts each name goes into; small differences such as “Narwest” or “Lloyd” are matched for you. For transfers, a **Source** column says which account the money came from and a **Destination** column where it went. When the file has both sides of a transfer (the same day, opposite amounts), they are linked; when it has only one, the other side is matched to a transaction already in that account, or added. Example: an HSBC row “−£200, Source HSBC, Destination NatWest” and a NatWest row “+£200, Source HSBC” become one transfer.
+
 ## Bank connections {#banks}
 
 With sync turned on, **Settings → Bank connections → Connect a bank** brings your transactions in automatically.

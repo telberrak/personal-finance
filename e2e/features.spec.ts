@@ -31,6 +31,29 @@ test('importing an older statement opens Activity on its month', async ({ page }
   await expect(page.locator('.list-row, tbody tr', { hasText: /late bakery/i })).toHaveCount(1);
 });
 
+test('importing a file covering several accounts links the two sides of a transfer', async ({ page }) => {
+  const csv = [
+    'Date,Account,Source,Destination,Payee,Category,Amount',
+    '15/02/2025,Current account,Current account,Savngs,Transfer to Savings,Transfers,-100.00',
+    '15/02/2025,Savngs,Current account,,Transfer from Current,Transfers,100.00',
+    '15/02/2025,current account,,,Corner Grocer,Groceries,-8.40',
+    '15/02/2025,Other Bank,,,Somewhere,Groceries,-1.00',
+  ].join('\n');
+  await page.goto('/import');
+  await page.locator('input[type=file]').setInputFiles({ name: 'all.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
+  const accounts = page
+    .getByRole('region', { name: 'Accounts in this file' })
+    .or(page.locator('section', { hasText: 'Accounts in this file' }));
+  await expect(accounts.getByLabel('Savngs')).toHaveValue('savings'); // a typo still finds Savings
+  await expect(accounts.getByLabel('Other Bank')).toHaveValue(''); // not in Mizan: its rows are left out
+  await expect(page.getByText('No Mizan account chosen for “Other Bank”')).toBeVisible();
+  await page.getByRole('button', { name: 'Import 3 transactions' }).click();
+  await expect(page).toHaveURL(/\/activity\?month=2025-02-01$/);
+  await expect(page.locator('.list-row, tbody tr', { hasText: 'Transfer to Savings' })).toHaveCount(1);
+  await expect(page.locator('.list-row, tbody tr', { hasText: 'Transfer from Current account' })).toHaveCount(1);
+  await expect(page.locator('.list-row, tbody tr', { hasText: 'Corner Grocer' })).toHaveCount(1);
+});
+
 test('importing a CSV skips duplicates, matches bills and can be undone', async ({ page }) => {
   const now = new Date();
   const lastMonth18 = new Date(now.getFullYear(), now.getMonth() - 1, 18);

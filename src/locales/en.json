@@ -548,7 +548,8 @@
     "errors": {
       "date": "Unreadable date \"{{value}}\"",
       "amount": "No amount",
-      "description": "No description"
+      "description": "No description",
+      "account": "No Mizan account chosen for “{{name}}”"
     },
     "empty": "That file looks empty.",
     "imported_one": "Imported {{count}} transaction",
@@ -592,7 +593,16 @@
     "noCategoryColumn": "None (suggest categories)",
     "transfersWith_one": "{{count}} transfer with",
     "transfersWith_other": "{{count}} transfers with",
-    "unknownCategories": "Not found in Mizan, so suggested categories are used instead: {{names}}. Add them under Settings → Categories, then choose the file again."
+    "unknownCategories": "Not found in Mizan, so suggested categories are used instead: {{names}}. Add them under Settings → Categories, then choose the file again.",
+    "accountFallback": "Account (for rows without one)",
+    "sourceColumn": "Transfer from (source)",
+    "destinationColumn": "Transfer to (destination)",
+    "noColumn": "None",
+    "fileAccounts": "Accounts in this file",
+    "fileAccountsHelp": "Each account named in the file and the Mizan account it goes into. Rows of an account set to “Not in Mizan” are left out; transfers with it use the account chosen below.",
+    "notInMizan": "Not in Mizan",
+    "unpairedTransfers_one": "{{count}} transfer has no matching row in the other account in this file: its other side will be matched to a transaction already there, or added.",
+    "unpairedTransfers_other": "{{count}} transfers have no matching row in the other account in this file: their other side will be matched to a transaction already there, or added."
   },
   "settings": {
     "theme": {

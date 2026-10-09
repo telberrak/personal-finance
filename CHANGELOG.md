@@ -2,6 +2,13 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.23.0 — Importing files that cover several accounts
+
+- Import reads an Account column, so one file (such as Mizan's own export, edited in a spreadsheet) goes into several accounts. Under "Accounts in this file" you check which of your accounts each name goes into; small differences ("Narwest", "Lloyd") are matched for you.
+- Source and Destination columns say where each transfer came from and went to. Both sides found in the file are linked; a side that is missing is matched to a transaction already in the other account (same day, opposite amount), or added. Undoing the import removes what it added and unlinks the rest.
+- Mizan's export is recognised: its Payee, Note and Time columns are kept, the bank's wording stays as the description, and blank lines left by spreadsheets are skipped.
+- A transfer already in an account (same day and amount) is now marked as already imported, even when its wording differs.
+
 ## 0.22.1 — Imports open on their month
 
 - After importing, Activity opens on the month of the newest imported transaction, so an older statement no longer looks missing.
