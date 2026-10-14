@@ -174,3 +174,31 @@ test('Activity keeps its filters when going back from a transaction', async ({ p
   await expect(page.getByRole('button', { name: 'Spending' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByPlaceholder('Search payees or categories')).toHaveValue('groceries');
 });
+
+test('Activity shows one day, and the calendar’s See activity opens that day', async ({ page }) => {
+  await page.goto('/calendar');
+  const details = page.getByRole('region', { name: 'Day details' });
+  const seeActivity = details.getByRole('link', { name: 'See activity' });
+  const cells = page.getByRole('gridcell');
+  // Find a day with transactions (the demo data has them on most past days).
+  for (let i = 0, n = await cells.count(); i < n && !(await seeActivity.isVisible()); i++) await cells.nth(i).click();
+  await seeActivity.click();
+
+  await expect(page).toHaveURL(/\/activity\?month=\d{4}-\d{2}-01&day=\d{4}-\d{2}-\d{2}$/);
+  const day = new URL(page.url()).searchParams.get('day')!;
+  const daySelect = page.getByLabel('Day', { exact: true });
+  await expect(daySelect).toHaveValue(day);
+  const rows = page.locator('a[href^="/transactions/"]');
+  await expect(rows.first()).toBeVisible();
+  const onDay = await rows.count();
+
+  // All days of the month again: at least as many transactions.
+  await daySelect.selectOption('');
+  await expect(page).not.toHaveURL(/day=/);
+  await expect.poll(() => rows.count()).toBeGreaterThanOrEqual(onDay);
+
+  // Choosing a day from the list filters on it.
+  await daySelect.selectOption(day);
+  await expect(page).toHaveURL(new RegExp(`day=${day}`));
+  await expect.poll(() => rows.count()).toBe(onDay);
+});

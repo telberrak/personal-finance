@@ -2,6 +2,12 @@
 
 All notable changes. Versions follow [semantic versioning](https://semver.org); each roadmap phase (see [docs/ROADMAP_PRO.md](docs/ROADMAP_PRO.md)) is a minor release until 1.0.
 
+## 0.24.0 — One day in Activity
+
+- Activity can show a single day: choose it from the day list next to the accounts ("All days" shows the whole month). Totals are for that day, and it is kept in the address like the other filters.
+- In the Calendar, **See activity** now opens Activity on the chosen day instead of the whole month.
+- Fixed: in dark mode, today's date in the Calendar had too little contrast.
+
 ## 0.23.1 — Activity keeps its filters
 
 - Activity's type filter, search and account filter are kept in the address, like the month: opening a transaction and going back returns to the same filtered list.

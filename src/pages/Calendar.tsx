@@ -142,7 +142,7 @@ function DayDetails({ day }: { day: CalendarDay }) {
       {(day.income > 0 || day.spending > 0) && (
         <p className="small">
           {t('calendar.inOut', { in: formatMoney(day.income), out: formatMoney(day.spending) })}{' '}
-          <Link to={`/activity?month=${startOfMonth(day.date)}`}>{t('calendar.seeActivity')}</Link>
+          <Link to={`/activity?month=${startOfMonth(day.date)}&day=${day.date}`}>{t('calendar.seeActivity')}</Link>
         </p>
       )}
       {!day.payday && day.bills.length === 0 && day.income === 0 && day.spending === 0 && (

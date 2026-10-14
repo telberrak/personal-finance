@@ -183,7 +183,7 @@ Touchez **Sélectionner**, choisissez des transactions, puis **Modifier la séle
 
 ## Calendrier {#calendar}
 
-Le **Calendrier** montre les factures, les jours de paie et votre solde prévu jour après jour. Touchez un jour pour voir ce qui a été payé, ce qui est dû, et ses transactions.
+Le **Calendrier** montre les factures, les jours de paie et votre solde prévu jour après jour. Touchez un jour pour voir ce qui a été payé, ce qui est dû, et ses transactions. **Voir l’activité** ouvre l’Activité sur ce jour. Dans **Activité**, la liste des jours à côté des comptes (« Tous les jours ») affiche un seul jour du mois ; choisissez **Tous les jours** pour revoir tout le mois.
 
 ## Patrimoine et dettes {#networth}
 

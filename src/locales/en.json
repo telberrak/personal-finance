@@ -295,7 +295,10 @@
     "advancedSearch": "Search and edit",
     "comingUp": "Coming up",
     "comingUpNote": "Bills due in the next 7 days. They join your activity once paid.",
-    "allBills": "All bills"
+    "allBills": "All bills",
+    "day": "Day",
+    "allDays": "All days",
+    "emptyDay": "No transactions on this day."
   },
   "columns": {
     "payee": "Payee",

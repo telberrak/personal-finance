@@ -295,7 +295,10 @@
     "advancedSearch": "Rechercher et modifier",
     "comingUp": "À venir",
     "comingUpNote": "Factures dues dans les 7 prochains jours. Elles rejoignent votre activité une fois payées.",
-    "allBills": "Toutes les factures"
+    "allBills": "Toutes les factures",
+    "day": "Jour",
+    "allDays": "Tous les jours",
+    "emptyDay": "Aucune opération ce jour-là."
   },
   "columns": {
     "payee": "Bénéficiaire",

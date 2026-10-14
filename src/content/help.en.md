@@ -183,7 +183,7 @@ Tap **Select**, choose transactions, then **Edit selected** to **Move to categor
 
 ## Calendar {#calendar}
 
-**Calendar** shows bills, paydays and your expected balance day by day. Tap a day to see what was paid, what is due, and the transactions on it.
+**Calendar** shows bills, paydays and your expected balance day by day. Tap a day to see what was paid, what is due, and the transactions on it. **See activity** opens Activity on that day. In **Activity**, the day list next to the accounts (“All days”) shows one day of the month; choose **All days** to see the whole month again.
 
 ## Net worth and debts {#networth}
 

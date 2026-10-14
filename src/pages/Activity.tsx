@@ -1,6 +1,6 @@
 /**
- * Activity: transactions for a month, grouped by day (phone) or in a table (computer), with search, filters,
- * totals, and bills coming up in the next 7 days.
+ * Activity: transactions for a month (or one day of it), grouped by day (phone) or in a table (computer), with
+ * search, filters, totals, and bills coming up in the next 7 days.
  */
 import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router';
@@ -10,7 +10,7 @@ import { BillRow, ruleLabel, TransactionRow } from '../components/rows';
 import { TransactionTable } from '../components/tables';
 import { useIsDesktop } from '../components/useMediaQuery';
 import type { FinanceData, Transaction } from '../db/types';
-import { addDays, dayHeading, dueLabel, endOfMonth, formatShort, startOfMonth, today } from '../lib/dates';
+import { addDays, dayHeading, dueLabel, endOfMonth, formatShort, startOfMonth, today, type ISODate } from '../lib/dates';
 import { formatMoney } from '../lib/money';
 import { billOccurrences, groupByDay, inRange, moneyInOut, overdueBills } from '../lib/selectors';
 import { t } from '../i18n';
@@ -29,25 +29,38 @@ const MATCHES: Record<Filter, (t: Transaction) => boolean> = {
   Transfers: (t) => !!t.transferId,
 };
 
-/** The Activity screen. The month and filters are kept in the URL so Back returns to them. */
+/** Every day of a month, first to last. */
+function daysOf(month: ISODate): ISODate[] {
+  const days: ISODate[] = [];
+  for (let d = startOfMonth(month); d <= endOfMonth(month); d = addDays(d, 1)) days.push(d);
+  return days;
+}
+
+/** The Activity screen. The month, day and filters are kept in the URL so Back returns to them. */
 export function Activity({ data }: { data?: FinanceData }) {
   const ref = today();
   const isDesktop = useIsDesktop();
-  // The month and filters live in the URL (?month=2026-09-01&type=Spending&q=tesco&account=current), so
-  // going back from a transaction returns to the same list. Defaults are left out of the URL.
+  // The month, day and filters live in the URL (?month=2026-09-01&day=2026-09-14&type=Spending&q=tesco&
+  // account=current), so going back from a transaction returns to the same list, and the calendar can link to
+  // a day. Defaults are left out of the URL.
   const [params, setParams] = useSearchParams();
-  const setParam = (key: string, value: string, fallback: string) =>
+  const setParam = (key: string, value: string, fallback: string, also?: (next: URLSearchParams) => void) =>
     setParams(
       (prev) => {
         const next = new URLSearchParams(prev);
         if (value === fallback) next.delete(key);
         else next.set(key, value);
+        also?.(next);
         return next;
       },
       { replace: true },
     );
-  const month = params.get('month') ?? startOfMonth(ref);
-  const setMonth = (m: string) => setParam('month', m, startOfMonth(ref));
+  const dayParam = params.get('day');
+  const day = dayParam && /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : undefined;
+  const month = day ? startOfMonth(day) : (params.get('month') ?? startOfMonth(ref));
+  // Another month shows all of it: the chosen day belonged to the old one.
+  const setMonth = (m: string) => setParam('month', m, startOfMonth(ref), (next) => next.delete('day'));
+  const setDay = (d: string) => setParam('day', d, '', (next) => d && next.set('month', startOfMonth(d)));
   const typeParam = params.get('type');
   const filter: Filter = FILTERS.find((f) => f === typeParam) ?? 'All';
   const setFilter = (f: Filter) => setParam('type', f, 'All');
@@ -58,8 +71,8 @@ export function Activity({ data }: { data?: FinanceData }) {
 
   const view = useMemo(() => {
     if (!data) return undefined;
-    const from = startOfMonth(month);
-    const to = endOfMonth(month);
+    const from = day ?? startOfMonth(month);
+    const to = day ?? endOfMonth(month);
     const categories = new Map(data.categories.map((c) => [c.id, c]));
     const inMonth = data.transactions.filter((t) => inRange(t, from, to) && (accountFilter === 'all' || t.accountId === accountFilter));
     const q = query.trim().toLowerCase();
@@ -69,7 +82,7 @@ export function Activity({ data }: { data?: FinanceData }) {
     );
     const { moneyIn, moneyOut } = moneyInOut(inMonth, from, to);
     // Unpaid bills are not transactions (they change no balance or total); they are listed so none is missed.
-    const showComingUp = month === startOfMonth(ref) && (filter === 'All' || filter === 'Bills') && !q;
+    const showComingUp = !day && month === startOfMonth(ref) && (filter === 'All' || filter === 'Bills') && !q;
     const comingUp = showComingUp
       ? [
           ...overdueBills(data, ref),
@@ -86,7 +99,7 @@ export function Activity({ data }: { data?: FinanceData }) {
       shownCount: shown.length,
       groups: groupByDay(shown),
     };
-  }, [data, month, filter, query, accountFilter, ref]);
+  }, [data, month, day, filter, query, accountFilter, ref]);
 
   if (!view) return <Loading />;
 
@@ -132,6 +145,19 @@ export function Activity({ data }: { data?: FinanceData }) {
     </label>
   );
 
+  const daySelect = (
+    <label className="select-pill">
+      <select aria-label={t('activity.day')} value={day ?? ''} onChange={(e) => setDay(e.target.value)}>
+        <option value="">{t('activity.allDays')}</option>
+        {daysOf(month).map((d) => (
+          <option key={d} value={d}>
+            {formatShort(d)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
   const comingUp = view.comingUp.length > 0 && (
     <section className="section" aria-labelledby="coming-up">
       <div className="section-head">
@@ -164,7 +190,9 @@ export function Activity({ data }: { data?: FinanceData }) {
   );
 
   const empty = view.groups.length === 0 && (
-    <p className="empty">{filter === 'All' && !query.trim() ? t('activity.emptyMonth') : t('activity.noMatch')}</p>
+    <p className="empty">
+      {filter !== 'All' || query.trim() ? t('activity.noMatch') : day ? t('activity.emptyDay') : t('activity.emptyMonth')}
+    </p>
   );
 
   return (
@@ -193,6 +221,7 @@ export function Activity({ data }: { data?: FinanceData }) {
           </div>
           <div className="toolbar">
             {search}
+            {daySelect}
             {accountSelect}
             {chips}
             <span className="label toolbar-count">{t('activity.shown', { shown: view.shownCount, total: view.count })}</span>
@@ -203,7 +232,10 @@ export function Activity({ data }: { data?: FinanceData }) {
       ) : (
         <>
           {search}
-          {accountSelect}
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            {daySelect}
+            {accountSelect}
+          </div>
           {chips}
           <div className="grid-2">
             <div className="card stack" style={{ padding: '12px 14px' }}>
